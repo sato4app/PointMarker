@@ -67,11 +67,18 @@ export class RouteManager {
     }
 
     /**
-     * 開始ポイントIDを設定（フォーマット処理付き）
+     * 開始ポイントIDを設定
      * @param {string} id - 開始ポイントID
+     * @param {boolean} skipFormatting - フォーマット処理をスキップするかどうか (デフォルト: false)
+     * @example
+     * // 入力時（フォーマット処理なし）
+     * routeManager.setStartPoint('J-1', true);  // → 'J-1'
+     * 
+     * // blur時（フォーマット処理あり）
+     * routeManager.setStartPoint('J-1');  // → 'J-01'
      */
-    setStartPoint(id) {
-        this.startPointId = Validators.formatPointId(id);
+    setStartPoint(id, skipFormatting = false) {
+        this.startPointId = skipFormatting ? id : Validators.formatPointId(id);
         this.notify('onStartEndChange', { 
             start: this.startPointId, 
             end: this.endPointId 
@@ -79,35 +86,18 @@ export class RouteManager {
     }
 
     /**
-     * 終了ポイントIDを設定（フォーマット処理付き）
+     * 終了ポイントIDを設定
      * @param {string} id - 終了ポイントID
+     * @param {boolean} skipFormatting - フォーマット処理をスキップするかどうか (デフォルト: false)
+     * @example
+     * // 入力時（フォーマット処理なし）
+     * routeManager.setEndPoint('A-2', true);  // → 'A-2'
+     * 
+     * // blur時（フォーマット処理あり）
+     * routeManager.setEndPoint('A-2');  // → 'A-02'
      */
-    setEndPoint(id) {
-        this.endPointId = Validators.formatPointId(id);
-        this.notify('onStartEndChange', { 
-            start: this.startPointId, 
-            end: this.endPointId 
-        });
-    }
-
-    /**
-     * 開始ポイントIDを直接設定（フォーマット処理なし）
-     * @param {string} id - 開始ポイントID
-     */
-    setStartPointDirect(id) {
-        this.startPointId = id;
-        this.notify('onStartEndChange', { 
-            start: this.startPointId, 
-            end: this.endPointId 
-        });
-    }
-
-    /**
-     * 終了ポイントIDを直接設定（フォーマット処理なし）
-     * @param {string} id - 終了ポイントID
-     */
-    setEndPointDirect(id) {
-        this.endPointId = id;
+    setEndPoint(id, skipFormatting = false) {
+        this.endPointId = skipFormatting ? id : Validators.formatPointId(id);
         this.notify('onStartEndChange', { 
             start: this.startPointId, 
             end: this.endPointId 

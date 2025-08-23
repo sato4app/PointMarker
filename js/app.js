@@ -130,26 +130,34 @@ export class PointMarkerApp {
         startPointInput.addEventListener('input', (e) => {
             const value = e.target.value.replace(/[a-z]/g, (match) => match.toUpperCase());
             e.target.value = value;
-            // フォーマット処理を行わず、直接設定メソッドを使用
-            this.routeManager.setStartPointDirect(value);
+            // フォーマット処理をスキップして設定
+            this.routeManager.setStartPoint(value, true);
         });
         
         endPointInput.addEventListener('input', (e) => {
             const value = e.target.value.replace(/[a-z]/g, (match) => match.toUpperCase());
             e.target.value = value;
-            // フォーマット処理を行わず、直接設定メソッドを使用
-            this.routeManager.setEndPointDirect(value);
+            // フォーマット処理をスキップして設定
+            this.routeManager.setEndPoint(value, true);
         });
         
         // blur時にX-nn形式のフォーマット処理を実行
         startPointInput.addEventListener('blur', (e) => {
             this.routeManager.setStartPoint(e.target.value);
-            e.target.value = this.routeManager.getStartEndPoints().start;
+            const newValue = this.routeManager.getStartEndPoints().start;
+            e.target.value = newValue;
+            
+            // 入力検証フィードバック
+            this.updateInputValidationFeedback(e.target, newValue);
         });
         
         endPointInput.addEventListener('blur', (e) => {
             this.routeManager.setEndPoint(e.target.value);
-            e.target.value = this.routeManager.getStartEndPoints().end;
+            const newValue = this.routeManager.getStartEndPoints().end;
+            e.target.value = newValue;
+            
+            // 入力検証フィードバック
+            this.updateInputValidationFeedback(e.target, newValue);
         });
 
         // ウィンドウリサイズ
@@ -372,6 +380,42 @@ export class PointMarkerApp {
         } finally {
             event.target.value = '';
         }
+    }
+
+    /**
+     * 入力フィールドの検証フィードバックを更新
+     * @param {HTMLInputElement} inputElement - 入力要素
+     * @param {string} value - 検証する値
+     */
+    updateInputValidationFeedback(inputElement, value) {
+        // Validatorsクラスをインポートしていないため、ここで直接チェック
+        const isValidFormat = this.isValidPointIdFormat(value);
+        
+        if (!isValidFormat && value.trim() !== '') {
+            // 無効な形式の場合は薄いピンクの背景色とツールチップを設定
+            inputElement.style.backgroundColor = '#ffe4e4';
+            inputElement.style.borderColor = '#ff6b6b';
+            inputElement.title = 'X-nn形式で入力してください（例：A-01, J-12）';
+        } else {
+            // 有効な形式の場合は通常の表示に戻す
+            inputElement.style.backgroundColor = '';
+            inputElement.style.borderColor = '';
+            inputElement.title = '';
+        }
+    }
+
+    /**
+     * ポイントIDが「X-nn」形式（英大文字1桁-数字2桁）かどうかをチェック
+     * @param {string} value - 検証する値
+     * @returns {boolean} 有効な形式かどうか
+     */
+    isValidPointIdFormat(value) {
+        if (!value || value.trim() === '') {
+            return true;
+        }
+        
+        const validPattern = /^[A-Z]-\d{2}$/;
+        return validPattern.test(value);
     }
 
     /**
