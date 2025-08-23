@@ -1,7 +1,7 @@
-# RouteMarker 機能仕様書
+# PointMarker 機能仕様書
 
 ## 概要
-RouteMarker（旧PickPoints）は、ハイキングマップのPNG画像からポイントとルートをマーキングし、座標データをJSONファイルとして出力するWebアプリケーションです。
+PointMarker（旧RouteMarker/PickPoints）は、ハイキングマップのPNG画像からポイントとルートをマーキングし、座標データをJSONファイルとして出力するWebアプリケーションです。
 
 ## システム構成
 - **フロントエンド**: 純粋なHTML5、CSS3、JavaScript（ES6+）
@@ -23,10 +23,10 @@ PNG形式のハイキングマップ画像を読み込み、Canvas要素に表�
 - **座標系管理**: 元画像座標とCanvas表示座標の相互変換
 
 #### 実装クラス・メソッド
-- `PickPoints.handleImageSelection()`: File System Access APIを使用した画像選択
-- `PickPoints.handleImageLoad()`: 従来方式でのファイル読み込み
-- `PickPoints.loadImageFromFile()`: 画像ファイルの実際の読み込み処理
-- `PickPoints.setupCanvas()`: Canvas要素のサイズ調整
+- `PointMarker.handleImageSelection()`: File System Access APIを使用した画像選択
+- `PointMarker.handleImageLoad()`: 従来方式でのファイル読み込み
+- `PointMarker.loadImageFromFile()`: 画像ファイルの実際の読み込み処理
+- `PointMarker.setupCanvas()`: Canvas要素のサイズ調整
 
 ### 2. ポイント編集機能
 #### 概要
@@ -37,25 +37,22 @@ PNG形式のハイキングマップ画像を読み込み、Canvas要素に表�
 - **ポイント削除**: 既存ポイント上でのクリック
 - **ID自動生成**: A-01, A-02...Z-99の形式
 - **視覚表現**: 赤い円マーカー + 白抜き文字ID
-- **最大ポイント数**: 2,574個（A-01 〜 Z-99）
 
 #### データ構造
 ```javascript
 {
     id: "A-01",           // ポイントID
-    x: 123,               // Canvas座標X
-    y: 456,               // Canvas座標Y  
     imageX: 234,          // 元画像座標X
     imageY: 567           // 元画像座標Y
 }
 ```
 
 #### 実装クラス・メソッド
-- `PickPoints.handleCanvasClick()`: クリックイベント処理
-- `PickPoints.addPoint()`: ポイント追加処理
-- `PickPoints.removePoint()`: ポイント削除処理
-- `PickPoints.generatePointId()`: ID自動生成ロジック
-- `PickPoints.clearPoints()`: 全ポイント削除
+- `PointMarker.handleCanvasClick()`: クリックイベント処理
+- `PointMarker.addPoint()`: ポイント追加処理
+- `PointMarker.removePoint()`: ポイント削除処理
+- `PointMarker.createInputBox()`: ポイントID入力ボックス生成
+- `PointMarker.clearPoints()`: 全ポイント削除
 
 ### 3. ルート編集機能
 #### 概要
@@ -72,6 +69,7 @@ PNG形式のハイキングマップ画像を読み込み、Canvas要素に表�
 #### データ構造
 ```javascript
 {
+    imageReference: "map01.png",   // 元画像ファイル名
     routeInfo: {
         startPoint: "A-01",        // 開始ポイントID
         endPoint: "B-05",          // 終了ポイントID
@@ -79,25 +77,20 @@ PNG形式のハイキングマップ画像を読み込み、Canvas要素に表�
     },
     waypoints: [                   // 中間点配列
         {
-            x: 123,                // Canvas座標X
-            y: 456,                // Canvas座標Y
             imageX: 234,           // 元画像座標X
             imageY: 567            // 元画像座標Y
         }
     ],
-    metadata: {
-        imageFileName: "map01",    // 元画像ファイル名
-        exportedAt: "2025-08-19T..."  // エクスポート日時
-    }
+    exportedAt: "2025-08-19T..."   // エクスポート日時
 }
 ```
 
 #### 実装クラス・メソッド
-- `PickPoints.handleRouteCanvasClick()`: ルート編集時のクリック処理
-- `PickPoints.addRoutePoint()`: 中間点追加
-- `PickPoints.removeRoutePoint()`: 中間点削除
-- `PickPoints.validateStartEndPoints()`: 開始・終了ポイント検証
-- `PickPoints.clearRoute()`: ルート全削除
+- `PointMarker.handleCanvasClick()`: ルート編集時のクリック処理も含む
+- `PointMarker.addRoutePoint()`: 中間点追加
+- `PointMarker.validateStartEndPoints()`: 開始・終了ポイント検証
+- `PointMarker.clearRoute()`: ルート全削除
+- `PointMarker.updateWaypointCount()`: 中間点数更新
 
 ### 4. JSON出力機能
 #### 概要
@@ -114,16 +107,16 @@ PNG形式のハイキングマップ画像を読み込み、Canvas要素に表�
   - ブラウザダウンロード（フォールバック）
 
 #### 実装クラス・メソッド
-- `PickPoints.exportJSON()`: ポイントデータのJSON出力
-- `PickPoints.exportRouteJSON()`: ルートデータのJSON出力
-- `PickPoints.downloadJSONWithUserChoice()`: ダウンロード処理統合
+- `PointMarker.exportJSON()`: ポイントデータのJSON出力
+- `PointMarker.exportRouteJSON()`: ルートデータのJSON出力
+- `PointMarker.downloadJSONWithUserChoice()`: ダウンロード処理統合
 
 ### 5. JSON読み込み機能
 #### 概要
 以前に出力したJSONファイルを読み込み、ポイントやルートを復元する機能です。
 
 #### 仕様
-- **対応形式**: RouteMarker出力形式のJSONファイル
+- **対応形式**: PointMarker出力形式のJSONファイル
 - **復元内容**: 
   - ポイント: 座標、ID
   - ルート: 開始・終了ポイント、中間点
@@ -131,10 +124,10 @@ PNG形式のハイキングマップ画像を読み込み、Canvas要素に表�
 - **エラーハンドリング**: 不正なJSONファイルの検出と警告
 
 #### 実装クラス・メソッド
-- `PickPoints.handleJSONLoad()`: ポイントJSON読み込み
-- `PickPoints.handleRouteJSONLoad()`: ルートJSON読み込み
-- `PickPoints.loadPointsFromJSON()`: ポイントデータ復元
-- `PickPoints.loadRouteFromJSON()`: ルートデータ復元
+- `PointMarker.handleJSONLoad()`: ポイントJSON読み込み
+- `PointMarker.handleRouteJSONLoad()`: ルートJSON読み込み
+- `PointMarker.loadPointsFromJSON()`: ポイントデータ復元
+- `PointMarker.loadRouteFromJSON()`: ルートデータ復元
 
 ### 6. UI・レイアウト機能
 #### 概要
@@ -151,10 +144,10 @@ PNG形式のハイキングマップ画像を読み込み、Canvas要素に表�
 - **アクセシビリティ**: ARIA属性、キーボードナビゲーション対応
 
 #### 実装クラス・メソッド
-- `PickPoints.initializeLayoutManager()`: レイアウト管理初期化
-- `PickPoints.setEditingMode()`: 編集モード切り替え
-- `PickPoints.updatePointCount()`: ポイント数表示更新
-- `PickPoints.updateWaypointCount()`: 中間点数表示更新
+- `PointMarker.initializeLayoutManager()`: レイアウト管理初期化
+- `PointMarker.setEditingMode()`: 編集モード切り替え
+- `PointMarker.updatePointCount()`: ポイント数表示更新
+- `PointMarker.updateLayoutDisplay()`: レイアウト表示更新
 
 ### 7. 描画・ビジュアル機能
 #### 概要
@@ -173,11 +166,11 @@ PNG形式のハイキングマップ画像を読み込み、Canvas要素に表�
   - 高DPI対応
 
 #### 実装クラス・メソッド
-- `PickPoints.drawImage()`: 画像とマーカーの統合描画
-- `PickPoints.drawPoints()`: ポイント描画
-- `PickPoints.drawRoutes()`: ルート描画
-- `PickPoints.drawPoint()`: 個別ポイント描画
-- `PickPoints.drawRoute()`: 個別ルート描画
+- `PointMarker.drawImage()`: 画像とマーカーの統合描画
+- `PointMarker.drawAllPoints()`: 全ポイント描画
+- `PointMarker.drawPoint()`: 個別ポイント描画
+- `PointMarker.redrawInputBoxes()`: 入力ボックス再描画
+- `PointMarker.handleWindowResize()`: リサイズ処理
 
 ## 技術仕様
 

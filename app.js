@@ -1,8 +1,8 @@
 /**
- * PickPoints - ハイキングマップポイント選択ツール
+ * PointMarker - ハイキングマップポイント選択ツール
  * PNG画像からポイントを選択してJSON出力するWebアプリケーション
  */
-class PickPoints {
+class PointMarker {
     /**
      * アプリケーション初期化とプロパティ設定
      */
@@ -1224,5 +1224,5 @@ class PickPoints {
 
 // DOM読み込み完了後にアプリケーションを初期化
 document.addEventListener('DOMContentLoaded', () => {
-    new PickPoints();
+    new PointMarker();
 });
