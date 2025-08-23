@@ -67,7 +67,7 @@ export class RouteManager {
     }
 
     /**
-     * 開始ポイントIDを設定
+     * 開始ポイントIDを設定（フォーマット処理付き）
      * @param {string} id - 開始ポイントID
      */
     setStartPoint(id) {
@@ -79,11 +79,35 @@ export class RouteManager {
     }
 
     /**
-     * 終了ポイントIDを設定
+     * 終了ポイントIDを設定（フォーマット処理付き）
      * @param {string} id - 終了ポイントID
      */
     setEndPoint(id) {
         this.endPointId = Validators.formatPointId(id);
+        this.notify('onStartEndChange', { 
+            start: this.startPointId, 
+            end: this.endPointId 
+        });
+    }
+
+    /**
+     * 開始ポイントIDを直接設定（フォーマット処理なし）
+     * @param {string} id - 開始ポイントID
+     */
+    setStartPointDirect(id) {
+        this.startPointId = id;
+        this.notify('onStartEndChange', { 
+            start: this.startPointId, 
+            end: this.endPointId 
+        });
+    }
+
+    /**
+     * 終了ポイントIDを直接設定（フォーマット処理なし）
+     * @param {string} id - 終了ポイントID
+     */
+    setEndPointDirect(id) {
+        this.endPointId = id;
         this.notify('onStartEndChange', { 
             start: this.startPointId, 
             end: this.endPointId 

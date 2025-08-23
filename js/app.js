@@ -126,25 +126,29 @@ export class PointMarkerApp {
         const startPointInput = document.getElementById('startPointInput');
         const endPointInput = document.getElementById('endPointInput');
         
+        // input時は小文字を大文字に変換するのみ（フォーマット処理はしない）
         startPointInput.addEventListener('input', (e) => {
             const value = e.target.value.replace(/[a-z]/g, (match) => match.toUpperCase());
             e.target.value = value;
-            this.routeManager.setStartPoint(value);
+            // フォーマット処理を行わず、直接設定メソッドを使用
+            this.routeManager.setStartPointDirect(value);
         });
         
         endPointInput.addEventListener('input', (e) => {
             const value = e.target.value.replace(/[a-z]/g, (match) => match.toUpperCase());
             e.target.value = value;
-            this.routeManager.setEndPoint(value);
+            // フォーマット処理を行わず、直接設定メソッドを使用
+            this.routeManager.setEndPointDirect(value);
         });
         
+        // blur時にX-nn形式のフォーマット処理を実行
         startPointInput.addEventListener('blur', (e) => {
-            const formattedValue = this.routeManager.setStartPoint(e.target.value);
+            this.routeManager.setStartPoint(e.target.value);
             e.target.value = this.routeManager.getStartEndPoints().start;
         });
         
         endPointInput.addEventListener('blur', (e) => {
-            const formattedValue = this.routeManager.setEndPoint(e.target.value);
+            this.routeManager.setEndPoint(e.target.value);
             e.target.value = this.routeManager.getStartEndPoints().end;
         });
 
