@@ -71,10 +71,17 @@ export class PointManager {
      * ポイントIDを更新
      * @param {number} index - 更新するポイントのインデックス
      * @param {string} newId - 新しいID
+     * @param {boolean} skipFormatting - フォーマット処理をスキップするかどうか (デフォルト: false)
+     * @example
+     * // 入力時（フォーマット処理なし）
+     * pointManager.updatePointId(0, 'J-1', true);  // → 'J-1'
+     * 
+     * // blur時（フォーマット処理あり）
+     * pointManager.updatePointId(0, 'J-1');  // → 'J-01'
      */
-    updatePointId(index, newId) {
+    updatePointId(index, newId, skipFormatting = false) {
         if (index >= 0 && index < this.points.length) {
-            this.points[index].id = newId;
+            this.points[index].id = skipFormatting ? newId : Validators.formatPointId(newId);
             this.notify('onChange', this.points);
         }
     }

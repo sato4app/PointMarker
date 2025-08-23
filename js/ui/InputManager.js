@@ -56,6 +56,7 @@ export class InputManager {
         
         this.positionInputBox(input, point);
         
+        // input時は小文字を大文字に変換するのみ（フォーマット処理はしない）
         input.addEventListener('input', (e) => {
             const value = e.target.value;
             const uppercaseValue = value.replace(/[a-z]/g, (match) => match.toUpperCase());
@@ -64,9 +65,11 @@ export class InputManager {
                 e.target.value = uppercaseValue;
             }
             
-            this.notify('onPointIdChange', { index, id: uppercaseValue });
+            // フォーマット処理をスキップして更新
+            this.notify('onPointIdChange', { index, id: uppercaseValue, skipFormatting: true });
         });
         
+        // blur時にX-nn形式のフォーマット処理を実行
         input.addEventListener('blur', (e) => {
             const value = e.target.value.trim();
             
@@ -81,13 +84,19 @@ export class InputManager {
                 e.target.value = formattedValue;
             }
             
+            // 入力検証フィードバック（ルート編集と同様）
             if (Validators.isValidPointIdFormat(formattedValue)) {
                 e.target.style.backgroundColor = '';
+                e.target.style.borderColor = '';
+                e.target.title = '';
             } else {
                 e.target.style.backgroundColor = '#ffe4e4';
+                e.target.style.borderColor = '#ff6b6b';
+                e.target.title = 'X-nn形式で入力してください（例：A-01, J-12）';
             }
             
-            this.notify('onPointIdChange', { index, id: formattedValue });
+            // フォーマット処理ありで更新
+            this.notify('onPointIdChange', { index, id: formattedValue, skipFormatting: false });
         });
         
         document.body.appendChild(input);

@@ -61,7 +61,7 @@ export class PointMarkerApp {
 
         // 入力管理のコールバック
         this.inputManager.setCallback('onPointIdChange', (data) => {
-            this.pointManager.updatePointId(data.index, data.id);
+            this.pointManager.updatePointId(data.index, data.id, data.skipFormatting);
         });
         
         this.inputManager.setCallback('onPointRemove', (data) => {
