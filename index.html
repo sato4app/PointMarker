@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RouteMarker - ルート図マーキング</title>
+    <meta name="description" content="PNG画像のハイキングマップから視覚的にポイントを選択し、座標データをJSONファイルとして出力するWebアプリケーション">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- レイアウト選択 -->
+        <div class="layout-selector">
+            <label class="layout-option">
+                <input type="radio" name="layout" value="sidebar" checked>
+                <span>サイドバー</span>
+            </label>
+            <label class="layout-option">
+                <input type="radio" name="layout" value="overlay">
+                <span>オーバーレイ</span>
+            </label>
+        </div>
+
+        <!-- ヘッダー -->
+        <header>
+            <h1>Points and Routes Marker</h1>
+            <p>ハイキングマップからポイント・ルートをマークしてJSON出力</p>
+        </header>
+        
+        <!-- メインコンテンツ -->
+        <main class="main-content" data-layout="sidebar">
+            <!-- 地図表示エリア -->
+            <div class="map-container">
+                <canvas id="mapCanvas" class="map-canvas"></canvas>
+            </div>
+            
+            <!-- コントロールサイドバー -->
+            <aside class="controls-sidebar">
+                <!-- 画像ファイル入力 -->
+                <div class="file-input-wrapper">
+                    <input type="file" id="imageInput" accept="image/png" class="file-input" aria-label="PNG画像を選択">
+                    <label for="imageInput" class="file-input-label">
+                        PNG画像を選択
+                    </label>
+                </div>
+                
+                <!-- 編集モード選択 -->
+                <fieldset class="editing-mode-selector">
+                    <legend class="sr-only">編集モード選択</legend>
+                    <label class="editing-option">
+                        <input type="radio" name="editingMode" value="point" checked>
+                        <span>ポイント編集</span>
+                    </label>
+                    <label class="editing-option">
+                        <input type="radio" name="editingMode" value="route">
+                        <span>ルート編集</span>
+                    </label>
+                </fieldset>
+                
+                <!-- ポイント編集パネル -->
+                <section class="point-editor" id="pointEditor">
+                    <h3>ポイント編集</h3>
+                    
+                    <div class="editor-controls">
+                        <button type="button" id="clearBtn" class="btn btn-clear" disabled aria-label="全ポイントをクリア">
+                            ポイントをクリア
+                        </button>
+                        <button type="button" id="exportBtn" class="btn btn-export" disabled aria-label="ポイントをJSONで出力">
+                            ポイントをJSON出力
+                        </button>
+                    </div>
+                    
+                    <div class="file-input-wrapper">
+                        <input type="file" id="jsonInput" accept="application/json" class="file-input" aria-label="ポイントJSONファイルを読み込み">
+                        <label for="jsonInput" class="file-input-label">
+                            ポイントのJSON読込
+                        </label>
+                    </div>
+                    
+                    <div class="point-count" aria-live="polite">
+                        ポイント数: <span id="pointCount">0</span>
+                    </div>
+                </section>
+                
+                <!-- ルート編集パネル -->
+                <section class="route-editor" id="routeEditor" style="display: none;">
+                    <h3>ルート編集</h3>
+                    
+                    <div class="route-info">
+                        <!-- 開始・終了ポイント設定 -->
+                        <div class="route-points-inputs">
+                            <div class="route-point-input">
+                                <label for="startPointInput">開始ポイント:</label>
+                                <input type="text" id="startPointInput" class="route-point-field" maxlength="4" aria-describedby="start-point-desc">
+                                <span id="start-point-desc" class="sr-only">既存ポイントのIDを入力</span>
+                            </div>
+                            <div class="route-point-input">
+                                <label for="endPointInput">終了ポイント:</label>
+                                <input type="text" id="endPointInput" class="route-point-field" maxlength="4" aria-describedby="end-point-desc">
+                                <span id="end-point-desc" class="sr-only">既存ポイントのIDを入力</span>
+                            </div>
+                        </div>
+                        
+                        <!-- ルート制御ボタン -->
+                        <div class="route-controls">
+                            <button type="button" id="clearRouteBtn" class="btn btn-clear-route" aria-label="ルート中間点をクリア">
+                                ルートをクリア
+                            </button>
+                            <button type="button" id="exportRouteBtn" class="btn btn-export-route" aria-label="ルートをJSONで出力">
+                                ルートをJSON出力
+                            </button>
+                        </div>
+                        
+                        <!-- ルートJSON読込 -->
+                        <div class="file-input-wrapper">
+                            <input type="file" id="routeJsonInput" accept="application/json" class="file-input" aria-label="ルートJSONファイルを読み込み">
+                            <label for="routeJsonInput" class="file-input-label">
+                                ルートのJSON読込
+                            </label>
+                        </div>
+                        
+                        <!-- 中間点数表示 -->
+                        <div class="waypoint-count" aria-live="polite">
+                            ルートの中間点数: <span id="waypointCount">0</span>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
