@@ -95,8 +95,8 @@ export class InputManager {
                 e.target.title = 'X-nn形式で入力してください（例：A-01, J-12）';
             }
             
-            // フォーマット処理ありで更新
-            this.notify('onPointIdChange', { index, id: formattedValue, skipFormatting: false });
+            // 既にフォーマット済みなのでスキップして更新
+            this.notify('onPointIdChange', { index, id: formattedValue, skipFormatting: true });
         });
         
         document.body.appendChild(input);
