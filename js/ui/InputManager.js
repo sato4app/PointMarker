@@ -106,6 +106,9 @@ export class InputManager {
             }
         });
         
+        // ポイントインデックスを属性として設定
+        input.setAttribute('data-point-index', index);
+        
         document.body.appendChild(input);
         this.inputElements.push(input);
 
@@ -162,6 +165,23 @@ export class InputManager {
     }
 
     /**
+     * 特定のポイントのIDのみを更新（入力ボックスは再作成しない）
+     * @param {number} pointIndex - 更新するポイントのインデックス
+     * @param {string} newId - 新しいID
+     */
+    updatePointIdDisplay(pointIndex, newId) {
+        if (pointIndex < this.inputElements.length) {
+            const input = this.inputElements.find((element, index) => {
+                // 入力要素に紐づくポイントのインデックスを確認
+                return element.getAttribute('data-point-index') == pointIndex;
+            });
+            if (input && input.value !== newId) {
+                input.value = newId;
+            }
+        }
+    }
+
+    /**
      * 全入力ボックスをクリア・再作成
      * @param {Array} points - ポイント配列
      */
@@ -175,6 +195,7 @@ export class InputManager {
                     const input = this.inputElements[this.inputElements.length - 1];
                     if (input) {
                         input.value = point.id || '';
+                        input.setAttribute('data-point-index', index);
                     }
                 }
             });

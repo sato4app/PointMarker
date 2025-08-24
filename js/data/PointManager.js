@@ -26,10 +26,11 @@ export class PointManager {
      * 変更通知を発行
      * @param {string} event - イベント名
      * @param {any} data - イベントデータ
+     * @param {...any} args - 追加パラメータ
      */
-    notify(event, data) {
+    notify(event, data, ...args) {
         if (this.callbacks[event]) {
-            this.callbacks[event](data);
+            this.callbacks[event](data, ...args);
         }
     }
 
@@ -97,14 +98,31 @@ export class PointManager {
     }
 
     /**
-     * すべてのポイントID名を補正
+     * すべてのポイントID名を補正し、ブランクのポイントを削除
      */
     formatAllPointIds() {
+        // まず、ID名のフォーマット補正を実行
         this.points.forEach(point => {
             if (point.id) {
                 point.id = Validators.formatPointId(point.id);
             }
         });
+        
+        // 次に、ID名がブランクまたは空のポイントを削除
+        const initialLength = this.points.length;
+        this.points = this.points.filter(point => {
+            // マーカーポイントは保持、ユーザーポイントでIDが空または空白のものは削除
+            if (point.isMarker) {
+                return true;
+            }
+            return point.id && point.id.trim() !== '';
+        });
+        
+        // ポイント数が変更された場合は数の更新通知も送信
+        if (this.points.length !== initialLength) {
+            this.notify('onCountChange', this.getUserPointCount());
+        }
+        
         this.notify('onChange', this.points);
     }
 
