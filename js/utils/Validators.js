@@ -60,7 +60,7 @@ export class Validators {
         
         return convertedValue;
     }
-
+    
     /**
      * 全角英文字と全角数字、全角ハイフンを半角に変換する
      * @param {string} str - 変換する文字列
