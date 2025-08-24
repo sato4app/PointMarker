@@ -58,6 +58,13 @@ export class PointMarkerApp {
         this.routeManager.setCallback('onStartEndChange', (data) => {
             document.getElementById('startPointInput').value = data.start;
             document.getElementById('endPointInput').value = data.end;
+            
+            // InputManagerに開始・終了ポイントの強調表示を更新
+            const highlightIds = [];
+            if (data.start && data.start.trim()) highlightIds.push(data.start);
+            if (data.end && data.end.trim()) highlightIds.push(data.end);
+            this.inputManager.setHighlightedPoints(highlightIds);
+            
             this.redrawCanvas();
         });
 
@@ -83,6 +90,14 @@ export class PointMarkerApp {
         
         this.layoutManager.setCallback('onModeChange', (mode) => {
             this.inputManager.setRouteEditMode(mode === 'route');
+            if (mode === 'route') {
+                // ルート編集モードに切り替えた時、既存の開始・終了ポイントを強調表示
+                const startEndPoints = this.routeManager.getStartEndPoints();
+                const highlightIds = [];
+                if (startEndPoints.start && startEndPoints.start.trim()) highlightIds.push(startEndPoints.start);
+                if (startEndPoints.end && startEndPoints.end.trim()) highlightIds.push(startEndPoints.end);
+                this.inputManager.setHighlightedPoints(highlightIds);
+            }
             this.redrawCanvas();
         });
     }
