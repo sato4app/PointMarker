@@ -28,13 +28,32 @@ export class Validators {
         
         let convertedValue = this.convertFullWidthToHalfWidth(value);
         
-        const match1 = convertedValue.match(/^([A-Za-z])[-]?(\d{1,2})$/);
-        if (match1) {
-            const letter = match1[1].toUpperCase();
-            const numbers = match1[2].padStart(2, '0');
+        // 完全な「X-nn」形式（2桁数字）の場合
+        const fullMatch = convertedValue.match(/^([A-Za-z])[-]?(\d{2})$/);
+        if (fullMatch) {
+            const letter = fullMatch[1].toUpperCase();
+            const numbers = fullMatch[2];
             return `${letter}-${numbers}`;
         }
         
+        // 不完全な入力「X-n」（1桁数字）の場合
+        const partialMatch = convertedValue.match(/^([A-Za-z])[-]?(\d{1})$/);
+        if (partialMatch) {
+            const letter = partialMatch[1].toUpperCase();
+            const number = partialMatch[2];
+            // 1桁の場合は0埋めしてフォーマット
+            return `${letter}-${number.padStart(2, '0')}`;
+        }
+        
+        // ハイフンなしの「X数字」形式の場合
+        const noHyphenMatch = convertedValue.match(/^([A-Za-z])(\d{1,2})$/);
+        if (noHyphenMatch) {
+            const letter = noHyphenMatch[1].toUpperCase();
+            const numbers = noHyphenMatch[2].padStart(2, '0');
+            return `${letter}-${numbers}`;
+        }
+        
+        // 数字のみの場合は変換しない
         if (convertedValue.match(/^\d+$/)) {
             return convertedValue;
         }
