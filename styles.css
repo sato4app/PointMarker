@@ -281,6 +281,15 @@ header p {
     background: var(--danger-dark);
 }
 
+.btn-format {
+    background: var(--warning-color);
+    color: white;
+}
+
+.btn-format:hover:not(:disabled) {
+    background: var(--warning-dark);
+}
+
 .btn-export {
     background: var(--success-color);
     color: white;

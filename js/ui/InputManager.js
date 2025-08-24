@@ -8,6 +8,7 @@ export class InputManager {
     constructor(canvas) {
         this.canvas = canvas;
         this.inputElements = [];
+        this.isRouteEditMode = false;
         this.callbacks = {
             onPointIdChange: null,
             onPointRemove: null
@@ -32,6 +33,32 @@ export class InputManager {
         if (this.callbacks[event]) {
             this.callbacks[event](data);
         }
+    }
+
+    /**
+     * ルート編集モードを設定
+     * @param {boolean} isRouteEditMode - ルート編集モードかどうか
+     */
+    setRouteEditMode(isRouteEditMode) {
+        this.isRouteEditMode = isRouteEditMode;
+        this.updateInputsState();
+    }
+
+    /**
+     * 入力状態を更新
+     */
+    updateInputsState() {
+        this.inputElements.forEach(input => {
+            if (this.isRouteEditMode) {
+                input.disabled = true;
+                input.style.backgroundColor = '#f0f0f0';
+                input.title = 'ルート編集モード中はポイントID名の編集はできません';
+            } else {
+                input.disabled = false;
+                input.style.backgroundColor = '';
+                input.title = '';
+            }
+        });
     }
 
     /**
@@ -64,30 +91,12 @@ export class InputManager {
             this.notify('onPointIdChange', { index, id: value, skipFormatting: true });
         });
         
-        // blur時にX-nn形式のフォーマット処理を実行
+        // blur時は単純に値を保存するのみ（フォーマット処理なし）
         input.addEventListener('blur', (e) => {
             const value = e.target.value.trim();
             
-            // 空の入力でもポイントは保持する
-            const formattedValue = Validators.formatPointId(value);
-            
-            if (formattedValue !== value) {
-                e.target.value = formattedValue;
-            }
-            
-            // 入力検証フィードバック（ルート編集と同様）
-            if (value === '' || Validators.isValidPointIdFormat(formattedValue)) {
-                e.target.style.backgroundColor = '';
-                e.target.style.borderColor = '';
-                e.target.title = '';
-            } else {
-                e.target.style.backgroundColor = '#ffe4e4';
-                e.target.style.borderColor = '#ff6b6b';
-                e.target.title = 'X-nn形式で入力してください（例：A-01, J-12）';
-            }
-            
-            // 既にフォーマット済みなのでスキップして更新
-            this.notify('onPointIdChange', { index, id: formattedValue, skipFormatting: true });
+            // フォーマット処理なしで更新
+            this.notify('onPointIdChange', { index, id: value, skipFormatting: true });
         });
         
         // キーボードイベント（Escapeキーでポイント削除）
@@ -99,6 +108,13 @@ export class InputManager {
         
         document.body.appendChild(input);
         this.inputElements.push(input);
+
+        // ルート編集モードの状態を適用
+        if (this.isRouteEditMode) {
+            input.disabled = true;
+            input.style.backgroundColor = '#f0f0f0';
+            input.title = 'ルート編集モード中はポイントID名の編集はできません';
+        }
 
         if (shouldFocus && (point.id ?? '') === '') {
             setTimeout(() => input.focus(), 0);

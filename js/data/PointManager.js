@@ -96,6 +96,18 @@ export class PointManager {
     }
 
     /**
+     * すべてのポイントID名を補正
+     */
+    formatAllPointIds() {
+        this.points.forEach(point => {
+            if (point.id) {
+                point.id = Validators.formatPointId(point.id);
+            }
+        });
+        this.notify('onChange', this.points);
+    }
+
+    /**
      * ポイント配列を取得
      * @returns {Array} ポイント配列
      */

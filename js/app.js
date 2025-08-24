@@ -78,6 +78,7 @@ export class PointMarkerApp {
         });
         
         this.layoutManager.setCallback('onModeChange', (mode) => {
+            this.inputManager.setRouteEditMode(mode === 'route');
             this.redrawCanvas();
         });
     }
@@ -100,6 +101,11 @@ export class PointMarkerApp {
         document.getElementById('clearBtn').addEventListener('click', (e) => {
             e.preventDefault();
             this.clearPoints();
+        });
+        
+        document.getElementById('formatBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.formatAllPointIds();
         });
         
         document.getElementById('exportBtn').addEventListener('click', async (e) => {
@@ -139,23 +145,13 @@ export class PointMarkerApp {
             this.routeManager.setEndPoint(value, true);
         });
         
-        // blur時にX-nn形式のフォーマット処理を実行
+        // blur時は単純に値を保存するのみ（フォーマット処理なし）
         startPointInput.addEventListener('blur', (e) => {
-            this.routeManager.setStartPoint(e.target.value);
-            const newValue = this.routeManager.getStartEndPoints().start;
-            e.target.value = newValue;
-            
-            // 入力検証フィードバック
-            this.updateInputValidationFeedback(e.target, newValue);
+            this.routeManager.setStartPoint(e.target.value, true);
         });
         
         endPointInput.addEventListener('blur', (e) => {
-            this.routeManager.setEndPoint(e.target.value);
-            const newValue = this.routeManager.getStartEndPoints().end;
-            e.target.value = newValue;
-            
-            // 入力検証フィードバック
-            this.updateInputValidationFeedback(e.target, newValue);
+            this.routeManager.setEndPoint(e.target.value, true);
         });
 
         // ウィンドウリサイズ
@@ -178,6 +174,7 @@ export class PointMarkerApp {
      */
     enableImageControls() {
         document.getElementById('clearBtn').disabled = false;
+        document.getElementById('formatBtn').disabled = false;
         document.getElementById('exportBtn').disabled = false;
     }
 
@@ -223,6 +220,7 @@ export class PointMarkerApp {
         if (mode === 'route') {
             this.routeManager.addRoutePoint(coords.x, coords.y);
         } else if (mode === 'point') {
+            // ポイント編集モードでのみポイント追加を許可
             this.pointManager.removeTrailingEmptyUserPoints();
             const point = this.pointManager.addPoint(coords.x, coords.y);
             this.inputManager.createInputBox(point, this.pointManager.getPoints().length - 1, true);
@@ -285,6 +283,15 @@ export class PointMarkerApp {
             console.error('エクスポートエラー:', error);
             alert('エクスポート中にエラーが発生しました');
         }
+    }
+
+    /**
+     * 全ポイントID名を補正
+     */
+    formatAllPointIds() {
+        this.pointManager.formatAllPointIds();
+        this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
+        this.redrawCanvas();
     }
 
     /**
