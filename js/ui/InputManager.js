@@ -68,11 +68,7 @@ export class InputManager {
         input.addEventListener('blur', (e) => {
             const value = e.target.value.trim();
             
-            if (value === '') {
-                this.notify('onPointRemove', { index, point });
-                return;
-            }
-            
+            // 空の入力でもポイントは保持する
             const formattedValue = Validators.formatPointId(value);
             
             if (formattedValue !== value) {
@@ -80,7 +76,7 @@ export class InputManager {
             }
             
             // 入力検証フィードバック（ルート編集と同様）
-            if (Validators.isValidPointIdFormat(formattedValue)) {
+            if (value === '' || Validators.isValidPointIdFormat(formattedValue)) {
                 e.target.style.backgroundColor = '';
                 e.target.style.borderColor = '';
                 e.target.title = '';
@@ -92,6 +88,13 @@ export class InputManager {
             
             // 既にフォーマット済みなのでスキップして更新
             this.notify('onPointIdChange', { index, id: formattedValue, skipFormatting: true });
+        });
+        
+        // キーボードイベント（Escapeキーでポイント削除）
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.notify('onPointRemove', { index, point });
+            }
         });
         
         document.body.appendChild(input);
