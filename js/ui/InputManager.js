@@ -170,14 +170,12 @@ export class InputManager {
      * @param {string} newId - 新しいID
      */
     updatePointIdDisplay(pointIndex, newId) {
-        if (pointIndex < this.inputElements.length) {
-            const input = this.inputElements.find((element, index) => {
-                // 入力要素に紐づくポイントのインデックスを確認
-                return element.getAttribute('data-point-index') == pointIndex;
-            });
-            if (input && input.value !== newId) {
-                input.value = newId;
-            }
+        const input = this.inputElements.find((element) => {
+            // 入力要素に紐づくポイントのインデックスを確認
+            return element.getAttribute('data-point-index') == pointIndex;
+        });
+        if (input && input.value !== newId) {
+            input.value = newId;
         }
     }
 

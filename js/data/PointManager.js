@@ -84,7 +84,10 @@ export class PointManager {
     updatePointId(index, newId, skipFormatting = false, skipRedrawInput = false) {
         if (index >= 0 && index < this.points.length) {
             this.points[index].id = skipFormatting ? newId : Validators.formatPointId(newId);
-            this.notify('onChange', this.points, skipRedrawInput);
+            // skipRedrawInputがtrueの場合はonChange通知を送らない（入力中のフォーカス保持のため）
+            if (!skipRedrawInput) {
+                this.notify('onChange', this.points, skipRedrawInput);
+            }
         }
     }
 
