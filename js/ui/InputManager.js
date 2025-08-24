@@ -51,7 +51,7 @@ export class InputManager {
         this.inputElements.forEach(input => {
             if (this.isRouteEditMode) {
                 input.disabled = true;
-                input.style.backgroundColor = '#f0f0f0';
+                input.style.backgroundColor = '#e0e0e0';
                 input.title = 'ルート編集モード中はポイントID名の編集はできません';
             } else {
                 input.disabled = false;
@@ -112,7 +112,7 @@ export class InputManager {
         // ルート編集モードの状態を適用
         if (this.isRouteEditMode) {
             input.disabled = true;
-            input.style.backgroundColor = '#f0f0f0';
+            input.style.backgroundColor = '#e0e0e0';
             input.title = 'ルート編集モード中はポイントID名の編集はできません';
         }
 

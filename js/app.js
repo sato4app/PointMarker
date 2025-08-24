@@ -35,9 +35,11 @@ export class PointMarkerApp {
      */
     initializeCallbacks() {
         // ポイント管理のコールバック
-        this.pointManager.setCallback('onChange', (points) => {
+        this.pointManager.setCallback('onChange', (points, skipRedrawInput = false) => {
             this.redrawCanvas();
-            this.inputManager.redrawInputBoxes(points);
+            if (!skipRedrawInput) {
+                this.inputManager.redrawInputBoxes(points);
+            }
         });
         
         this.pointManager.setCallback('onCountChange', (count) => {
@@ -61,7 +63,7 @@ export class PointMarkerApp {
 
         // 入力管理のコールバック
         this.inputManager.setCallback('onPointIdChange', (data) => {
-            this.pointManager.updatePointId(data.index, data.id, data.skipFormatting);
+            this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
         });
         
         this.inputManager.setCallback('onPointRemove', (data) => {
@@ -145,13 +147,23 @@ export class PointMarkerApp {
             this.routeManager.setEndPoint(value, true);
         });
         
-        // blur時は単純に値を保存するのみ（フォーマット処理なし）
+        // blur時にX-nn形式のフォーマット処理を実行
         startPointInput.addEventListener('blur', (e) => {
-            this.routeManager.setStartPoint(e.target.value, true);
+            this.routeManager.setStartPoint(e.target.value);
+            const newValue = this.routeManager.getStartEndPoints().start;
+            e.target.value = newValue;
+            
+            // 入力検証フィードバック
+            this.updateInputValidationFeedback(e.target, newValue);
         });
         
         endPointInput.addEventListener('blur', (e) => {
-            this.routeManager.setEndPoint(e.target.value, true);
+            this.routeManager.setEndPoint(e.target.value);
+            const newValue = this.routeManager.getStartEndPoints().end;
+            e.target.value = newValue;
+            
+            // 入力検証フィードバック
+            this.updateInputValidationFeedback(e.target, newValue);
         });
 
         // ウィンドウリサイズ

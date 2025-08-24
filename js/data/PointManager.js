@@ -72,6 +72,7 @@ export class PointManager {
      * @param {number} index - 更新するポイントのインデックス
      * @param {string} newId - 新しいID
      * @param {boolean} skipFormatting - フォーマット処理をスキップするかどうか (デフォルト: false)
+     * @param {boolean} skipRedrawInput - 入力ボックスの再描画をスキップするかどうか (デフォルト: false)
      * @example
      * // 入力時（フォーマット処理なし）
      * pointManager.updatePointId(0, 'J-1', true);  // → 'J-1'
@@ -79,10 +80,10 @@ export class PointManager {
      * // blur時（フォーマット処理あり）
      * pointManager.updatePointId(0, 'J-1');  // → 'J-01'
      */
-    updatePointId(index, newId, skipFormatting = false) {
+    updatePointId(index, newId, skipFormatting = false, skipRedrawInput = false) {
         if (index >= 0 && index < this.points.length) {
             this.points[index].id = skipFormatting ? newId : Validators.formatPointId(newId);
-            this.notify('onChange', this.points);
+            this.notify('onChange', this.points, skipRedrawInput);
         }
     }
 
