@@ -150,6 +150,14 @@ export class RouteManager {
             };
         }
         
+        // 中間点が1つ以上あることをチェック
+        if (this.routePoints.length < 1) {
+            return {
+                isValid: false,
+                message: 'ルートを作成するには中間点が1つ以上必要です。地図上をクリックして中間点を追加してください。'
+            };
+        }
+        
         return { isValid: true };
     }
 
