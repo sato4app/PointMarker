@@ -126,18 +126,16 @@ export class PointMarkerApp {
         const startPointInput = document.getElementById('startPointInput');
         const endPointInput = document.getElementById('endPointInput');
         
-        // input時は小文字を大文字に変換するのみ（フォーマット処理はしない）
+        // input時は変換処理を一切行わない（フォーマット処理もしない）
         startPointInput.addEventListener('input', (e) => {
-            const value = e.target.value.replace(/[a-z]/g, (match) => match.toUpperCase());
-            e.target.value = value;
-            // フォーマット処理をスキップして設定
+            const value = e.target.value;
+            // 入力中は変換処理なし、フォーマット処理をスキップして設定
             this.routeManager.setStartPoint(value, true);
         });
         
         endPointInput.addEventListener('input', (e) => {
-            const value = e.target.value.replace(/[a-z]/g, (match) => match.toUpperCase());
-            e.target.value = value;
-            // フォーマット処理をスキップして設定
+            const value = e.target.value;
+            // 入力中は変換処理なし、フォーマット処理をスキップして設定
             this.routeManager.setEndPoint(value, true);
         });
         

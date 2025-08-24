@@ -56,17 +56,12 @@ export class InputManager {
         
         this.positionInputBox(input, point);
         
-        // input時は小文字を大文字に変換するのみ（フォーマット処理はしない）
+        // input時は変換処理を一切行わない
         input.addEventListener('input', (e) => {
             const value = e.target.value;
-            const uppercaseValue = value.replace(/[a-z]/g, (match) => match.toUpperCase());
             
-            if (uppercaseValue !== value) {
-                e.target.value = uppercaseValue;
-            }
-            
-            // フォーマット処理をスキップして更新
-            this.notify('onPointIdChange', { index, id: uppercaseValue, skipFormatting: true });
+            // 入力中は変換処理なし、そのまま保存
+            this.notify('onPointIdChange', { index, id: value, skipFormatting: true });
         });
         
         // blur時にX-nn形式のフォーマット処理を実行
