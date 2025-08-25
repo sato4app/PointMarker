@@ -25,6 +25,13 @@ export class PointMarkerApp {
         // 現在の画像情報
         this.currentImage = null;
         
+        // ドラッグ状態管理
+        this.isDragging = false;
+        this.draggedPointIndex = -1;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+        this.isHoveringPoint = false;
+        
         this.initializeCallbacks();
         this.initializeEventListeners();
         this.enableBasicControls();
@@ -115,6 +122,11 @@ export class PointMarkerApp {
 
         // キャンバスクリック
         this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+        
+        // マウス移動（ホバー検出・ドラッグ処理）
+        this.canvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
+        this.canvas.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
+        this.canvas.addEventListener('mouseup', (e) => this.handleCanvasMouseUp(e));
 
         // ポイント編集コントロール
         document.getElementById('clearBtn').addEventListener('click', (e) => {
@@ -237,14 +249,126 @@ export class PointMarkerApp {
     }
 
     /**
+     * ポイントがマウス座標上にあるか検出
+     * @param {number} mouseX - マウスX座標
+     * @param {number} mouseY - マウスY座標
+     * @returns {number} ポイントのインデックス、ない場合は-1
+     */
+    findPointAtMouse(mouseX, mouseY) {
+        const points = this.pointManager.getPoints();
+        for (let i = 0; i < points.length; i++) {
+            const point = points[i];
+            const dx = mouseX - point.x;
+            const dy = mouseY - point.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            // ポイントの半径（デフォルトは4）よりも少し大きめの範囲で検出
+            if (distance <= 8) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * キャンバスマウス移動処理
+     * @param {MouseEvent} event - マウスイベント
+     */
+    handleCanvasMouseMove(event) {
+        if (!this.currentImage) return;
+        
+        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
+        const pointIndex = this.findPointAtMouse(coords.x, coords.y);
+        
+        if (this.isDragging && this.draggedPointIndex !== -1) {
+            // ドラッグ中の場合、ポイント位置を更新
+            const newX = coords.x - this.dragOffsetX;
+            const newY = coords.y - this.dragOffsetY;
+            
+            const points = this.pointManager.getPoints();
+            if (this.draggedPointIndex < points.length) {
+                points[this.draggedPointIndex].x = Math.round(newX);
+                points[this.draggedPointIndex].y = Math.round(newY);
+                this.redrawCanvas();
+            }
+        } else if (pointIndex !== -1) {
+            // ポイント上にマウスがある場合、カーソルを変更
+            if (!this.isHoveringPoint) {
+                this.canvas.style.cursor = 'move';
+                this.isHoveringPoint = true;
+            }
+        } else {
+            // ポイント上にない場合、カーソルをリセット
+            if (this.isHoveringPoint) {
+                this.canvas.style.cursor = 'default';
+                this.isHoveringPoint = false;
+            }
+        }
+    }
+
+    /**
+     * キャンバスマウスダウン処理
+     * @param {MouseEvent} event - マウスイベント
+     */
+    handleCanvasMouseDown(event) {
+        if (!this.currentImage) return;
+        
+        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
+        const pointIndex = this.findPointAtMouse(coords.x, coords.y);
+        
+        if (pointIndex !== -1 && this.layoutManager.getCurrentEditingMode() === 'point') {
+            // ポイント上でクリック、ドラッグ開始
+            this.isDragging = true;
+            this.draggedPointIndex = pointIndex;
+            
+            const point = this.pointManager.getPoints()[pointIndex];
+            this.dragOffsetX = coords.x - point.x;
+            this.dragOffsetY = coords.y - point.y;
+            
+            event.preventDefault(); // テキスト選択などのデフォルト動作を防止
+        }
+    }
+
+    /**
+     * キャンバスマウスアップ処理
+     * @param {MouseEvent} event - マウスイベント
+     */
+    handleCanvasMouseUp(event) {
+        if (this.isDragging) {
+            this.isDragging = false;
+            
+            // ポイント移動後に入力ボックスを再描画
+            if (this.draggedPointIndex !== -1) {
+                this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
+                // ポイントデータ変更を通知
+                this.pointManager.notify('onChange', this.pointManager.getPoints());
+            }
+            
+            this.draggedPointIndex = -1;
+            this.dragOffsetX = 0;
+            this.dragOffsetY = 0;
+        }
+    }
+
+    /**
      * キャンバスクリック処理
      * @param {MouseEvent} event - マウスイベント
      */
     handleCanvasClick(event) {
         if (!this.currentImage) return;
         
+        // ドラッグ中のクリックは無視
+        if (this.isDragging) {
+            return;
+        }
+        
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
         const mode = this.layoutManager.getCurrentEditingMode();
+        
+        // ポイント上でのクリックはポイント追加しない
+        const pointIndex = this.findPointAtMouse(coords.x, coords.y);
+        if (pointIndex !== -1) {
+            return;
+        }
         
         if (mode === 'route') {
             this.routeManager.addRoutePoint(coords.x, coords.y);
