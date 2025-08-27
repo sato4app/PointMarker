@@ -119,20 +119,13 @@ export class InputManager {
         input.placeholder = 'ID';
         input.value = point.id || '';
         
-        // 入力プレビュー（入力中でも値が見えるように明示表示）
-        const preview = document.createElement('div');
-        preview.className = 'point-id-preview';
-        preview.textContent = input.value || '';
-        
         container.appendChild(input);
-        container.appendChild(preview);
         
         this.positionInputBox(container, point);
         
         // input時は変換処理を一切行わない
         input.addEventListener('input', (e) => {
             const value = e.target.value;
-            preview.textContent = value || '';
             
             // 入力中は変換処理なし、そのまま保存（表示更新なし）
             this.notify('onPointIdChange', { index, id: value, skipFormatting: true, skipDisplay: true });

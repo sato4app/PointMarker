@@ -507,19 +507,7 @@ header p {
     outline: 2px solid var(--primary-color);
 }
 
-/* 入力中の文字プレビュー */
-.point-id-preview {
-    min-width: 28px;
-    min-height: 18px;
-    padding: 2px 6px;
-    border-radius: var(--border-radius-sm);
-    background: #f8fafc;
-    border: 1px dashed var(--border-color);
-    color: #34495e;
-    font-size: 11px;
-    font-weight: 600;
-    text-align: center;
-}
+/* 入力中の文字プレビュー（削除） */
 
 .point-id-input:focus {
     border-color: var(--primary-dark);
