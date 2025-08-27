@@ -479,13 +479,12 @@ header p {
     width: 50px;
     height: 24px;
     padding: 2px 6px;
-    border: 2px solid var(--primary-color);
+    border: none;
     border-radius: var(--border-radius-sm);
-    background: white;
+    background: transparent;
     font-size: 12px;
     font-weight: bold;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     outline: none;
     transition: var(--transition);
 }
@@ -504,16 +503,13 @@ header p {
 }
 
 .point-id-popup.is-editing {
-    outline: 2px solid var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 6px rgba(52, 152, 219, 0.4);
 }
 
 /* 入力中の文字プレビュー（削除） */
 
-.point-id-input:focus {
-    border-color: var(--primary-dark);
-    box-shadow: 0 2px 6px rgba(52, 152, 219, 0.4);
-    transform: scale(1.05);
-}
+/* .point-id-input:focus のスタイルは .point-id-popup.is-editing で処理 */
 
 .point-id-input::placeholder {
     color: #bdc3c7;
