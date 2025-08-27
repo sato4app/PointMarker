@@ -106,20 +106,33 @@ export class InputManager {
             return;
         }
         
+        // ポップアップコンテナを作成
+        const container = document.createElement('div');
+        container.className = 'point-id-popup';
+        container.style.position = 'absolute';
+        container.style.zIndex = '1100';
+
         const input = document.createElement('input');
         input.type = 'text';
         input.maxLength = 4;
         input.className = 'point-id-input';
         input.placeholder = 'ID';
-        input.style.position = 'absolute';
-        input.style.zIndex = '1000';
         input.value = point.id || '';
         
-        this.positionInputBox(input, point);
+        // 入力プレビュー（入力中でも値が見えるように明示表示）
+        const preview = document.createElement('div');
+        preview.className = 'point-id-preview';
+        preview.textContent = input.value || '';
+        
+        container.appendChild(input);
+        container.appendChild(preview);
+        
+        this.positionInputBox(container, point);
         
         // input時は変換処理を一切行わない
         input.addEventListener('input', (e) => {
             const value = e.target.value;
+            preview.textContent = value || '';
             
             // 入力中は変換処理なし、そのまま保存（表示更新なし）
             this.notify('onPointIdChange', { index, id: value, skipFormatting: true, skipDisplay: true });
@@ -131,6 +144,7 @@ export class InputManager {
             
             // フォーマット処理なしで更新
             this.notify('onPointIdChange', { index, id: value, skipFormatting: true });
+            container.classList.remove('is-editing');
         });
         
         // キーボードイベント（Escapeキーでポイント削除）
@@ -140,11 +154,18 @@ export class InputManager {
             }
         });
         
+        // フォーカス時に編集中スタイル
+        input.addEventListener('focus', () => {
+            container.classList.add('is-editing');
+        });
+        
         // ポイントインデックスを属性として設定
         input.setAttribute('data-point-index', index);
         
-        document.body.appendChild(input);
+        document.body.appendChild(container);
         this.inputElements.push(input);
+        // 入力からコンテナへ参照
+        input._container = container;
 
         // ルート編集モードの状態を適用
         if (this.isRouteEditMode) {
@@ -177,7 +198,7 @@ export class InputManager {
      * @param {HTMLInputElement} input - 入力要素
      * @param {Object} point - ポイントオブジェクト
      */
-    positionInputBox(input, point) {
+    positionInputBox(container, point) {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = rect.width / this.canvas.width;
         const scaleY = rect.height / this.canvas.height;
@@ -185,8 +206,8 @@ export class InputManager {
         const inputX = this.findOptimalInputPosition(point.x, point.y, scaleX, rect.left);
         const inputY = point.y * scaleY + rect.top - 15;
         
-        input.style.left = inputX + 'px';
-        input.style.top = inputY + 'px';
+        container.style.left = inputX + 'px';
+        container.style.top = inputY + 'px';
     }
 
     /**
@@ -253,7 +274,11 @@ export class InputManager {
      */
     clearInputBoxes() {
         this.inputElements.forEach(input => {
-            if (input && input.parentNode) {
+            const container = input && input._container;
+            if (container && container.parentNode) {
+                container.parentNode.removeChild(container);
+            } else if (input && input.parentNode) {
+                // 後方互換（コンテナ未設定の場合）
                 input.parentNode.removeChild(input);
             }
         });
