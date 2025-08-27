@@ -72,24 +72,34 @@ export class InputManager {
         this.inputElements.forEach(input => {
             const inputValue = input.value;
             const isHighlighted = this.highlightedPointIds.has(inputValue);
+            const container = input._container;
             
             if (this.isRouteEditMode) {
                 input.disabled = true;
                 if (isHighlighted) {
                     // 開始・終了ポイントとして指定されている場合は白背景
                     input.style.backgroundColor = 'white';
-                    input.style.border = '2px solid #007bff';
+                    if (container) {
+                        container.style.backgroundColor = 'white';
+                        container.style.border = '2px solid #007bff';
+                    }
                     input.title = '開始または終了ポイントとして指定されています';
                 } else {
-                    // 通常のルート編集モード時の背景色
+                    // 通常のルート編集モード時の背景色（コンテナと入力フィールドを統一）
                     input.style.backgroundColor = '#e0e0e0';
-                    input.style.border = '';
+                    if (container) {
+                        container.style.backgroundColor = '#e0e0e0';
+                        container.style.border = '2px solid #999';
+                    }
                     input.title = 'ルート編集モード中はポイントID名の編集はできません';
                 }
             } else {
                 input.disabled = false;
                 input.style.backgroundColor = '';
-                input.style.border = '';
+                if (container) {
+                    container.style.backgroundColor = '';
+                    container.style.border = '';
+                }
                 input.title = '';
             }
         });
@@ -167,12 +177,14 @@ export class InputManager {
             if (isHighlighted) {
                 // 開始・終了ポイントとして指定されている場合は白背景
                 input.style.backgroundColor = 'white';
-                input.style.border = '2px solid #007bff';
+                container.style.backgroundColor = 'white';
+                container.style.border = '2px solid #007bff';
                 input.title = '開始または終了ポイントとして指定されています';
             } else {
-                // 通常のルート編集モード時の背景色
+                // 通常のルート編集モード時の背景色（コンテナと入力フィールドを統一）
                 input.style.backgroundColor = '#e0e0e0';
-                input.style.border = '';
+                container.style.backgroundColor = '#e0e0e0';
+                container.style.border = '2px solid #999';
                 input.title = 'ルート編集モード中はポイントID名の編集はできません';
             }
         }
