@@ -382,7 +382,10 @@ export class PointMarkerApp {
             // ポイント編集モードでのみポイント追加を許可
             this.pointManager.removeTrailingEmptyUserPoints();
             const point = this.pointManager.addPoint(coords.x, coords.y);
-            this.inputManager.createInputBox(point, this.pointManager.getPoints().length - 1, true);
+            // onChange -> redrawInputBoxesで生成されるため、ここでは生成しない
+            // 新規作成された最後のポイントの入力へフォーカス
+            const newIndex = this.pointManager.getPoints().length - 1;
+            setTimeout(() => this.focusInputForPoint(newIndex), 30);
         }
     }
 
