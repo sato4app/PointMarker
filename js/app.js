@@ -423,12 +423,50 @@ export class PointMarkerApp {
     }
 
     /**
+     * ポイントID名の重複チェック
+     * @param {Array} points - ポイント配列
+     * @returns {Object} {isValid: boolean, duplicates: Array<string>, message: string}
+     */
+    checkDuplicatePointIds(points) {
+        const idCount = {};
+        const duplicates = [];
+        
+        // 空でないIDのみをチェック対象にする
+        points.forEach(point => {
+            if (point.id && point.id.trim() !== '' && !point.isMarker) {
+                const id = point.id.trim();
+                idCount[id] = (idCount[id] || 0) + 1;
+                if (idCount[id] === 2) {
+                    duplicates.push(id);
+                }
+            }
+        });
+        
+        const isValid = duplicates.length === 0;
+        let message = '';
+        
+        if (!isValid) {
+            message = `重複するポイントID名が見つかりました: ${duplicates.join(', ')}\n` +
+                     'ポイントID名を修正してから再度エクスポートしてください。';
+        }
+        
+        return { isValid, duplicates, message };
+    }
+
+    /**
      * ポイントをJSON出力
      */
     async exportPoints() {
         const points = this.pointManager.getPoints();
         if (points.length === 0) {
             alert('ポイントが選択されていません');
+            return;
+        }
+
+        // ポイントID名の重複チェック
+        const duplicateCheck = this.checkDuplicatePointIds(points);
+        if (!duplicateCheck.isValid) {
+            alert(duplicateCheck.message);
             return;
         }
 
