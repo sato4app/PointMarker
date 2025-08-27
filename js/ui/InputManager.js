@@ -121,8 +121,8 @@ export class InputManager {
         input.addEventListener('input', (e) => {
             const value = e.target.value;
             
-            // 入力中は変換処理なし、そのまま保存
-            this.notify('onPointIdChange', { index, id: value, skipFormatting: true });
+            // 入力中は変換処理なし、そのまま保存（表示更新なし）
+            this.notify('onPointIdChange', { index, id: value, skipFormatting: true, skipDisplay: true });
         });
         
         // blur時は単純に値を保存するのみ（フォーマット処理なし）
@@ -163,8 +163,12 @@ export class InputManager {
             }
         }
 
-        if (shouldFocus && (point.id ?? '') === '') {
-            setTimeout(() => input.focus(), 0);
+        if (shouldFocus) {
+            setTimeout(() => {
+                input.focus();
+                // カーソルを末尾に設定
+                input.setSelectionRange(input.value.length, input.value.length);
+            }, 0);
         }
     }
 

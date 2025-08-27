@@ -78,8 +78,10 @@ export class PointMarkerApp {
         // 入力管理のコールバック
         this.inputManager.setCallback('onPointIdChange', (data) => {
             this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
-            // 入力中の場合は既存の入力ボックスの値のみを更新
-            this.inputManager.updatePointIdDisplay(data.index, data.id);
+            // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
+            if (!data.skipDisplay) {
+                this.inputManager.updatePointIdDisplay(data.index, data.id);
+            }
         });
         
         this.inputManager.setCallback('onPointRemove', (data) => {
@@ -364,9 +366,13 @@ export class PointMarkerApp {
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
         const mode = this.layoutManager.getCurrentEditingMode();
         
-        // ポイント上でのクリックはポイント追加しない
+        // ポイント上でのクリックはポイント追加しないが、入力フィールドにフォーカス
         const pointIndex = this.findPointAtMouse(coords.x, coords.y);
         if (pointIndex !== -1) {
+            // 既存ポイントクリック時は対応する入力フィールドにフォーカス
+            if (mode === 'point') {
+                this.focusInputForPoint(pointIndex);
+            }
             return;
         }
         
@@ -574,6 +580,19 @@ export class PointMarkerApp {
         
         const validPattern = /^[A-Z]-\d{2}$/;
         return validPattern.test(value);
+    }
+
+    /**
+     * 指定したポイントに対応する入力フィールドにフォーカスを当てる
+     * @param {number} pointIndex - ポイントのインデックス
+     */
+    focusInputForPoint(pointIndex) {
+        const inputElement = document.querySelector(`input[data-point-index="${pointIndex}"]`);
+        if (inputElement) {
+            inputElement.focus();
+            // カーソルを末尾に設定
+            inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
+        }
     }
 
     /**
