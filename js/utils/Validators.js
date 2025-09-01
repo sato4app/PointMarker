@@ -26,29 +26,33 @@ export class Validators {
             return value;
         }
         
+        // 1. 全角英数字を半角英数字に変換
         let convertedValue = this.convertFullWidthToHalfWidth(value);
         
+        // 2. 英小文字を英大文字に変換
+        convertedValue = convertedValue.toUpperCase();
+        
         // 完全な「X-nn」形式（2桁数字）の場合
-        const fullMatch = convertedValue.match(/^([A-Za-z])[-]?(\d{2})$/);
+        const fullMatch = convertedValue.match(/^([A-Z])[-]?(\d{2})$/);
         if (fullMatch) {
-            const letter = fullMatch[1].toUpperCase();
+            const letter = fullMatch[1];
             const numbers = fullMatch[2];
             return `${letter}-${numbers}`;
         }
         
         // 不完全な入力「X-n」（1桁数字）の場合
-        const partialMatch = convertedValue.match(/^([A-Za-z])[-]?(\d{1})$/);
+        const partialMatch = convertedValue.match(/^([A-Z])[-]?(\d{1})$/);
         if (partialMatch) {
-            const letter = partialMatch[1].toUpperCase();
+            const letter = partialMatch[1];
             const number = partialMatch[2];
             // 1桁の場合は0埋めしてフォーマット
             return `${letter}-${number.padStart(2, '0')}`;
         }
         
         // ハイフンなしの「X数字」形式の場合
-        const noHyphenMatch = convertedValue.match(/^([A-Za-z])(\d{1,2})$/);
+        const noHyphenMatch = convertedValue.match(/^([A-Z])(\d{1,2})$/);
         if (noHyphenMatch) {
-            const letter = noHyphenMatch[1].toUpperCase();
+            const letter = noHyphenMatch[1];
             const numbers = noHyphenMatch[2].padStart(2, '0');
             return `${letter}-${numbers}`;
         }
@@ -72,8 +76,8 @@ export class Validators {
                 return String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
             }
             if (char >= 'ａ' && char <= 'ｚ') {
-                const halfWidthChar = String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
-                return halfWidthChar.toUpperCase();
+                // 全角小文字を半角小文字に変換（大文字変換は後で行う）
+                return String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
             }
             if (char >= '０' && char <= '９') {
                 return String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
