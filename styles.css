@@ -300,21 +300,21 @@ header p {
 }
 
 .btn-export-route {
-    background: var(--info-color);
+    background: var(--success-color);
     color: white;
 }
 
 .btn-export-route:hover:not(:disabled) {
-    background: var(--info-dark);
+    background: var(--success-dark);
 }
 
 .btn-clear-route {
-    background: var(--warning-color);
+    background: var(--danger-color);
     color: white;
 }
 
 .btn-clear-route:hover:not(:disabled) {
-    background: var(--warning-dark);
+    background: var(--danger-dark);
 }
 
 /* =====================================
