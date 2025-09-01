@@ -295,7 +295,7 @@ export class PointMarkerApp {
         } else if (pointIndex !== -1) {
             // ポイント上にマウスがある場合、カーソルを変更
             if (!this.isHoveringPoint) {
-                this.canvas.style.cursor = 'move';
+                this.canvas.style.cursor = 'default';
                 this.isHoveringPoint = true;
             }
         } else {
