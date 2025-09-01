@@ -293,15 +293,15 @@ export class PointMarkerApp {
                 this.redrawCanvas();
             }
         } else if (pointIndex !== -1) {
-            // ポイント上にマウスがある場合、カーソルを変更
+            // ポイント上にマウスがある場合、十字カーソルを維持
             if (!this.isHoveringPoint) {
-                this.canvas.style.cursor = 'default';
+                this.canvas.style.cursor = 'crosshair';
                 this.isHoveringPoint = true;
             }
         } else {
-            // ポイント上にない場合、カーソルをリセット
+            // ポイント上にない場合、十字カーソルを維持
             if (this.isHoveringPoint) {
-                this.canvas.style.cursor = 'default';
+                this.canvas.style.cursor = 'crosshair';
                 this.isHoveringPoint = false;
             }
         }
