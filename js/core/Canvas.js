@@ -128,21 +128,40 @@ export class CanvasRenderer {
     }
 
     /**
-     * スポット（星形マーカー）を描画
+     * 正四角形を描画
+     * @param {number} cx - 中心X座標
+     * @param {number} cy - 中心Y座標
+     * @param {number} size - 正方形のサイズ（一辺の長さ）
+     * @param {string} fillColor - 塗りつぶし色
+     * @param {string} strokeColor - 枠線色
+     * @param {number} strokeWidth - 枠線の太さ
+     */
+    drawSquare(cx, cy, size, fillColor = '#ff9500', strokeColor = '#ffffff', strokeWidth = 1) {
+        const halfSize = size / 2;
+        
+        this.ctx.fillStyle = fillColor;
+        this.ctx.strokeStyle = strokeColor;
+        this.ctx.lineWidth = strokeWidth;
+        
+        this.ctx.fillRect(cx - halfSize, cy - halfSize, size, size);
+        this.ctx.strokeRect(cx - halfSize, cy - halfSize, size, size);
+    }
+
+    /**
+     * スポット（正四角形マーカー）を描画
      * @param {Array} spots - スポット配列
      * @param {Object} options - 描画オプション
      */
     drawSpots(spots, options = {}) {
         const {
-            fillColor = '#ffcc00',
-            strokeColor = '#ffffff',
-            outerRadius = 8,
-            innerRadius = 4,
-            strokeWidth = 1.5
+            fillColor = '#ff9500',    // オレンジ色
+            strokeColor = '#ffffff',   // 白色の枠線
+            size = 8,                  // 4px 半径 = 8px 一辺
+            strokeWidth = 1
         } = options;
 
         spots.forEach(spot => {
-            this.drawStar(spot.x, spot.y, 5, outerRadius, innerRadius, fillColor, strokeColor, strokeWidth);
+            this.drawSquare(spot.x, spot.y, size, fillColor, strokeColor, strokeWidth);
         });
     }
 

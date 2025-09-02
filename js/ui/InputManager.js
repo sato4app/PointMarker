@@ -8,11 +8,15 @@ export class InputManager {
     constructor(canvas) {
         this.canvas = canvas;
         this.inputElements = [];
+        this.spotInputElements = [];
         this.isRouteEditMode = false;
+        this.isSpotEditMode = false;
         this.highlightedPointIds = new Set(); // 強調表示するポイントIDのセット
         this.callbacks = {
             onPointIdChange: null,
-            onPointRemove: null
+            onPointRemove: null,
+            onSpotNameChange: null,
+            onSpotRemove: null
         };
     }
 
@@ -37,16 +41,28 @@ export class InputManager {
     }
 
     /**
-     * ルート編集モードを設定
-     * @param {boolean} isRouteEditMode - ルート編集モードかどうか
+     * 編集モードを設定
+     * @param {string} mode - 編集モード ('point', 'route', 'spot')
      */
-    setRouteEditMode(isRouteEditMode) {
-        this.isRouteEditMode = isRouteEditMode;
-        if (!isRouteEditMode) {
+    setEditMode(mode) {
+        this.isRouteEditMode = (mode === 'route');
+        this.isSpotEditMode = (mode === 'spot');
+        
+        if (mode !== 'route') {
             // ルート編集モード終了時は強調表示をクリア
             this.highlightedPointIds.clear();
         }
+        
         this.updateInputsState();
+        this.updateSpotInputsState();
+    }
+
+    /**
+     * ルート編集モードを設定（後方互換性のため）
+     * @param {boolean} isRouteEditMode - ルート編集モードかどうか
+     */
+    setRouteEditMode(isRouteEditMode) {
+        this.setEditMode(isRouteEditMode ? 'route' : 'point');
     }
 
     /**
@@ -66,7 +82,7 @@ export class InputManager {
     }
 
     /**
-     * 入力状態を更新
+     * ポイント入力状態を更新
      */
     updateInputsState() {
         this.inputElements.forEach(input => {
@@ -74,9 +90,9 @@ export class InputManager {
             const isHighlighted = this.highlightedPointIds.has(inputValue);
             const container = input._container;
             
-            if (this.isRouteEditMode) {
+            if (this.isRouteEditMode || this.isSpotEditMode) {
                 input.disabled = true;
-                if (isHighlighted) {
+                if (this.isRouteEditMode && isHighlighted) {
                     // 開始・終了ポイントとして指定されている場合は白背景
                     input.style.backgroundColor = 'white';
                     if (container) {
@@ -85,13 +101,14 @@ export class InputManager {
                     }
                     input.title = '開始または終了ポイントとして指定されています';
                 } else {
-                    // 通常のルート編集モード時の背景色（コンテナと入力フィールドを統一）
+                    // ルート編集モードまたはスポット編集モード時の背景色
                     input.style.backgroundColor = '#e0e0e0';
                     if (container) {
                         container.style.backgroundColor = '#e0e0e0';
                         container.style.border = '2px solid #999';
                     }
-                    input.title = 'ルート編集モード中はポイントID名の編集はできません';
+                    const modeText = this.isSpotEditMode ? 'スポット編集' : 'ルート編集';
+                    input.title = `${modeText}モード中はポイントID名の編集はできません`;
                 }
             } else {
                 input.disabled = false;
@@ -167,22 +184,23 @@ export class InputManager {
         // 入力からコンテナへ参照
         input._container = container;
 
-        // ルート編集モードの状態を適用
-        if (this.isRouteEditMode) {
+        // 編集モードの状態を適用
+        if (this.isRouteEditMode || this.isSpotEditMode) {
             const isHighlighted = this.highlightedPointIds.has(point.id);
             input.disabled = true;
-            if (isHighlighted) {
+            if (this.isRouteEditMode && isHighlighted) {
                 // 開始・終了ポイントとして指定されている場合は白背景
                 input.style.backgroundColor = 'white';
                 container.style.backgroundColor = 'white';
                 container.style.border = '2px solid #007bff';
                 input.title = '開始または終了ポイントとして指定されています';
             } else {
-                // 通常のルート編集モード時の背景色（コンテナと入力フィールドを統一）
+                // ルート編集モードまたはスポット編集モード時の背景色
                 input.style.backgroundColor = '#e0e0e0';
                 container.style.backgroundColor = '#e0e0e0';
                 container.style.border = '2px solid #999';
-                input.title = 'ルート編集モード中はポイントID名の編集はできません';
+                const modeText = this.isSpotEditMode ? 'スポット編集' : 'ルート編集';
+                input.title = `${modeText}モード中はポイントID名の編集はできません`;
             }
         }
 
@@ -270,6 +288,147 @@ export class InputManager {
     }
 
     /**
+     * スポット用の入力ボックスを作成
+     * @param {Object} spot - スポットオブジェクト
+     * @param {number} index - スポットのインデックス
+     * @param {boolean} shouldFocus - フォーカスするかどうか
+     */
+    createSpotInputBox(spot, index, shouldFocus = false) {
+        // ポップアップコンテナを作成
+        const container = document.createElement('div');
+        container.className = 'spot-name-popup';
+        container.style.position = 'absolute';
+        container.style.zIndex = '1100';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = 20;
+        input.className = 'spot-name-input';
+        input.placeholder = 'スポット名';
+        input.value = spot.name || '';
+        
+        container.appendChild(input);
+        
+        this.positionSpotInputBox(container, spot);
+        
+        // input時は変換処理を一切行わない
+        input.addEventListener('input', (e) => {
+            const value = e.target.value;
+            // 入力中は変換処理なし、そのまま保存（表示更新なし）
+            this.notify('onSpotNameChange', { index, name: value, skipDisplay: true });
+        });
+        
+        // blur時は単純に値を保存するのみ
+        input.addEventListener('blur', (e) => {
+            const value = e.target.value.trim();
+            this.notify('onSpotNameChange', { index, name: value });
+            container.classList.remove('is-editing');
+        });
+        
+        // キーボードイベント（Escapeキーでスポット削除）
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.notify('onSpotRemove', { index, spot });
+            }
+        });
+        
+        // フォーカス時に編集中スタイル
+        input.addEventListener('focus', () => {
+            container.classList.add('is-editing');
+        });
+        
+        // スポットインデックスを属性として設定
+        input.setAttribute('data-spot-index', index);
+        
+        document.body.appendChild(container);
+        this.spotInputElements.push(input);
+        // 入力からコンテナへ参照
+        input._container = container;
+
+        if (shouldFocus) {
+            setTimeout(() => {
+                input.focus();
+                // カーソルを末尾に設定
+                input.setSelectionRange(input.value.length, input.value.length);
+            }, 0);
+        }
+    }
+
+    /**
+     * スポット入力ボックスの最適な表示位置を計算・設定
+     * @param {HTMLElement} container - コンテナ要素
+     * @param {Object} spot - スポットオブジェクト
+     */
+    positionSpotInputBox(container, spot) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = rect.width / this.canvas.width;
+        const scaleY = rect.height / this.canvas.height;
+        
+        const inputX = this.findOptimalInputPosition(spot.x, spot.y, scaleX, rect.left);
+        const inputY = spot.y * scaleY + rect.top - 15;
+        
+        container.style.left = inputX + 'px';
+        container.style.top = inputY + 'px';
+    }
+
+    /**
+     * スポット入力状態を更新
+     */
+    updateSpotInputsState() {
+        this.spotInputElements.forEach(input => {
+            const container = input._container;
+            
+            if (!this.isSpotEditMode) {
+                // スポット編集モード以外では非表示
+                if (container) {
+                    container.style.display = 'none';
+                }
+            } else {
+                // スポット編集モードでは表示
+                if (container) {
+                    container.style.display = 'block';
+                }
+            }
+        });
+    }
+
+    /**
+     * 特定のスポットの名前のみを更新（入力ボックスは再作成しない）
+     * @param {number} spotIndex - 更新するスポットのインデックス
+     * @param {string} newName - 新しいスポット名
+     */
+    updateSpotNameDisplay(spotIndex, newName) {
+        const input = this.spotInputElements.find((element) => {
+            // 入力要素に紐づくスポットのインデックスを確認
+            return element.getAttribute('data-spot-index') == spotIndex;
+        });
+        if (input && input.value !== newName) {
+            input.value = newName;
+        }
+    }
+
+    /**
+     * 全スポット入力ボックスをクリア・再作成
+     * @param {Array} spots - スポット配列
+     */
+    redrawSpotInputBoxes(spots) {
+        this.clearSpotInputBoxes();
+        
+        if (this.isSpotEditMode) {
+            setTimeout(() => {
+                spots.forEach((spot, index) => {
+                    this.createSpotInputBox(spot, index);
+                    const input = this.spotInputElements[this.spotInputElements.length - 1];
+                    if (input) {
+                        input.value = spot.name || '';
+                        input.setAttribute('data-spot-index', index);
+                    }
+                });
+            }, 10);
+        }
+    }
+
+    /**
      * 全ての動的入力ボックスをDOMから削除
      */
     clearInputBoxes() {
@@ -283,5 +442,29 @@ export class InputManager {
             }
         });
         this.inputElements = [];
+    }
+
+    /**
+     * 全スポット入力ボックスをDOMから削除
+     */
+    clearSpotInputBoxes() {
+        this.spotInputElements.forEach(input => {
+            const container = input && input._container;
+            if (container && container.parentNode) {
+                container.parentNode.removeChild(container);
+            } else if (input && input.parentNode) {
+                // 後方互換（コンテナ未設定の場合）
+                input.parentNode.removeChild(input);
+            }
+        });
+        this.spotInputElements = [];
+    }
+
+    /**
+     * 全ての入力ボックスをクリア
+     */
+    clearAllInputBoxes() {
+        this.clearInputBoxes();
+        this.clearSpotInputBoxes();
     }
 }

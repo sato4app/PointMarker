@@ -79,8 +79,11 @@ export class PointMarkerApp {
         });
 
         // スポット管理のコールバック
-        this.spotManager.setCallback('onChange', () => {
+        this.spotManager.setCallback('onChange', (spots, skipRedrawInput = false) => {
             this.redrawCanvas();
+            if (!skipRedrawInput) {
+                this.inputManager.redrawSpotInputBoxes(spots || this.spotManager.getSpots());
+            }
         });
         
         this.spotManager.setCallback('onCountChange', (count) => {
@@ -101,6 +104,21 @@ export class PointMarkerApp {
                 this.pointManager.removePoint(data.index);
             }
         });
+        
+        // スポット名変更のコールバック
+        this.inputManager.setCallback('onSpotNameChange', (data) => {
+            this.spotManager.updateSpotName(data.index, data.name);
+            // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
+            if (!data.skipDisplay) {
+                this.inputManager.updateSpotNameDisplay(data.index, data.name);
+            }
+        });
+        
+        this.inputManager.setCallback('onSpotRemove', (data) => {
+            if (this.layoutManager.getCurrentEditingMode() === 'spot') {
+                this.spotManager.removeSpot(data.index);
+            }
+        });
 
         // レイアウト管理のコールバック
         this.layoutManager.setCallback('onLayoutChange', (layout) => {
@@ -110,7 +128,7 @@ export class PointMarkerApp {
         });
         
         this.layoutManager.setCallback('onModeChange', (mode) => {
-            this.inputManager.setRouteEditMode(mode === 'route');
+            this.inputManager.setEditMode(mode);
             if (mode === 'route') {
                 // ルート編集モードに切り替えた時、既存の開始・終了ポイントを強調表示
                 const startEndPoints = this.routeManager.getStartEndPoints();
@@ -119,10 +137,8 @@ export class PointMarkerApp {
                 if (startEndPoints.end && startEndPoints.end.trim()) highlightIds.push(startEndPoints.end);
                 this.inputManager.setHighlightedPoints(highlightIds);
             } else if (mode === 'spot') {
-                // スポット編集モードに切り替えた時は特別な処理なし
-            } else {
-                // 他のモードに切り替えた時はスポットをクリア
-                this.spotManager.clearSpots();
+                // スポット編集モードに切り替えた時、スポット入力ボックスを表示
+                this.inputManager.redrawSpotInputBoxes(this.spotManager.getSpots());
             }
             this.redrawCanvas();
         });
@@ -186,6 +202,13 @@ export class PointMarkerApp {
             e.preventDefault();
             this.clearSpots();
         });
+        
+        document.getElementById('exportSpotBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await this.exportSpots();
+        });
+        
+        document.getElementById('spotJsonInput').addEventListener('change', (e) => this.handleSpotJSONLoad(e));
 
         // 開始・終了ポイント入力
         const startPointInput = document.getElementById('startPointInput');
@@ -457,7 +480,8 @@ export class PointMarkerApp {
         }
         
         if (spotIndex !== -1 && mode === 'spot') {
-            // スポット上でのクリックは何もしない（ドラッグで移動可能）
+            // スポット上でのクリックは対応するスポット名入力フィールドにフォーカス
+            this.focusInputForSpot(spotIndex);
             return;
         }
         
@@ -473,7 +497,11 @@ export class PointMarkerApp {
             setTimeout(() => this.focusInputForPoint(newIndex), 30);
         } else if (mode === 'spot') {
             // スポット編集モードでスポット追加
-            this.spotManager.addSpot(coords.x, coords.y);
+            this.spotManager.removeTrailingEmptySpots();
+            const spot = this.spotManager.addSpot(coords.x, coords.y);
+            // 新規作成されたスポットの入力へフォーカス
+            const newIndex = this.spotManager.getSpots().length - 1;
+            setTimeout(() => this.focusInputForSpot(newIndex), 30);
         }
     }
 
@@ -516,6 +544,7 @@ export class PointMarkerApp {
      */
     clearSpots() {
         this.spotManager.clearSpots();
+        this.inputManager.clearSpotInputBoxes();
     }
 
     /**
@@ -729,6 +758,74 @@ export class PointMarkerApp {
             inputElement.focus();
             // カーソルを末尾に設定
             inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
+        }
+    }
+
+    /**
+     * 指定したスポットに対応する入力フィールドにフォーカスを当てる
+     * @param {number} spotIndex - スポットのインデックス
+     */
+    focusInputForSpot(spotIndex) {
+        const inputElement = document.querySelector(`input[data-spot-index="${spotIndex}"]`);
+        if (inputElement) {
+            inputElement.focus();
+            // カーソルを末尾に設定
+            inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
+        }
+    }
+
+    /**
+     * スポットをJSON出力
+     */
+    async exportSpots() {
+        const spots = this.spotManager.getSpots();
+        if (spots.length === 0) {
+            alert('スポットが選択されていません');
+            return;
+        }
+
+        try {
+            const data = this.spotManager.exportToJSON(
+                this.fileHandler.getCurrentImageFileName() + '.png',
+                this.canvas.width, this.canvas.height,
+                this.currentImage.width, this.currentImage.height
+            );
+            
+            const filename = this.spotManager.generateSpotFilename(
+                this.fileHandler.getCurrentImageFileName()
+            );
+            await this.fileHandler.saveJSONWithUserChoice(data, filename);
+        } catch (error) {
+            console.error('スポットエクスポートエラー:', error);
+            alert('スポットエクスポート中にエラーが発生しました');
+        }
+    }
+
+    /**
+     * スポットJSONファイル読み込み処理
+     * @param {Event} event - ファイル選択イベント
+     */
+    async handleSpotJSONLoad(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!this.currentImage) {
+            alert('先に画像を読み込んでください');
+            return;
+        }
+
+        try {
+            const data = await this.fileHandler.loadJsonFile(file);
+            this.spotManager.loadFromJSON(
+                data,
+                this.canvas.width, this.canvas.height,
+                this.currentImage.width, this.currentImage.height
+            );
+        } catch (error) {
+            console.error('スポットJSON読み込みエラー:', error);
+            alert('スポットJSON読み込み中にエラーが発生しました: ' + error.message);
+        } finally {
+            event.target.value = '';
         }
     }
 

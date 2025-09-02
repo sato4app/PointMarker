@@ -317,6 +317,34 @@ header p {
     background: var(--danger-dark);
 }
 
+/* スポット編集ボタンの色分け */
+.btn-clear-spot {
+    background: var(--danger-color);  /* 赤色 */
+    color: white;
+}
+
+.btn-clear-spot:hover:not(:disabled) {
+    background: var(--danger-dark);
+}
+
+.btn-export-spot {
+    background: var(--success-color);  /* 緑色 */
+    color: white;
+}
+
+.btn-export-spot:hover:not(:disabled) {
+    background: var(--success-dark);
+}
+
+.btn-load-spot {
+    background: var(--primary-color);  /* 青色 */
+    color: white;
+}
+
+.btn-load-spot:hover:not(:disabled) {
+    background: var(--primary-dark);
+}
+
 /* =====================================
    Editing Mode Selector
    ===================================== */
@@ -512,6 +540,42 @@ header p {
 /* .point-id-input:focus のスタイルは .point-id-popup.is-editing で処理 */
 
 .point-id-input::placeholder {
+    color: #bdc3c7;
+    font-size: 10px;
+}
+
+/* スポット名入力ポップアップ */
+.spot-name-popup {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 2px;
+    background: white;
+    border: 2px solid #ff9500;  /* オレンジ色の枠線 */
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    pointer-events: auto;
+}
+
+.spot-name-popup.is-editing {
+    border-color: #e67e00;  /* 濃いオレンジ色 */
+    box-shadow: 0 2px 4px rgba(255, 149, 0, 0.5);
+}
+
+.spot-name-input {
+    width: 80px;
+    height: 24px;
+    padding: 2px 6px;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    background: transparent;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    outline: none;
+}
+
+.spot-name-input::placeholder {
     color: #bdc3c7;
     font-size: 10px;
 }

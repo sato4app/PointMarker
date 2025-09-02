@@ -124,4 +124,14 @@ export class Validators {
     static isValidRouteData(data) {
         return data && data.points && Array.isArray(data.points) && data.routeInfo;
     }
+
+    /**
+     * JSONデータがスポット形式として有効かどうかをチェック
+     * @param {Object} data - チェックするJSONデータ
+     * @returns {boolean} 有効なスポットデータかどうか
+     */
+    static isValidSpotData(data) {
+        return data && data.points && Array.isArray(data.points) && 
+               data.points.some(point => point.type === 'spot');
+    }
 }

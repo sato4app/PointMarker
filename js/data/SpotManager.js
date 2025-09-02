@@ -1,6 +1,9 @@
+import { CoordinateUtils } from '../utils/Coordinates.js';
+import { Validators } from '../utils/Validators.js';
+
 /**
  * スポット管理クラス
- * 一時的な注目点（スポット）の管理を行う
+ * 名称を持つ地図上の特定の点（スポット）の管理を行う
  */
 export class SpotManager {
     constructor() {
@@ -32,12 +35,14 @@ export class SpotManager {
      * スポットを追加
      * @param {number} x - X座標
      * @param {number} y - Y座標
+     * @param {string} name - スポット名（デフォルト: 空文字列）
      * @returns {Object} 追加されたスポット
      */
-    addSpot(x, y) {
+    addSpot(x, y, name = '') {
         const spot = {
             x: Math.round(x),
             y: Math.round(y),
+            name: name,
             index: this.spots.length
         };
         
@@ -123,5 +128,126 @@ export class SpotManager {
             this.spots[index].y = Math.round(y);
             this.notify('onChange');
         }
+    }
+
+    /**
+     * スポット名を更新
+     * @param {number} index - スポットのインデックス
+     * @param {string} name - 新しいスポット名
+     */
+    updateSpotName(index, name) {
+        if (index >= 0 && index < this.spots.length) {
+            this.spots[index].name = name;
+            this.notify('onChange');
+        }
+    }
+
+    /**
+     * 末尾の未入力スポットを削除
+     */
+    removeTrailingEmptySpots() {
+        if (this.spots.length === 0) return;
+        
+        let removed = false;
+        for (let i = this.spots.length - 1; i >= 0; i--) {
+            const spot = this.spots[i];
+            if ((spot.name ?? '') === '') {
+                this.spots.splice(i, 1);
+                removed = true;
+            } else {
+                break;
+            }
+        }
+        
+        if (removed) {
+            // インデックスを再割り当て
+            this.spots.forEach((spot, i) => {
+                spot.index = i;
+            });
+            this.notify('onChange');
+            this.notify('onCountChange', this.spots.length);
+        }
+    }
+
+    /**
+     * JSONデータからスポットを復元
+     * @param {Object} data - JSONデータ
+     * @param {number} canvasWidth - キャンバス幅
+     * @param {number} canvasHeight - キャンバス高さ
+     * @param {number} imageWidth - 元画像幅
+     * @param {number} imageHeight - 元画像高さ
+     */
+    loadFromJSON(data, canvasWidth, canvasHeight, imageWidth, imageHeight) {
+        if (!Validators.isValidSpotData(data)) {
+            throw new Error('JSONファイルにスポットデータが見つかりません');
+        }
+
+        this.spots = [];
+        
+        data.points.forEach(pointData => {
+            if (pointData.type === 'spot' && 
+                pointData.imageX !== undefined && 
+                pointData.imageY !== undefined) {
+                const canvasCoords = CoordinateUtils.imageToCanvas(
+                    pointData.imageX, pointData.imageY,
+                    canvasWidth, canvasHeight,
+                    imageWidth, imageHeight
+                );
+                
+                this.addSpot(
+                    canvasCoords.x, canvasCoords.y,
+                    pointData.name || ''
+                );
+            }
+        });
+        
+        this.notify('onChange');
+        this.notify('onCountChange', this.spots.length);
+    }
+
+    /**
+     * スポットデータをJSON形式で出力
+     * @param {string} imageFileName - 画像ファイル名
+     * @param {number} canvasWidth - キャンバス幅
+     * @param {number} canvasHeight - キャンバス高さ
+     * @param {number} imageWidth - 元画像幅
+     * @param {number} imageHeight - 元画像高さ
+     * @returns {Object} JSONデータ
+     */
+    exportToJSON(imageFileName, canvasWidth, canvasHeight, imageWidth, imageHeight) {
+        return {
+            totalPoints: this.spots.length,
+            imageReference: imageFileName,
+            imageInfo: {
+                width: imageWidth,
+                height: imageHeight
+            },
+            points: this.spots.map((spot, index) => {
+                const imageCoords = CoordinateUtils.canvasToImage(
+                    spot.x, spot.y,
+                    canvasWidth, canvasHeight,
+                    imageWidth, imageHeight
+                );
+                
+                return {
+                    type: 'spot',
+                    index: index + 1,
+                    name: spot.name || '',
+                    imageX: imageCoords.x,
+                    imageY: imageCoords.y
+                };
+            }),
+            exportedAt: new Date().toISOString()
+        };
+    }
+
+    /**
+     * スポット用のデフォルトファイル名を生成
+     * @param {string} imageFileName - 画像ファイル名
+     * @returns {string} スポットファイル名
+     */
+    generateSpotFilename(imageFileName) {
+        const baseFileName = imageFileName || 'spots';
+        return `${baseFileName}_spots.json`;
     }
 }

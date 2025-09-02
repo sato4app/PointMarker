@@ -139,9 +139,19 @@
                     <p class="spot-description">一時的な注目点をマーク</p>
                     
                     <div class="editor-controls">
-                        <button type="button" id="clearSpotBtn" class="btn btn-clear" aria-label="全スポットをクリア">
+                        <button type="button" id="clearSpotBtn" class="btn btn-clear-spot" aria-label="全スポットをクリア">
                             スポットをクリア
                         </button>
+                        <button type="button" id="exportSpotBtn" class="btn btn-export-spot" aria-label="スポットをJSONで出力">
+                            スポットをJSON出力
+                        </button>
+                    </div>
+                    
+                    <div class="file-input-wrapper">
+                        <input type="file" id="spotJsonInput" accept="application/json" class="file-input" aria-label="スポットJSONファイルを読み込み">
+                        <label for="spotJsonInput" class="file-input-label btn-load-spot">
+                            スポットのJSON読込
+                        </label>
                     </div>
                     
                     <div class="spot-instructions">
