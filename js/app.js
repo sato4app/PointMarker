@@ -169,8 +169,6 @@ export class PointMarkerApp {
         this.canvas.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
         this.canvas.addEventListener('mouseup', (e) => this.handleCanvasMouseUp(e));
         
-        // スポット編集の右クリックコンテキストメニューを無効化して削除機能を実装
-        this.canvas.addEventListener('contextmenu', (e) => this.handleCanvasRightClick(e));
 
         // ポイント編集コントロール
         document.getElementById('clearBtn').addEventListener('click', (e) => {
@@ -336,27 +334,6 @@ export class PointMarkerApp {
         return this.spotManager.findSpotAt(mouseX, mouseY, 10); // 星形は少し大きいので許容値を大きく
     }
 
-    /**
-     * キャンバス右クリック処理（スポット削除）
-     * @param {MouseEvent} event - マウスイベント
-     */
-    handleCanvasRightClick(event) {
-        if (!this.currentImage) return;
-        
-        event.preventDefault(); // デフォルトのコンテキストメニューを無効化
-        
-        const mode = this.layoutManager.getCurrentEditingMode();
-        if (mode !== 'spot') {
-            return; // スポット編集モード以外では何もしない
-        }
-        
-        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
-        const spotIndex = this.findSpotAtMouse(coords.x, coords.y);
-        
-        if (spotIndex !== -1) {
-            this.spotManager.removeSpot(spotIndex);
-        }
-    }
 
     /**
      * キャンバスマウス移動処理
