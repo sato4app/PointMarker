@@ -237,8 +237,8 @@ export class PointMarkerApp {
             const newValue = this.routeManager.getStartEndPoints().start;
             e.target.value = newValue;
             
-            // ルートポイント専用の検証フィードバック
-            this.updateRoutePointValidationFeedback(e.target, newValue);
+            // 開始・終了ポイント両方の検証フィードバック
+            this.updateBothRoutePointsValidation();
         });
         
         endPointInput.addEventListener('blur', (e) => {
@@ -246,8 +246,8 @@ export class PointMarkerApp {
             const newValue = this.routeManager.getStartEndPoints().end;
             e.target.value = newValue;
             
-            // ルートポイント専用の検証フィードバック
-            this.updateRoutePointValidationFeedback(e.target, newValue);
+            // 開始・終了ポイント両方の検証フィードバック
+            this.updateBothRoutePointsValidation();
         });
 
         // ウィンドウリサイズ
@@ -754,6 +754,32 @@ export class PointMarkerApp {
             inputElement.style.backgroundColor = '';
             inputElement.style.borderColor = '';
             inputElement.title = '';
+        }
+    }
+
+    /**
+     * 開始・終了ポイント両方の検証を実行
+     */
+    updateBothRoutePointsValidation() {
+        const startPointInput = document.getElementById('startPointInput');
+        const endPointInput = document.getElementById('endPointInput');
+        const routePoints = this.routeManager.getStartEndPoints();
+        const startValue = routePoints.start;
+        const endValue = routePoints.end;
+
+        // 個別の検証を実行
+        this.updateRoutePointValidationFeedback(startPointInput, startValue);
+        this.updateRoutePointValidationFeedback(endPointInput, endValue);
+
+        // 重複チェック（両方が空でない場合のみ）
+        if (startValue && endValue && startValue.trim() !== '' && endValue.trim() !== '') {
+            if (startValue === endValue) {
+                // 開始と終了が同じ場合、両方を赤枠表示
+                startPointInput.style.borderColor = '#ff0000';
+                endPointInput.style.borderColor = '#ff0000';
+                startPointInput.title = '開始ポイントと終了ポイントは異なるポイントIDを指定してください。';
+                endPointInput.title = '開始ポイントと終了ポイントは異なるポイントIDを指定してください。';
+            }
         }
     }
 
