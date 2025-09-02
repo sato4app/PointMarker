@@ -386,7 +386,8 @@ header p {
    Editor Panels
    ===================================== */
 .point-editor,
-.route-editor {
+.route-editor,
+.spot-editor {
     padding: 15px;
     background: var(--light-gray);
     border: 1px solid var(--border-color);
@@ -397,7 +398,8 @@ header p {
 }
 
 .point-editor h3,
-.route-editor h3 {
+.route-editor h3,
+.spot-editor h3 {
     margin: 0;
     color: var(--secondary-color);
     font-size: 1.1em;
@@ -475,7 +477,8 @@ header p {
    Counters & Status
    ===================================== */
 .point-count,
-.waypoint-count {
+.waypoint-count,
+.spot-count {
     padding: 10px;
     background: var(--light-gray);
     border-radius: var(--border-radius-sm);
@@ -497,6 +500,11 @@ header p {
 
 .waypoint-count span {
     color: #e67e22;
+    font-weight: bold;
+}
+
+.spot-count span {
+    color: #ff9500;
     font-weight: bold;
 }
 

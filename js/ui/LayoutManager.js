@@ -125,7 +125,7 @@ export class LayoutManager {
         } else if (this.currentEditingMode === 'route') {
             routeEditor.style.display = 'block';
         } else if (this.currentEditingMode === 'spot') {
-            spotEditor.style.display = 'block';
+            spotEditor.style.display = 'flex';
         }
         
         const radio = document.querySelector(`input[name="editingMode"][value="${this.currentEditingMode}"]`);
