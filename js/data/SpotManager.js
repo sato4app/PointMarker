@@ -135,10 +135,11 @@ export class SpotManager {
      * @param {number} index - スポットのインデックス
      * @param {string} name - 新しいスポット名
      */
-    updateSpotName(index, name) {
+    updateSpotName(index, name, skipRedrawInput = false) {
         if (index >= 0 && index < this.spots.length) {
             this.spots[index].name = name;
-            this.notify('onChange');
+            // 入力中は入力ボックスの再生成を避けるため第二引数で抑制
+            this.notify('onChange', this.spots, skipRedrawInput);
         }
     }
 

@@ -107,7 +107,8 @@ export class PointMarkerApp {
         
         // スポット名変更のコールバック
         this.inputManager.setCallback('onSpotNameChange', (data) => {
-            this.spotManager.updateSpotName(data.index, data.name);
+            // 入力中はスポット入力ボックス再生成をスキップ
+            this.spotManager.updateSpotName(data.index, data.name, !!data.skipDisplay);
             // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
             if (!data.skipDisplay) {
                 this.inputManager.updateSpotNameDisplay(data.index, data.name);
