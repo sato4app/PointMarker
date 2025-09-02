@@ -57,7 +57,6 @@ export class CanvasRenderer {
         const {
             defaultColor = '#ff0000',
             highlightColor = '#0066ff',
-            markerColor = '#0066ff',
             startPointId = '',
             endPointId = '',
             showRouteMode = false
@@ -71,10 +70,6 @@ export class CanvasRenderer {
             if ((showRouteMode || startPointId || endPointId) && 
                 (point.id === startPointId || point.id === endPointId)) {
                 color = highlightColor;
-            } else if (point.isMarker) {
-                color = markerColor;
-                radius = 3;
-                strokeWidth = 1;
             }
             
             this.drawPoint(point, color, radius, strokeWidth);

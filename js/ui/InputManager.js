@@ -112,9 +112,6 @@ export class InputManager {
      * @param {boolean} shouldFocus - フォーカスするかどうか
      */
     createInputBox(point, index, shouldFocus = false) {
-        if (point.isMarker) {
-            return;
-        }
         
         // ポップアップコンテナを作成
         const container = document.createElement('div');
@@ -262,13 +259,11 @@ export class InputManager {
         
         setTimeout(() => {
             points.forEach((point, index) => {
-                if (!point.isMarker) {
-                    this.createInputBox(point, index);
-                    const input = this.inputElements[this.inputElements.length - 1];
-                    if (input) {
-                        input.value = point.id || '';
-                        input.setAttribute('data-point-index', index);
-                    }
+                this.createInputBox(point, index);
+                const input = this.inputElements[this.inputElements.length - 1];
+                if (input) {
+                    input.value = point.id || '';
+                    input.setAttribute('data-point-index', index);
                 }
             });
         }, 10);

@@ -39,15 +39,13 @@ export class PointManager {
      * @param {number} x - X座標
      * @param {number} y - Y座標
      * @param {string} id - ポイントID
-     * @param {boolean} isMarker - マーカーポイントかどうか
      * @returns {Object} 追加されたポイント
      */
-    addPoint(x, y, id = '', isMarker = false) {
+    addPoint(x, y, id = '') {
         const point = { 
             x: Math.round(x), 
             y: Math.round(y),
-            id,
-            isMarker
+            id
         };
         
         this.points.push(point);
@@ -114,10 +112,6 @@ export class PointManager {
         // 次に、ID名がブランクまたは空のポイントを削除
         const initialLength = this.points.length;
         this.points = this.points.filter(point => {
-            // マーカーポイントは保持、ユーザーポイントでIDが空または空白のものは削除
-            if (point.isMarker) {
-                return true;
-            }
             return point.id && point.id.trim() !== '';
         });
         
@@ -138,11 +132,11 @@ export class PointManager {
     }
 
     /**
-     * ユーザーポイント数を取得（マーカー除外）
-     * @returns {number} ユーザーポイント数
+     * ポイント数を取得
+     * @returns {number} ポイント数
      */
     getUserPointCount() {
-        return this.points.filter(point => !point.isMarker).length;
+        return this.points.length;
     }
 
     /**
@@ -165,7 +159,7 @@ export class PointManager {
     }
 
     /**
-     * 末尾の未入力ユーザーポイントを削除
+     * 末尾の未入力ポイントを削除
      */
     removeTrailingEmptyUserPoints() {
         if (this.points.length === 0) return;
@@ -173,9 +167,6 @@ export class PointManager {
         let removed = false;
         for (let i = this.points.length - 1; i >= 0; i--) {
             const point = this.points[i];
-            if (point.isMarker) {
-                continue;
-            }
             if ((point.id ?? '') === '') {
                 this.points.splice(i, 1);
                 removed = true;
@@ -215,8 +206,7 @@ export class PointManager {
                 
                 this.addPoint(
                     canvasCoords.x, canvasCoords.y,
-                    pointData.id || '',
-                    pointData.isMarker || false
+                    pointData.id || ''
                 );
             }
         });
@@ -253,8 +243,7 @@ export class PointManager {
                     index: index + 1,
                     id: point.id || '',
                     imageX: imageCoords.x,
-                    imageY: imageCoords.y,
-                    isMarker: point.isMarker || false
+                    imageY: imageCoords.y
                 };
             }),
             exportedAt: new Date().toISOString()

@@ -529,7 +529,7 @@ export class PointMarkerApp {
         
         // 空でないIDのみをチェック対象にする
         points.forEach(point => {
-            if (point.id && point.id.trim() !== '' && !point.isMarker) {
+            if (point.id && point.id.trim() !== '') {
                 const id = point.id.trim();
                 idCount[id] = (idCount[id] || 0) + 1;
                 if (idCount[id] === 2) {
