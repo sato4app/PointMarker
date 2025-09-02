@@ -138,6 +138,15 @@ export class SpotManager {
      */
     updateSpotName(index, name, skipRedrawInput = false) {
         if (index >= 0 && index < this.spots.length) {
+            // スポット名がブランクの場合はスポットを削除
+            if (!name || name.trim() === '') {
+                if (!skipRedrawInput) {
+                    // フォーカス離脱時（blur）でブランクの場合は削除
+                    this.removeSpot(index);
+                    return;
+                }
+            }
+            
             this.spots[index].name = name;
             // 入力中は入力ボックスの再生成を避けるため
             if (skipRedrawInput) {
@@ -233,14 +242,19 @@ export class SpotManager {
      * @returns {Object} JSONデータ
      */
     exportToJSON(imageFileName, canvasWidth, canvasHeight, imageWidth, imageHeight) {
+        // スポット名がブランクでないスポットのみをフィルタリング
+        const validSpots = this.spots.filter(spot => 
+            spot.name && spot.name.trim() !== ''
+        );
+        
         return {
-            totalPoints: this.spots.length,
+            totalPoints: validSpots.length,
             imageReference: imageFileName,
             imageInfo: {
                 width: imageWidth,
                 height: imageHeight
             },
-            points: this.spots.map((spot, index) => {
+            points: validSpots.map((spot, index) => {
                 const imageCoords = CoordinateUtils.canvasToImage(
                     spot.x, spot.y,
                     canvasWidth, canvasHeight,
@@ -250,7 +264,7 @@ export class SpotManager {
                 return {
                     type: 'spot',
                     index: index + 1,
-                    name: spot.name || '',
+                    name: spot.name,
                     imageX: imageCoords.x,
                     imageY: imageCoords.y
                 };
