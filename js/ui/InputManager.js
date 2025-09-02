@@ -90,9 +90,18 @@ export class InputManager {
             const isHighlighted = this.highlightedPointIds.has(inputValue);
             const container = input._container;
             
-            if (this.isRouteEditMode || this.isSpotEditMode) {
+            if (this.isSpotEditMode) {
+                // スポット編集モード時はポイントID名ポップアップを完全に非表示
+                if (container) {
+                    container.style.display = 'none';
+                }
+            } else if (this.isRouteEditMode) {
+                // ルート編集モードでは表示し、開始・終了ポイントを強調
+                if (container) {
+                    container.style.display = 'block';
+                }
                 input.disabled = true;
-                if (this.isRouteEditMode && isHighlighted) {
+                if (isHighlighted) {
                     // 開始・終了ポイントとして指定されている場合は白背景
                     input.style.backgroundColor = 'white';
                     if (container) {
@@ -101,16 +110,19 @@ export class InputManager {
                     }
                     input.title = '開始または終了ポイントとして指定されています';
                 } else {
-                    // ルート編集モードまたはスポット編集モード時の背景色
+                    // ルート編集モード時の背景色
                     input.style.backgroundColor = '#e0e0e0';
                     if (container) {
                         container.style.backgroundColor = '#e0e0e0';
                         container.style.border = '2px solid #999';
                     }
-                    const modeText = this.isSpotEditMode ? 'スポット編集' : 'ルート編集';
-                    input.title = `${modeText}モード中はポイントID名の編集はできません`;
+                    input.title = 'ルート編集モード中はポイントID名の編集はできません';
                 }
             } else {
+                // ポイント編集モードでは通常表示
+                if (container) {
+                    container.style.display = 'block';
+                }
                 input.disabled = false;
                 input.style.backgroundColor = '';
                 if (container) {
@@ -185,22 +197,25 @@ export class InputManager {
         input._container = container;
 
         // 編集モードの状態を適用
-        if (this.isRouteEditMode || this.isSpotEditMode) {
+        if (this.isSpotEditMode) {
+            // スポット編集モード時はポイントID名ポップアップを完全に非表示
+            container.style.display = 'none';
+        } else if (this.isRouteEditMode) {
+            // ルート編集モードでは表示し、開始・終了ポイントを強調
             const isHighlighted = this.highlightedPointIds.has(point.id);
             input.disabled = true;
-            if (this.isRouteEditMode && isHighlighted) {
+            if (isHighlighted) {
                 // 開始・終了ポイントとして指定されている場合は白背景
                 input.style.backgroundColor = 'white';
                 container.style.backgroundColor = 'white';
                 container.style.border = '2px solid #007bff';
                 input.title = '開始または終了ポイントとして指定されています';
             } else {
-                // ルート編集モードまたはスポット編集モード時の背景色
+                // ルート編集モード時の背景色
                 input.style.backgroundColor = '#e0e0e0';
                 container.style.backgroundColor = '#e0e0e0';
                 container.style.border = '2px solid #999';
-                const modeText = this.isSpotEditMode ? 'スポット編集' : 'ルート編集';
-                input.title = `${modeText}モード中はポイントID名の編集はできません`;
+                input.title = 'ルート編集モード中はポイントID名の編集はできません';
             }
         }
 
