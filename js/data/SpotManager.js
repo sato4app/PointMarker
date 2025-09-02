@@ -134,12 +134,29 @@ export class SpotManager {
      * スポット名を更新
      * @param {number} index - スポットのインデックス
      * @param {string} name - 新しいスポット名
+     * @param {boolean} skipRedrawInput - 入力ボックスの再描画をスキップするか
      */
     updateSpotName(index, name, skipRedrawInput = false) {
         if (index >= 0 && index < this.spots.length) {
             this.spots[index].name = name;
-            // 入力中は入力ボックスの再生成を避けるため第二引数で抑制
-            this.notify('onChange', this.spots, skipRedrawInput);
+            // 入力中は入力ボックスの再生成を避けるため
+            if (skipRedrawInput) {
+                // 入力中はキャンバス再描画のみ（入力ボックス再生成はスキップ）
+                this.redrawCanvasOnly();
+            } else {
+                // 通常の変更時は全て再描画
+                this.notify('onChange', this.spots, false);
+            }
+        }
+    }
+
+    /**
+     * キャンバスのみ再描画（入力ボックスの再生成なし）
+     */
+    redrawCanvasOnly() {
+        // 直接キャンバス再描画のみを実行
+        if (this.callbacks.onCanvasRedraw) {
+            this.callbacks.onCanvasRedraw();
         }
     }
 

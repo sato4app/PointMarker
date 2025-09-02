@@ -90,6 +90,11 @@ export class PointMarkerApp {
             document.getElementById('spotCount').textContent = count;
         });
 
+        // キャンバスのみの再描画用コールバック（入力ボックス再生成なし）
+        this.spotManager.setCallback('onCanvasRedraw', () => {
+            this.redrawCanvas();
+        });
+
         // 入力管理のコールバック
         this.inputManager.setCallback('onPointIdChange', (data) => {
             this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
