@@ -55,6 +55,10 @@
                         <input type="radio" name="editingMode" value="route">
                         <span>ルート編集</span>
                     </label>
+                    <label class="editing-option">
+                        <input type="radio" name="editingMode" value="spot">
+                        <span>スポット編集</span>
+                    </label>
                 </fieldset>
                 
                 <!-- ポイント編集パネル -->
@@ -126,6 +130,30 @@
                         <div class="waypoint-count" aria-live="polite">
                             ルートの中間点数: <span id="waypointCount">0</span>
                         </div>
+                    </div>
+                </section>
+                
+                <!-- スポット編集パネル -->
+                <section class="spot-editor" id="spotEditor" style="display: none;">
+                    <h3>スポット編集</h3>
+                    <p class="spot-description">一時的な注目点をマーク</p>
+                    
+                    <div class="editor-controls">
+                        <button type="button" id="clearSpotBtn" class="btn btn-clear" aria-label="全スポットをクリア">
+                            スポットをクリア
+                        </button>
+                    </div>
+                    
+                    <div class="spot-instructions">
+                        <ul>
+                            <li>左クリック: スポット追加</li>
+                            <li>ドラッグ: スポット移動</li>
+                            <li>右クリック: スポット削除</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="spot-count" aria-live="polite">
+                        スポット数: <span id="spotCount">0</span>
                     </div>
                 </section>
             </aside>

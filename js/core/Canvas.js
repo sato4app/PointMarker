@@ -92,15 +92,77 @@ export class CanvasRenderer {
     }
 
     /**
+     * 星形を描画
+     * @param {number} cx - 中心X座標
+     * @param {number} cy - 中心Y座標
+     * @param {number} spikes - 星の角の数 (デフォルト: 5)
+     * @param {number} outerRadius - 外半径 (デフォルト: 8)
+     * @param {number} innerRadius - 内半径 (デフォルト: 4)
+     * @param {string} fillColor - 塗りつぶし色 (デフォルト: '#ffcc00')
+     * @param {string} strokeColor - 枠線色 (デフォルト: '#ffffff')
+     * @param {number} strokeWidth - 枠線の太さ (デフォルト: 1.5)
+     */
+    drawStar(cx, cy, spikes = 5, outerRadius = 8, innerRadius = 4, fillColor = '#ffcc00', strokeColor = '#ffffff', strokeWidth = 1.5) {
+        let rot = Math.PI / 2 * 3;
+        let x, y;
+        const step = Math.PI / spikes;
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(cx, cy - outerRadius);
+        
+        for (let i = 0; i < spikes; i++) {
+            x = cx + Math.cos(rot) * outerRadius;
+            y = cy + Math.sin(rot) * outerRadius;
+            this.ctx.lineTo(x, y);
+            rot += step;
+            
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            this.ctx.lineTo(x, y);
+            rot += step;
+        }
+        
+        this.ctx.lineTo(cx, cy - outerRadius);
+        this.ctx.closePath();
+        
+        this.ctx.fillStyle = fillColor;
+        this.ctx.fill();
+        this.ctx.strokeStyle = strokeColor;
+        this.ctx.lineWidth = strokeWidth;
+        this.ctx.stroke();
+    }
+
+    /**
+     * スポット（星形マーカー）を描画
+     * @param {Array} spots - スポット配列
+     * @param {Object} options - 描画オプション
+     */
+    drawSpots(spots, options = {}) {
+        const {
+            fillColor = '#ffcc00',
+            strokeColor = '#ffffff',
+            outerRadius = 8,
+            innerRadius = 4,
+            strokeWidth = 1.5
+        } = options;
+
+        spots.forEach(spot => {
+            this.drawStar(spot.x, spot.y, 5, outerRadius, innerRadius, fillColor, strokeColor, strokeWidth);
+        });
+    }
+
+    /**
      * 画像とすべてのポイントを再描画
      * @param {Array} points - 通常ポイント配列
      * @param {Array} routePoints - ルートポイント配列
+     * @param {Array} spots - スポット配列
      * @param {Object} options - 描画オプション
      */
-    redraw(points = [], routePoints = [], options = {}) {
+    redraw(points = [], routePoints = [], spots = [], options = {}) {
         this.drawImage();
         this.drawPoints(points, options);
         this.drawRoutePoints(routePoints);
+        this.drawSpots(spots, options);
     }
 
     /**

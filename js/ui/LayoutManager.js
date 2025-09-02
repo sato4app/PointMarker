@@ -69,7 +69,7 @@ export class LayoutManager {
 
     /**
      * 編集モードを変更
-     * @param {string} mode - 編集モード ('point' | 'route')
+     * @param {string} mode - 編集モード ('point' | 'route' | 'spot')
      */
     setEditingMode(mode) {
         this.currentEditingMode = mode;
@@ -112,13 +112,20 @@ export class LayoutManager {
     updateEditingModeDisplay() {
         const pointEditor = document.getElementById('pointEditor');
         const routeEditor = document.getElementById('routeEditor');
+        const spotEditor = document.getElementById('spotEditor');
         
+        // 全パネルを一旦非表示
+        pointEditor.style.display = 'none';
+        routeEditor.style.display = 'none';
+        spotEditor.style.display = 'none';
+        
+        // 選択されたモードのパネルのみ表示
         if (this.currentEditingMode === 'point') {
             pointEditor.style.display = 'flex';
-            routeEditor.style.display = 'none';
-        } else {
-            pointEditor.style.display = 'none';
+        } else if (this.currentEditingMode === 'route') {
             routeEditor.style.display = 'block';
+        } else if (this.currentEditingMode === 'spot') {
+            spotEditor.style.display = 'block';
         }
         
         const radio = document.querySelector(`input[name="editingMode"][value="${this.currentEditingMode}"]`);
