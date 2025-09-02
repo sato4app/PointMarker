@@ -237,8 +237,8 @@ export class PointMarkerApp {
             const newValue = this.routeManager.getStartEndPoints().start;
             e.target.value = newValue;
             
-            // 入力検証フィードバック
-            this.updateInputValidationFeedback(e.target, newValue);
+            // ルートポイント専用の検証フィードバック
+            this.updateRoutePointValidationFeedback(e.target, newValue);
         });
         
         endPointInput.addEventListener('blur', (e) => {
@@ -246,8 +246,8 @@ export class PointMarkerApp {
             const newValue = this.routeManager.getStartEndPoints().end;
             e.target.value = newValue;
             
-            // 入力検証フィードバック
-            this.updateInputValidationFeedback(e.target, newValue);
+            // ルートポイント専用の検証フィードバック
+            this.updateRoutePointValidationFeedback(e.target, newValue);
         });
 
         // ウィンドウリサイズ
@@ -711,6 +711,46 @@ export class PointMarkerApp {
             inputElement.title = 'X-nn形式で入力してください（例：A-01, J-12）';
         } else {
             // 有効な形式の場合は通常の表示に戻す
+            inputElement.style.backgroundColor = '';
+            inputElement.style.borderColor = '';
+            inputElement.title = '';
+        }
+    }
+
+    /**
+     * ルートポイント入力フィールドの検証フィードバックを更新
+     * @param {HTMLInputElement} inputElement - 入力要素
+     * @param {string} value - 検証する値
+     */
+    updateRoutePointValidationFeedback(inputElement, value) {
+        // 空の場合は正常（クリア）
+        if (!value || value.trim() === '') {
+            inputElement.style.backgroundColor = '';
+            inputElement.style.borderColor = '';
+            inputElement.title = '';
+            return;
+        }
+
+        // 形式チェック
+        const isValidFormat = this.isValidPointIdFormat(value);
+        if (!isValidFormat) {
+            inputElement.style.backgroundColor = '#ffe4e4';
+            inputElement.style.borderColor = '#ff6b6b';
+            inputElement.title = 'X-nn形式で入力してください（例：A-01, J-12）';
+            return;
+        }
+
+        // 既存ポイントIDの存在チェック
+        const existingPointIds = this.pointManager.getRegisteredIds();
+        const pointExists = existingPointIds.includes(value);
+        
+        if (!pointExists) {
+            // 存在しないポイントIDの場合は赤枠表示
+            inputElement.style.backgroundColor = '';
+            inputElement.style.borderColor = '#ff0000';
+            inputElement.title = `ポイントID「${value}」は存在しません。先にポイント編集でポイントを作成してください。`;
+        } else {
+            // 存在するポイントIDの場合は通常表示
             inputElement.style.backgroundColor = '';
             inputElement.style.borderColor = '';
             inputElement.title = '';
