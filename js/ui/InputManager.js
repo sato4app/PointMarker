@@ -302,7 +302,7 @@ export class InputManager {
 
         const input = document.createElement('input');
         input.type = 'text';
-        input.maxLength = 20;
+        input.maxLength = 10;  // 10文字程度に設定
         input.className = 'spot-name-input';
         input.placeholder = 'スポット名';
         input.value = spot.name || '';

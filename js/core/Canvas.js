@@ -156,7 +156,7 @@ export class CanvasRenderer {
         const {
             fillColor = '#ff9500',    // オレンジ色
             strokeColor = '#ffffff',   // 白色の枠線
-            size = 8,                  // 4px 半径 = 8px 一辺
+            size = 12,                 // 6px 半径 = 12px 一辺
             strokeWidth = 1
         } = options;
 

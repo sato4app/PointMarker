@@ -569,10 +569,12 @@ header p {
     border: none;
     border-radius: var(--border-radius-sm);
     background: transparent;
-    font-size: 12px;
-    font-weight: bold;
-    text-align: center;
+    font-size: 11px;
+    font-weight: normal;
+    text-align: left;
     outline: none;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .spot-name-input::placeholder {
