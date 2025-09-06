@@ -37,7 +37,7 @@ export class CanvasRenderer {
      * @param {number} radius - 半径 (デフォルト: 4)
      * @param {number} strokeWidth - 線の太さ (デフォルト: 1.5)
      */
-    drawPoint(point, color = '#ff0000', radius = 4, strokeWidth = 1.5) {
+    drawPoint(point, color = '#ff0000', radius = 6, strokeWidth = 1.5) {
         this.ctx.fillStyle = color;
         this.ctx.strokeStyle = '#ffffff';
         this.ctx.lineWidth = strokeWidth;
@@ -55,22 +55,13 @@ export class CanvasRenderer {
      */
     drawPoints(points, options = {}) {
         const {
-            defaultColor = '#ff0000',
-            highlightColor = '#0066ff',
-            startPointId = '',
-            endPointId = '',
-            showRouteMode = false
+            defaultColor = '#ff0000'
         } = options;
 
         points.forEach((point) => {
             let color = defaultColor;
-            let radius = 4;
+            let radius = 6;
             let strokeWidth = 1.5;
-            
-            if ((showRouteMode || startPointId || endPointId) && 
-                (point.id === startPointId || point.id === endPointId)) {
-                color = highlightColor;
-            }
             
             this.drawPoint(point, color, radius, strokeWidth);
         });
@@ -82,7 +73,7 @@ export class CanvasRenderer {
      */
     drawRoutePoints(routePoints) {
         routePoints.forEach(point => {
-            this.drawPoint(point, '#0066ff', 3, 1);
+            this.drawDiamond(point.x, point.y, 4, '#ff9500', '#ffffff', 1);
         });
     }
 
@@ -154,7 +145,7 @@ export class CanvasRenderer {
      */
     drawSpots(spots, options = {}) {
         const {
-            fillColor = '#ff9500',    // オレンジ色
+            fillColor = '#87ceeb',    // 水色
             strokeColor = '#ffffff',   // 白色の枠線
             size = 12,                 // 6px 半径 = 12px 一辺
             strokeWidth = 1
