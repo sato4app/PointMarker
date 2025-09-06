@@ -130,7 +130,7 @@ export class CanvasRenderer {
      */
     drawSpots(spots, options = {}) {
         const {
-            fillColor = '#191970',    // 紺色
+            fillColor = '#0066ff',    // 青色
             strokeColor = '#ffffff',   // 白色の枠線
             size = 12,                 // 6px 半径 = 12px 一辺
             strokeWidth = 1
