@@ -68,6 +68,31 @@ export class CanvasRenderer {
     }
 
     /**
+     * 菱形を描画
+     * @param {number} cx - 中心X座標
+     * @param {number} cy - 中心Y座標
+     * @param {number} radius - 半径
+     * @param {string} fillColor - 塗りつぶし色
+     * @param {string} strokeColor - 枠線色
+     * @param {number} strokeWidth - 枠線の太さ
+     */
+    drawDiamond(cx, cy, radius, fillColor = '#ff0000', strokeColor = '#ffffff', strokeWidth = 1) {
+        this.ctx.fillStyle = fillColor;
+        this.ctx.strokeStyle = strokeColor;
+        this.ctx.lineWidth = strokeWidth;
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(cx, cy - radius);  // 上
+        this.ctx.lineTo(cx + radius, cy);  // 右
+        this.ctx.lineTo(cx, cy + radius);  // 下
+        this.ctx.lineTo(cx - radius, cy);  // 左
+        this.ctx.closePath();
+        
+        this.ctx.fill();
+        this.ctx.stroke();
+    }
+
+    /**
      * ルートポイント（中間点）を描画
      * @param {Array} routePoints - ルートポイント配列
      */
@@ -77,46 +102,6 @@ export class CanvasRenderer {
         });
     }
 
-    /**
-     * 星形を描画
-     * @param {number} cx - 中心X座標
-     * @param {number} cy - 中心Y座標
-     * @param {number} spikes - 星の角の数 (デフォルト: 5)
-     * @param {number} outerRadius - 外半径 (デフォルト: 8)
-     * @param {number} innerRadius - 内半径 (デフォルト: 4)
-     * @param {string} fillColor - 塗りつぶし色 (デフォルト: '#ffcc00')
-     * @param {string} strokeColor - 枠線色 (デフォルト: '#ffffff')
-     * @param {number} strokeWidth - 枠線の太さ (デフォルト: 1.5)
-     */
-    drawStar(cx, cy, spikes = 5, outerRadius = 8, innerRadius = 4, fillColor = '#ffcc00', strokeColor = '#ffffff', strokeWidth = 1.5) {
-        let rot = Math.PI / 2 * 3;
-        let x, y;
-        const step = Math.PI / spikes;
-        
-        this.ctx.beginPath();
-        this.ctx.moveTo(cx, cy - outerRadius);
-        
-        for (let i = 0; i < spikes; i++) {
-            x = cx + Math.cos(rot) * outerRadius;
-            y = cy + Math.sin(rot) * outerRadius;
-            this.ctx.lineTo(x, y);
-            rot += step;
-            
-            x = cx + Math.cos(rot) * innerRadius;
-            y = cy + Math.sin(rot) * innerRadius;
-            this.ctx.lineTo(x, y);
-            rot += step;
-        }
-        
-        this.ctx.lineTo(cx, cy - outerRadius);
-        this.ctx.closePath();
-        
-        this.ctx.fillStyle = fillColor;
-        this.ctx.fill();
-        this.ctx.strokeStyle = strokeColor;
-        this.ctx.lineWidth = strokeWidth;
-        this.ctx.stroke();
-    }
 
     /**
      * 正四角形を描画
