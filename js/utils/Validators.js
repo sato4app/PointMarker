@@ -131,7 +131,19 @@ export class Validators {
      * @returns {boolean} 有効なスポットデータかどうか
      */
     static isValidSpotData(data) {
-        return data && data.points && Array.isArray(data.points) && 
-               data.points.some(point => point.type === 'spot');
+        if (!data) return false;
+        
+        // 新しい形式: data.spots
+        if (data.spots && Array.isArray(data.spots)) {
+            return true;
+        }
+        
+        // 旧形式: data.points with type: 'spot'
+        if (data.points && Array.isArray(data.points) && 
+            data.points.some(point => point.type === 'spot')) {
+            return true;
+        }
+        
+        return false;
     }
 }

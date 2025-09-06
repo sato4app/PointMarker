@@ -400,7 +400,9 @@ export class FileHandler {
 
         spotManager.clearSpots();
         
-        jsonData.spots.forEach(spotData => {
+        // spots または points プロパティどちらでも対応
+        const spotsData = jsonData.spots || jsonData.points || [];
+        spotsData.forEach(spotData => {
             const canvasCoords = CoordinateUtils.imageToCanvas(
                 spotData.imageX, spotData.imageY,
                 canvasWidth, canvasHeight,
