@@ -579,14 +579,14 @@ export class PointMarkerApp {
         }
 
         try {
-            const data = this.pointManager.exportToJSON(
+            const filename = `${this.fileHandler.getCurrentImageFileName()}_points.json`;
+            await this.fileHandler.exportPointData(
+                this.pointManager,
                 this.fileHandler.getCurrentImageFileName() + '.png',
                 this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
+                this.currentImage.width, this.currentImage.height,
+                filename
             );
-            
-            const filename = `${this.fileHandler.getCurrentImageFileName()}_points.json`;
-            await this.fileHandler.saveJSONWithUserChoice(data, filename);
         } catch (error) {
             console.error('エクスポートエラー:', error);
             alert('エクスポート中にエラーが発生しました');
@@ -622,17 +622,17 @@ export class PointMarkerApp {
         }
 
         try {
-            const data = this.routeManager.exportToJSON(
-                this.fileHandler.getCurrentImageFileName() + '.png',
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-            
             const filename = this.routeManager.generateRouteFilename(
                 this.fileHandler.getCurrentImageFileName()
             );
             
-            await this.fileHandler.saveJSONWithUserChoice(data, filename);
+            await this.fileHandler.exportRouteData(
+                this.routeManager,
+                this.fileHandler.getCurrentImageFileName() + '.png',
+                this.canvas.width, this.canvas.height,
+                this.currentImage.width, this.currentImage.height,
+                filename
+            );
         } catch (error) {
             console.error('エクスポートエラー:', error);
             alert('エクスポート中にエラーが発生しました');
@@ -653,9 +653,9 @@ export class PointMarkerApp {
         }
 
         try {
-            const data = await this.fileHandler.loadJsonFile(file);
-            this.pointManager.loadFromJSON(
-                data,
+            await this.fileHandler.importPointData(
+                this.pointManager,
+                file,
                 this.canvas.width, this.canvas.height,
                 this.currentImage.width, this.currentImage.height
             );
@@ -681,9 +681,9 @@ export class PointMarkerApp {
         }
 
         try {
-            const data = await this.fileHandler.loadJsonFile(file);
-            this.routeManager.loadFromJSON(
-                data,
+            await this.fileHandler.importRouteData(
+                this.routeManager,
+                file,
                 this.canvas.width, this.canvas.height,
                 this.currentImage.width, this.currentImage.height
             );
@@ -834,16 +834,17 @@ export class PointMarkerApp {
         }
 
         try {
-            const data = this.spotManager.exportToJSON(
-                this.fileHandler.getCurrentImageFileName() + '.png',
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-            
             const filename = this.spotManager.generateSpotFilename(
                 this.fileHandler.getCurrentImageFileName()
             );
-            await this.fileHandler.saveJSONWithUserChoice(data, filename);
+            
+            await this.fileHandler.exportSpotData(
+                this.spotManager,
+                this.fileHandler.getCurrentImageFileName() + '.png',
+                this.canvas.width, this.canvas.height,
+                this.currentImage.width, this.currentImage.height,
+                filename
+            );
         } catch (error) {
             console.error('スポットエクスポートエラー:', error);
             alert('スポットエクスポート中にエラーが発生しました');
@@ -864,9 +865,9 @@ export class PointMarkerApp {
         }
 
         try {
-            const data = await this.fileHandler.loadJsonFile(file);
-            this.spotManager.loadFromJSON(
-                data,
+            await this.fileHandler.importSpotData(
+                this.spotManager,
+                file,
                 this.canvas.width, this.canvas.height,
                 this.currentImage.width, this.currentImage.height
             );

@@ -1,4 +1,5 @@
 import { Validators } from '../utils/Validators.js';
+import { CoordinateUtils } from '../utils/Coordinates.js';
 
 /**
  * ファイル操作を管理するクラス
@@ -185,5 +186,228 @@ export class FileHandler {
      */
     getCurrentImageFileName() {
         return this.currentImageFileName;
+    }
+
+    /**
+     * ポイントデータをJSONエクスポート
+     * @param {Object} pointManager - PointManagerインスタンス
+     * @param {string} imageFileName - 画像ファイル名
+     * @param {number} canvasWidth - キャンバス幅
+     * @param {number} canvasHeight - キャンバス高さ
+     * @param {number} imageWidth - 元画像幅
+     * @param {number} imageHeight - 元画像高さ
+     * @param {string} filename - 出力ファイル名
+     * @returns {Promise<void>}
+     */
+    async exportPointData(pointManager, imageFileName, canvasWidth, canvasHeight, imageWidth, imageHeight, filename) {
+        const points = pointManager.getPoints();
+        const jsonData = {
+            totalPoints: points.length,
+            imageReference: imageFileName,
+            imageInfo: {
+                width: imageWidth,
+                height: imageHeight
+            },
+            points: points.map((point, index) => {
+                const imageCoords = CoordinateUtils.canvasToImage(
+                    point.x, point.y,
+                    canvasWidth, canvasHeight,
+                    imageWidth, imageHeight
+                );
+                
+                return {
+                    index: index + 1,
+                    id: point.id,
+                    imageX: Math.round(imageCoords.x),
+                    imageY: Math.round(imageCoords.y),
+                    isMarker: false
+                };
+            }),
+            exportedAt: new Date().toISOString()
+        };
+        await this.saveJSONWithUserChoice(jsonData, filename);
+    }
+
+    /**
+     * ルートデータをJSONエクスポート
+     * @param {Object} routeManager - RouteManagerインスタンス
+     * @param {string} imageFileName - 画像ファイル名
+     * @param {number} canvasWidth - キャンバス幅
+     * @param {number} canvasHeight - キャンバス高さ
+     * @param {number} imageWidth - 元画像幅
+     * @param {number} imageHeight - 元画像高さ
+     * @param {string} filename - 出力ファイル名
+     * @returns {Promise<void>}
+     */
+    async exportRouteData(routeManager, imageFileName, canvasWidth, canvasHeight, imageWidth, imageHeight, filename) {
+        const routePoints = routeManager.getRoutePoints();
+        const startEndPoints = routeManager.getStartEndPoints();
+        
+        const jsonData = {
+            routeInfo: {
+                startPoint: startEndPoints.start || '',
+                endPoint: startEndPoints.end || '',
+                waypointCount: routePoints.length
+            },
+            imageReference: imageFileName,
+            imageInfo: {
+                width: imageWidth,
+                height: imageHeight
+            },
+            points: routePoints.map((point, index) => {
+                const imageCoords = CoordinateUtils.canvasToImage(
+                    point.x, point.y,
+                    canvasWidth, canvasHeight,
+                    imageWidth, imageHeight
+                );
+                
+                return {
+                    type: 'waypoint',
+                    index: index + 1,
+                    imageX: Math.round(imageCoords.x),
+                    imageY: Math.round(imageCoords.y)
+                };
+            }),
+            exportedAt: new Date().toISOString()
+        };
+        await this.saveJSONWithUserChoice(jsonData, filename);
+    }
+
+    /**
+     * スポットデータをJSONエクスポート
+     * @param {Object} spotManager - SpotManagerインスタンス
+     * @param {string} imageFileName - 画像ファイル名
+     * @param {number} canvasWidth - キャンバス幅
+     * @param {number} canvasHeight - キャンバス高さ
+     * @param {number} imageWidth - 元画像幅
+     * @param {number} imageHeight - 元画像高さ
+     * @param {string} filename - 出力ファイル名
+     * @returns {Promise<void>}
+     */
+    async exportSpotData(spotManager, imageFileName, canvasWidth, canvasHeight, imageWidth, imageHeight, filename) {
+        const spots = spotManager.getSpots();
+        const validSpots = spots.filter(spot => spot.name && spot.name.trim() !== '');
+        
+        const jsonData = {
+            totalSpots: validSpots.length,
+            imageReference: imageFileName,
+            imageInfo: {
+                width: imageWidth,
+                height: imageHeight
+            },
+            spots: validSpots.map((spot, index) => {
+                const imageCoords = CoordinateUtils.canvasToImage(
+                    spot.x, spot.y,
+                    canvasWidth, canvasHeight,
+                    imageWidth, imageHeight
+                );
+                
+                return {
+                    index: index + 1,
+                    name: spot.name.trim(),
+                    imageX: Math.round(imageCoords.x),
+                    imageY: Math.round(imageCoords.y)
+                };
+            }),
+            exportedAt: new Date().toISOString()
+        };
+        await this.saveJSONWithUserChoice(jsonData, filename);
+    }
+
+    /**
+     * ポイントデータをJSONインポート
+     * @param {Object} pointManager - PointManagerインスタンス
+     * @param {File} file - JSONファイル
+     * @param {number} canvasWidth - キャンバス幅
+     * @param {number} canvasHeight - キャンバス高さ
+     * @param {number} imageWidth - 元画像幅
+     * @param {number} imageHeight - 元画像高さ
+     * @returns {Promise<void>}
+     */
+    async importPointData(pointManager, file, canvasWidth, canvasHeight, imageWidth, imageHeight) {
+        const jsonData = await this.loadJsonFile(file);
+        
+        if (!Validators.isValidPointData(jsonData)) {
+            throw new Error('JSONファイルにポイントデータが見つかりません');
+        }
+
+        pointManager.clearPoints();
+        
+        jsonData.points.forEach(pointData => {
+            const canvasCoords = CoordinateUtils.imageToCanvas(
+                pointData.imageX, pointData.imageY,
+                canvasWidth, canvasHeight,
+                imageWidth, imageHeight
+            );
+            
+            pointManager.addPoint(canvasCoords.x, canvasCoords.y, pointData.id);
+        });
+    }
+
+    /**
+     * ルートデータをJSONインポート
+     * @param {Object} routeManager - RouteManagerインスタンス
+     * @param {File} file - JSONファイル
+     * @param {number} canvasWidth - キャンバス幅
+     * @param {number} canvasHeight - キャンバス高さ
+     * @param {number} imageWidth - 元画像幅
+     * @param {number} imageHeight - 元画像高さ
+     * @returns {Promise<void>}
+     */
+    async importRouteData(routeManager, file, canvasWidth, canvasHeight, imageWidth, imageHeight) {
+        const jsonData = await this.loadJsonFile(file);
+        
+        if (!Validators.isValidRouteData(jsonData)) {
+            throw new Error('ルートJSONファイルの形式が正しくありません');
+        }
+
+        routeManager.clearRoute();
+        routeManager.setStartPoint(jsonData.routeInfo.startPoint || '');
+        routeManager.setEndPoint(jsonData.routeInfo.endPoint || '');
+        
+        jsonData.points.forEach(pointData => {
+            if (pointData.type === 'waypoint' && 
+                typeof pointData.imageX === 'number' && 
+                typeof pointData.imageY === 'number') {
+                    
+                const canvasCoords = CoordinateUtils.imageToCanvas(
+                    pointData.imageX, pointData.imageY,
+                    canvasWidth, canvasHeight,
+                    imageWidth, imageHeight
+                );
+                
+                routeManager.addRoutePoint(canvasCoords.x, canvasCoords.y);
+            }
+        });
+    }
+
+    /**
+     * スポットデータをJSONインポート
+     * @param {Object} spotManager - SpotManagerインスタンス
+     * @param {File} file - JSONファイル
+     * @param {number} canvasWidth - キャンバス幅
+     * @param {number} canvasHeight - キャンバス高さ
+     * @param {number} imageWidth - 元画像幅
+     * @param {number} imageHeight - 元画像高さ
+     * @returns {Promise<void>}
+     */
+    async importSpotData(spotManager, file, canvasWidth, canvasHeight, imageWidth, imageHeight) {
+        const jsonData = await this.loadJsonFile(file);
+        
+        if (!Validators.isValidSpotData(jsonData)) {
+            throw new Error('JSONファイルにスポットデータが見つかりません');
+        }
+
+        spotManager.clearSpots();
+        
+        jsonData.spots.forEach(spotData => {
+            const canvasCoords = CoordinateUtils.imageToCanvas(
+                spotData.imageX, spotData.imageY,
+                canvasWidth, canvasHeight,
+                imageWidth, imageHeight
+            );
+            
+            spotManager.addSpot(canvasCoords.x, canvasCoords.y, spotData.name);
+        });
     }
 }
