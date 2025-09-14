@@ -6,6 +6,9 @@ import { FileHandler } from './data/FileHandler.js';
 import { InputManager } from './ui/InputManager.js';
 import { LayoutManager } from './ui/LayoutManager.js';
 import { CoordinateUtils } from './utils/Coordinates.js';
+import { Validators } from './utils/Validators.js';
+import { DragDropHandler } from './utils/DragDropHandler.js';
+import { ResizeHandler } from './utils/ResizeHandler.js';
 
 /**
  * PointMarkerアプリケーションのメインクラス
@@ -23,16 +26,13 @@ export class PointMarkerApp {
         this.fileHandler = new FileHandler();
         this.inputManager = new InputManager(this.canvas);
         this.layoutManager = new LayoutManager();
-        
+        this.dragDropHandler = new DragDropHandler();
+        this.resizeHandler = new ResizeHandler();
+
         // 現在の画像情報
         this.currentImage = null;
-        
-        // ドラッグ状態管理
-        this.isDragging = false;
-        this.draggedPointIndex = -1;
-        this.draggedSpotIndex = -1;
-        this.dragOffsetX = 0;
-        this.dragOffsetY = 0;
+
+        // ホバー状態管理
         this.isHoveringPoint = false;
         
         this.initializeCallbacks();
@@ -129,7 +129,9 @@ export class PointMarkerApp {
         // レイアウト管理のコールバック
         this.layoutManager.setCallback('onLayoutChange', (layout) => {
             if (this.currentImage) {
-                setTimeout(() => this.handleWindowResize(), 300);
+                this.resizeHandler.debounceResize(() => {
+                    this.handleWindowResize();
+                }, 300);
             }
         });
         
@@ -253,7 +255,9 @@ export class PointMarkerApp {
         // ウィンドウリサイズ
         window.addEventListener('resize', () => {
             if (this.currentImage) {
-                setTimeout(() => this.handleWindowResize(), 100);
+                this.resizeHandler.debounceResize(() => {
+                    this.handleWindowResize();
+                }, 100);
             }
         });
     }
@@ -304,34 +308,53 @@ export class PointMarkerApp {
     }
 
     /**
-     * ポイントがマウス座標上にあるか検出
+     * 指定座標上のオブジェクト（ポイント/スポット）を検出
      * @param {number} mouseX - マウスX座標
      * @param {number} mouseY - マウスY座標
-     * @returns {number} ポイントのインデックス、ない場合は-1
+     * @returns {{type: string, index: number} | null} 検出されたオブジェクト情報
      */
-    findPointAtMouse(mouseX, mouseY) {
+    findObjectAtMouse(mouseX, mouseY) {
+        // スポットを先にチェック（ポイントより大きいため）
+        const spotIndex = this.spotManager.findSpotAt(mouseX, mouseY, 10);
+        if (spotIndex !== -1) {
+            return { type: 'spot', index: spotIndex };
+        }
+
+        // ポイントをチェック
         const points = this.pointManager.getPoints();
         for (let i = 0; i < points.length; i++) {
             const point = points[i];
             const dx = mouseX - point.x;
             const dy = mouseY - point.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            // ポイントの半径（デフォルトは4）よりも少し大きめの範囲で検出
             if (distance <= 8) {
-                return i;
+                return { type: 'point', index: i };
             }
         }
-        return -1;
+
+        return null;
     }
 
     /**
-     * スポットがマウス座標上にあるか検出
+     * ポイントがマウス座標上にあるか検出（後方互換性のため）
+     * @param {number} mouseX - マウスX座標
+     * @param {number} mouseY - マウスY座標
+     * @returns {number} ポイントのインデックス、ない場合は-1
+     */
+    findPointAtMouse(mouseX, mouseY) {
+        const result = this.findObjectAtMouse(mouseX, mouseY);
+        return (result && result.type === 'point') ? result.index : -1;
+    }
+
+    /**
+     * スポットがマウス座標上にあるか検出（後方互換性のため）
      * @param {number} mouseX - マウスX座標
      * @param {number} mouseY - マウスY座標
      * @returns {number} スポットのインデックス、ない場合は-1
      */
     findSpotAtMouse(mouseX, mouseY) {
-        return this.spotManager.findSpotAt(mouseX, mouseY, 10); // 星形は少し大きいので許容値を大きく
+        const result = this.findObjectAtMouse(mouseX, mouseY);
+        return (result && result.type === 'spot') ? result.index : -1;
     }
 
 
@@ -341,40 +364,28 @@ export class PointMarkerApp {
      */
     handleCanvasMouseMove(event) {
         if (!this.currentImage) return;
-        
+
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
-        const pointIndex = this.findPointAtMouse(coords.x, coords.y);
-        const spotIndex = this.findSpotAtMouse(coords.x, coords.y);
-        
-        if (this.isDragging && this.draggedPointIndex !== -1) {
-            // ポイントドラッグ中の場合、ポイント位置を更新
-            const newX = coords.x - this.dragOffsetX;
-            const newY = coords.y - this.dragOffsetY;
-            
-            const points = this.pointManager.getPoints();
-            if (this.draggedPointIndex < points.length) {
-                points[this.draggedPointIndex].x = Math.round(newX);
-                points[this.draggedPointIndex].y = Math.round(newY);
-                this.redrawCanvas();
-            }
-        } else if (this.isDragging && this.draggedSpotIndex !== -1) {
-            // スポットドラッグ中の場合、スポット位置を更新
-            const newX = coords.x - this.dragOffsetX;
-            const newY = coords.y - this.dragOffsetY;
-            
-            this.spotManager.updateSpotPosition(this.draggedSpotIndex, newX, newY);
-        } else if (pointIndex !== -1 || spotIndex !== -1) {
-            // ポイントまたはスポット上にマウスがある場合、十字カーソルを維持
-            if (!this.isHoveringPoint) {
-                this.canvas.style.cursor = 'crosshair';
-                this.isHoveringPoint = true;
-            }
-        } else {
-            // ポイント・スポット上にない場合、十字カーソルを維持
-            if (this.isHoveringPoint) {
-                this.canvas.style.cursor = 'crosshair';
-                this.isHoveringPoint = false;
-            }
+
+        // ドラッグ中の処理
+        if (this.dragDropHandler.updateDrag(coords.x, coords.y, this.pointManager, this.spotManager)) {
+            this.redrawCanvas();
+            return;
+        }
+
+        // ホバー処理
+        const hasObject = this.findObjectAtMouse(coords.x, coords.y) !== null;
+        this.updateCursor(hasObject);
+    }
+
+    /**
+     * カーソル状態を更新
+     * @param {boolean} hasObject - オブジェクト上にマウスがあるか
+     */
+    updateCursor(hasObject) {
+        if (hasObject !== this.isHoveringPoint) {
+            this.canvas.style.cursor = 'crosshair';
+            this.isHoveringPoint = hasObject;
         }
     }
 
@@ -384,31 +395,30 @@ export class PointMarkerApp {
      */
     handleCanvasMouseDown(event) {
         if (!this.currentImage) return;
-        
+
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
-        const pointIndex = this.findPointAtMouse(coords.x, coords.y);
-        const spotIndex = this.findSpotAtMouse(coords.x, coords.y);
+        const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
         const mode = this.layoutManager.getCurrentEditingMode();
-        
-        if (pointIndex !== -1 && mode === 'point') {
-            // ポイント上でクリック、ドラッグ開始
-            this.isDragging = true;
-            this.draggedPointIndex = pointIndex;
-            
-            const point = this.pointManager.getPoints()[pointIndex];
-            this.dragOffsetX = coords.x - point.x;
-            this.dragOffsetY = coords.y - point.y;
-            
-            event.preventDefault();
-        } else if (spotIndex !== -1 && mode === 'spot') {
-            // スポット上でクリック、ドラッグ開始
-            this.isDragging = true;
-            this.draggedSpotIndex = spotIndex;
-            
-            const spot = this.spotManager.getSpots()[spotIndex];
-            this.dragOffsetX = coords.x - spot.x;
-            this.dragOffsetY = coords.y - spot.y;
-            
+
+        if (!objectInfo) return;
+
+        // 適切なモードでのドラッグ開始をチェック
+        const canDrag = (objectInfo.type === 'point' && mode === 'point') ||
+                        (objectInfo.type === 'spot' && mode === 'spot');
+
+        if (canDrag) {
+            const object = objectInfo.type === 'point'
+                ? this.pointManager.getPoints()[objectInfo.index]
+                : this.spotManager.getSpots()[objectInfo.index];
+
+            this.dragDropHandler.startDrag(
+                objectInfo.type,
+                objectInfo.index,
+                coords.x,
+                coords.y,
+                object
+            );
+
             event.preventDefault();
         }
     }
@@ -418,21 +428,7 @@ export class PointMarkerApp {
      * @param {MouseEvent} event - マウスイベント
      */
     handleCanvasMouseUp(event) {
-        if (this.isDragging) {
-            this.isDragging = false;
-            
-            // ポイント移動後に入力ボックスを再描画
-            if (this.draggedPointIndex !== -1) {
-                this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
-                // ポイントデータ変更を通知
-                this.pointManager.notify('onChange', this.pointManager.getPoints());
-            }
-            
-            this.draggedPointIndex = -1;
-            this.draggedSpotIndex = -1;
-            this.dragOffsetX = 0;
-            this.dragOffsetY = 0;
-        }
+        this.dragDropHandler.endDrag(this.inputManager, this.pointManager);
     }
 
     /**
@@ -440,52 +436,74 @@ export class PointMarkerApp {
      * @param {MouseEvent} event - マウスイベント
      */
     handleCanvasClick(event) {
-        if (!this.currentImage) return;
-        
-        // ドラッグ中のクリックは無視
-        if (this.isDragging) {
-            return;
-        }
-        
+        if (!this.currentImage || this.dragDropHandler.isDraggingObject()) return;
+
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
         const mode = this.layoutManager.getCurrentEditingMode();
-        
-        // ポイント上でのクリックはポイント追加しないが、入力フィールドにフォーカス
-        const pointIndex = this.findPointAtMouse(coords.x, coords.y);
-        const spotIndex = this.findSpotAtMouse(coords.x, coords.y);
-        
-        if (pointIndex !== -1) {
-            // 既存ポイントクリック時は対応する入力フィールドにフォーカス
-            if (mode === 'point') {
-                this.focusInputForPoint(pointIndex);
-            }
+        const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
+
+        // 既存オブジェクトクリック時の処理
+        if (objectInfo) {
+            this.handleExistingObjectClick(objectInfo, mode);
             return;
         }
-        
-        if (spotIndex !== -1 && mode === 'spot') {
-            // スポット上でのクリックは対応するスポット名入力フィールドにフォーカス
-            this.focusInputForSpot(spotIndex);
-            return;
+
+        // 新規オブジェクト作成
+        this.handleNewObjectCreation(coords, mode);
+    }
+
+    /**
+     * 既存オブジェクトクリック時の処理
+     * @param {Object} objectInfo - オブジェクト情報
+     * @param {string} mode - 編集モード
+     */
+    handleExistingObjectClick(objectInfo, mode) {
+        if (objectInfo.type === 'point' && mode === 'point') {
+            this.focusInputForPoint(objectInfo.index);
+        } else if (objectInfo.type === 'spot' && mode === 'spot') {
+            this.focusInputForSpot(objectInfo.index);
         }
-        
-        if (mode === 'route') {
-            this.routeManager.addRoutePoint(coords.x, coords.y);
-        } else if (mode === 'point') {
-            // ポイント編集モードでのみポイント追加を許可
-            this.pointManager.removeTrailingEmptyUserPoints();
-            const point = this.pointManager.addPoint(coords.x, coords.y);
-            // onChange -> redrawInputBoxesで生成されるため、ここでは生成しない
-            // 新規作成された最後のポイントの入力へフォーカス
-            const newIndex = this.pointManager.getPoints().length - 1;
-            setTimeout(() => this.focusInputForPoint(newIndex), 30);
-        } else if (mode === 'spot') {
-            // スポット編集モードでスポット追加
-            this.spotManager.removeTrailingEmptySpots();
-            const spot = this.spotManager.addSpot(coords.x, coords.y);
-            // 新規作成されたスポットの入力へフォーカス
-            const newIndex = this.spotManager.getSpots().length - 1;
-            setTimeout(() => this.focusInputForSpot(newIndex), 30);
+    }
+
+    /**
+     * 新規オブジェクト作成処理
+     * @param {Object} coords - 座標
+     * @param {string} mode - 編集モード
+     */
+    handleNewObjectCreation(coords, mode) {
+        switch (mode) {
+            case 'route':
+                this.routeManager.addRoutePoint(coords.x, coords.y);
+                break;
+            case 'point':
+                this.createNewPoint(coords);
+                break;
+            case 'spot':
+                this.createNewSpot(coords);
+                break;
         }
+    }
+
+    /**
+     * 新規ポイント作成
+     * @param {Object} coords - 座標
+     */
+    createNewPoint(coords) {
+        this.pointManager.removeTrailingEmptyUserPoints();
+        this.pointManager.addPoint(coords.x, coords.y);
+        const newIndex = this.pointManager.getPoints().length - 1;
+        setTimeout(() => this.focusInputForPoint(newIndex), 30);
+    }
+
+    /**
+     * 新規スポット作成
+     * @param {Object} coords - 座標
+     */
+    createNewSpot(coords) {
+        this.spotManager.removeTrailingEmptySpots();
+        this.spotManager.addSpot(coords.x, coords.y);
+        const newIndex = this.spotManager.getSpots().length - 1;
+        setTimeout(() => this.focusInputForSpot(newIndex), 30);
     }
 
     /**
@@ -695,27 +713,6 @@ export class PointMarkerApp {
         }
     }
 
-    /**
-     * 入力フィールドの検証フィードバックを更新
-     * @param {HTMLInputElement} inputElement - 入力要素
-     * @param {string} value - 検証する値
-     */
-    updateInputValidationFeedback(inputElement, value) {
-        // Validatorsクラスをインポートしていないため、ここで直接チェック
-        const isValidFormat = this.isValidPointIdFormat(value);
-        
-        if (!isValidFormat && value.trim() !== '') {
-            // 無効な形式の場合は薄いピンクの背景色とツールチップを設定
-            inputElement.style.backgroundColor = '#ffe4e4';
-            inputElement.style.borderColor = '#ff6b6b';
-            inputElement.title = 'X-nn形式で入力してください（例：A-01, J-12）';
-        } else {
-            // 有効な形式の場合は通常の表示に戻す
-            inputElement.style.backgroundColor = '';
-            inputElement.style.borderColor = '';
-            inputElement.title = '';
-        }
-    }
 
     /**
      * ルートポイント入力フィールドの検証フィードバックを更新
@@ -725,36 +722,52 @@ export class PointMarkerApp {
     updateRoutePointValidationFeedback(inputElement, value) {
         // 空の場合は正常（クリア）
         if (!value || value.trim() === '') {
-            inputElement.style.backgroundColor = '';
-            inputElement.style.borderColor = '';
-            inputElement.title = '';
+            this.clearInputElementStyles(inputElement);
             return;
         }
 
         // 形式チェック
-        const isValidFormat = this.isValidPointIdFormat(value);
-        if (!isValidFormat) {
-            inputElement.style.backgroundColor = '#ffe4e4';
-            inputElement.style.borderColor = '#ff6b6b';
-            inputElement.title = 'X-nn形式で入力してください（例：A-01, J-12）';
+        if (!Validators.isValidPointIdFormat(value)) {
+            this.setInputElementError(inputElement, 'X-nn形式で入力してください（例：A-01, J-12）');
             return;
         }
 
         // 既存ポイントIDの存在チェック
         const existingPointIds = this.pointManager.getRegisteredIds();
-        const pointExists = existingPointIds.includes(value);
-        
-        if (!pointExists) {
-            // 存在しないポイントIDの場合は赤枠表示
+        if (!existingPointIds.includes(value)) {
+            this.setInputElementError(inputElement,
+                `ポイントID「${value}」は存在しません。先にポイント編集でポイントを作成してください。`,
+                true);
+        } else {
+            this.clearInputElementStyles(inputElement);
+        }
+    }
+
+    /**
+     * 入力要素のスタイルをクリア
+     * @param {HTMLInputElement} inputElement - 入力要素
+     */
+    clearInputElementStyles(inputElement) {
+        inputElement.style.backgroundColor = '';
+        inputElement.style.borderColor = '';
+        inputElement.title = '';
+    }
+
+    /**
+     * 入力要素にエラースタイルを設定
+     * @param {HTMLInputElement} inputElement - 入力要素
+     * @param {string} message - エラーメッセージ
+     * @param {boolean} redBorder - 赤枠のみ表示するか
+     */
+    setInputElementError(inputElement, message, redBorder = false) {
+        if (redBorder) {
             inputElement.style.backgroundColor = '';
             inputElement.style.borderColor = '#ff0000';
-            inputElement.title = `ポイントID「${value}」は存在しません。先にポイント編集でポイントを作成してください。`;
         } else {
-            // 存在するポイントIDの場合は通常表示
-            inputElement.style.backgroundColor = '';
-            inputElement.style.borderColor = '';
-            inputElement.title = '';
+            inputElement.style.backgroundColor = '#ffe4e4';
+            inputElement.style.borderColor = '#ff6b6b';
         }
+        inputElement.title = message;
     }
 
     /**
@@ -774,11 +787,9 @@ export class PointMarkerApp {
         // 重複チェック（両方が空でない場合のみ）
         if (startValue && endValue && startValue.trim() !== '' && endValue.trim() !== '') {
             if (startValue === endValue) {
-                // 開始と終了が同じ場合、両方を赤枠表示
-                startPointInput.style.borderColor = '#ff0000';
-                endPointInput.style.borderColor = '#ff0000';
-                startPointInput.title = '開始ポイントと終了ポイントは異なるポイントIDを指定してください。';
-                endPointInput.title = '開始ポイントと終了ポイントは異なるポイントIDを指定してください。';
+                const message = '開始ポイントと終了ポイントは異なるポイントIDを指定してください。';
+                this.setInputElementError(startPointInput, message, true);
+                this.setInputElementError(endPointInput, message, true);
             }
         }
     }
@@ -789,12 +800,7 @@ export class PointMarkerApp {
      * @returns {boolean} 有効な形式かどうか
      */
     isValidPointIdFormat(value) {
-        if (!value || value.trim() === '') {
-            return true;
-        }
-        
-        const validPattern = /^[A-Z]-\d{2}$/;
-        return validPattern.test(value);
+        return Validators.isValidPointIdFormat(value);
     }
 
     /**
@@ -883,40 +889,16 @@ export class PointMarkerApp {
      * ウィンドウリサイズ処理
      */
     handleWindowResize() {
-        if (!this.currentImage) return;
-        
-        const oldWidth = this.canvas.width;
-        const oldHeight = this.canvas.height;
-        
-        this.canvasRenderer.setupCanvas(this.layoutManager.getCurrentLayout());
-        
-        const newWidth = this.canvas.width;
-        const newHeight = this.canvas.height;
-        
-        if (oldWidth !== newWidth || oldHeight !== newHeight) {
-            const scaleX = newWidth / oldWidth;
-            const scaleY = newHeight / oldHeight;
-            
-            // ポイント座標のスケーリング
-            this.pointManager.getPoints().forEach(point => {
-                point.x = Math.round(point.x * scaleX);
-                point.y = Math.round(point.y * scaleY);
-            });
-            
-            // ルートポイント座標のスケーリング
-            this.routeManager.getRoutePoints().forEach(point => {
-                point.x = Math.round(point.x * scaleX);
-                point.y = Math.round(point.y * scaleY);
-            });
-            
-            // スポット座標のスケーリング
-            this.spotManager.getSpots().forEach(spot => {
-                spot.x = Math.round(spot.x * scaleX);
-                spot.y = Math.round(spot.y * scaleY);
-            });
-        }
-        
-        this.redrawCanvas();
+        this.resizeHandler.handleResize(
+            this.currentImage,
+            this.canvas,
+            this.canvasRenderer,
+            this.layoutManager,
+            this.pointManager,
+            this.routeManager,
+            this.spotManager,
+            () => this.redrawCanvas()
+        );
     }
 }
 
