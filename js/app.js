@@ -305,6 +305,7 @@ export class PointMarkerApp {
         this.canvasRenderer.drawImage();
         this.enableImageControls();
         this.layoutManager.setDefaultPointMode();
+        this.showMessage(`画像「${fileName}」を読み込みました`);
     }
 
     /**
@@ -529,23 +530,29 @@ export class PointMarkerApp {
      * ポイントをクリア
      */
     clearPoints() {
+        const pointCount = this.pointManager.getPoints().length;
         this.pointManager.clearPoints();
         this.inputManager.clearInputBoxes();
+        this.showMessage(`${pointCount}個のポイントをクリアしました`);
     }
 
     /**
      * ルートをクリア
      */
     clearRoute() {
+        const waypointCount = this.routeManager.getRoutePoints().length;
         this.routeManager.clearRoute();
+        this.showMessage(`${waypointCount}個の中間点をクリアしました`);
     }
 
     /**
      * スポットをクリア
      */
     clearSpots() {
+        const spotCount = this.spotManager.getSpots().length;
         this.spotManager.clearSpots();
         this.inputManager.clearSpotInputBoxes();
+        this.showMessage(`${spotCount}個のスポットをクリアしました`);
     }
 
     /**
@@ -605,9 +612,10 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height,
                 filename
             );
+            this.showMessage(`ポイントデータを「${filename}」に出力しました`);
         } catch (error) {
             console.error('エクスポートエラー:', error);
-            alert('エクスポート中にエラーが発生しました');
+            this.showError('エクスポート中にエラーが発生しました');
         }
     }
 
@@ -615,9 +623,11 @@ export class PointMarkerApp {
      * 全ポイントID名を補正
      */
     formatAllPointIds() {
+        const pointCount = this.pointManager.getPoints().length;
         this.pointManager.formatAllPointIds();
         this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
         this.redrawCanvas();
+        this.showMessage(`${pointCount}個のポイントIDを補正しました`);
     }
 
     /**
@@ -643,7 +653,7 @@ export class PointMarkerApp {
             const filename = this.routeManager.generateRouteFilename(
                 this.fileHandler.getCurrentImageFileName()
             );
-            
+
             await this.fileHandler.exportRouteData(
                 this.routeManager,
                 this.fileHandler.getCurrentImageFileName() + '.png',
@@ -651,9 +661,10 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height,
                 filename
             );
+            this.showMessage(`ルートデータを「${filename}」に出力しました`);
         } catch (error) {
             console.error('エクスポートエラー:', error);
-            alert('エクスポート中にエラーが発生しました');
+            this.showError('エクスポート中にエラーが発生しました');
         }
     }
 
@@ -677,9 +688,11 @@ export class PointMarkerApp {
                 this.canvas.width, this.canvas.height,
                 this.currentImage.width, this.currentImage.height
             );
+            const pointCount = this.pointManager.getPoints().length;
+            this.showMessage(`ポイントJSONファイルを読み込みました（${pointCount}個のポイント）`);
         } catch (error) {
             console.error('JSON読み込みエラー:', error);
-            alert('JSON読み込み中にエラーが発生しました: ' + error.message);
+            this.showError('JSON読み込み中にエラーが発生しました: ' + error.message);
         } finally {
             event.target.value = '';
         }
@@ -705,9 +718,11 @@ export class PointMarkerApp {
                 this.canvas.width, this.canvas.height,
                 this.currentImage.width, this.currentImage.height
             );
+            const waypointCount = this.routeManager.getRoutePoints().length;
+            this.showMessage(`ルートJSONファイルを読み込みました（${waypointCount}個の中間点）`);
         } catch (error) {
             console.error('ルートJSON読み込みエラー:', error);
-            alert('ルートJSON読み込み中にエラーが発生しました: ' + error.message);
+            this.showError('ルートJSON読み込み中にエラーが発生しました: ' + error.message);
         } finally {
             event.target.value = '';
         }
@@ -843,7 +858,7 @@ export class PointMarkerApp {
             const filename = this.spotManager.generateSpotFilename(
                 this.fileHandler.getCurrentImageFileName()
             );
-            
+
             await this.fileHandler.exportSpotData(
                 this.spotManager,
                 this.fileHandler.getCurrentImageFileName() + '.png',
@@ -851,9 +866,10 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height,
                 filename
             );
+            this.showMessage(`スポットデータを「${filename}」に出力しました`);
         } catch (error) {
             console.error('スポットエクスポートエラー:', error);
-            alert('スポットエクスポート中にエラーが発生しました');
+            this.showError('スポットエクスポート中にエラーが発生しました');
         }
     }
 
@@ -877,9 +893,11 @@ export class PointMarkerApp {
                 this.canvas.width, this.canvas.height,
                 this.currentImage.width, this.currentImage.height
             );
+            const spotCount = this.spotManager.getSpots().length;
+            this.showMessage(`スポットJSONファイルを読み込みました（${spotCount}個のスポット）`);
         } catch (error) {
             console.error('スポットJSON読み込みエラー:', error);
-            alert('スポットJSON読み込み中にエラーが発生しました: ' + error.message);
+            this.showError('スポットJSON読み込み中にエラーが発生しました: ' + error.message);
         } finally {
             event.target.value = '';
         }
@@ -899,6 +917,54 @@ export class PointMarkerApp {
             this.spotManager,
             () => this.redrawCanvas()
         );
+    }
+
+    /**
+     * メッセージを画面中央に表示
+     * @param {string} message - 表示するメッセージ
+     * @param {string} type - メッセージタイプ ('info', 'warning', 'error')
+     */
+    showMessage(message, type = 'info') {
+        // 既存のメッセージ要素があれば削除
+        const existingMessage = document.getElementById('messageOverlay');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        // メッセージオーバーレイ要素を作成
+        const messageOverlay = document.createElement('div');
+        messageOverlay.id = 'messageOverlay';
+        messageOverlay.className = `message-overlay message-${type}`;
+        messageOverlay.textContent = message;
+
+        // body要素に追加
+        document.body.appendChild(messageOverlay);
+
+        // 表示時間の設定
+        let displayDuration = 3000; // デフォルト3秒
+        switch (type) {
+            case 'warning':
+                displayDuration = 4500; // 警告は4.5秒
+                break;
+            case 'error':
+                displayDuration = 6000; // エラーは6秒
+                break;
+        }
+
+        // 指定時間後に自動削除
+        setTimeout(() => {
+            if (messageOverlay.parentNode) {
+                messageOverlay.remove();
+            }
+        }, displayDuration);
+    }
+
+    /**
+     * エラーメッセージを表示
+     * @param {string} message - エラーメッセージ
+     */
+    showError(message) {
+        this.showMessage(message, 'error');
     }
 }
 

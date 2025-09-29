@@ -649,3 +649,59 @@ header p {
         font-size: 11px;
     }
 }
+
+/* メッセージオーバーレイスタイル */
+.message-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    padding: 15px 25px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+    min-width: 200px;
+    max-width: 80%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    animation: messageSlideIn 0.3s ease-out;
+}
+
+.message-overlay.message-info {
+    background-color: #2196f3;
+    color: white;
+    border: 2px solid #1976d2;
+}
+
+.message-overlay.message-warning {
+    background-color: #ff9800;
+    color: white;
+    border: 2px solid #f57c00;
+}
+
+.message-overlay.message-error {
+    background-color: #f44336;
+    color: white;
+    border: 2px solid #d32f2f;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+    .message-overlay {
+        font-size: 14px;
+        padding: 12px 20px;
+        max-width: 90%;
+    }
+}
