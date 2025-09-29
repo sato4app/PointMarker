@@ -5,6 +5,8 @@ import { SpotManager } from './data/SpotManager.js';
 import { FileHandler } from './data/FileHandler.js';
 import { InputManager } from './ui/InputManager.js';
 import { LayoutManager } from './ui/LayoutManager.js';
+import { UIHelper } from './ui/UIHelper.js';
+import { ValidationManager } from './ui/ValidationManager.js';
 import { CoordinateUtils } from './utils/Coordinates.js';
 import { Validators } from './utils/Validators.js';
 import { DragDropHandler } from './utils/DragDropHandler.js';
@@ -240,7 +242,7 @@ export class PointMarkerApp {
             e.target.value = newValue;
             
             // 開始・終了ポイント両方の検証フィードバック
-            this.updateBothRoutePointsValidation();
+            ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
         });
         
         endPointInput.addEventListener('blur', (e) => {
@@ -249,7 +251,7 @@ export class PointMarkerApp {
             e.target.value = newValue;
             
             // 開始・終了ポイント両方の検証フィードバック
-            this.updateBothRoutePointsValidation();
+            ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
         });
 
         // ウィンドウリサイズ
@@ -305,7 +307,7 @@ export class PointMarkerApp {
         this.canvasRenderer.drawImage();
         this.enableImageControls();
         this.layoutManager.setDefaultPointMode();
-        this.showMessage(`画像「${fileName}」を読み込みました`);
+        UIHelper.showMessage(`画像「${fileName}」を読み込みました`);
     }
 
     /**
@@ -336,27 +338,6 @@ export class PointMarkerApp {
         return null;
     }
 
-    /**
-     * ポイントがマウス座標上にあるか検出（後方互換性のため）
-     * @param {number} mouseX - マウスX座標
-     * @param {number} mouseY - マウスY座標
-     * @returns {number} ポイントのインデックス、ない場合は-1
-     */
-    findPointAtMouse(mouseX, mouseY) {
-        const result = this.findObjectAtMouse(mouseX, mouseY);
-        return (result && result.type === 'point') ? result.index : -1;
-    }
-
-    /**
-     * スポットがマウス座標上にあるか検出（後方互換性のため）
-     * @param {number} mouseX - マウスX座標
-     * @param {number} mouseY - マウスY座標
-     * @returns {number} スポットのインデックス、ない場合は-1
-     */
-    findSpotAtMouse(mouseX, mouseY) {
-        const result = this.findObjectAtMouse(mouseX, mouseY);
-        return (result && result.type === 'spot') ? result.index : -1;
-    }
 
 
     /**
@@ -460,9 +441,9 @@ export class PointMarkerApp {
      */
     handleExistingObjectClick(objectInfo, mode) {
         if (objectInfo.type === 'point' && mode === 'point') {
-            this.focusInputForPoint(objectInfo.index);
+            UIHelper.focusInputForPoint(objectInfo.index);
         } else if (objectInfo.type === 'spot' && mode === 'spot') {
-            this.focusInputForSpot(objectInfo.index);
+            UIHelper.focusInputForSpot(objectInfo.index);
         }
     }
 
@@ -493,7 +474,7 @@ export class PointMarkerApp {
         this.pointManager.removeTrailingEmptyUserPoints();
         this.pointManager.addPoint(coords.x, coords.y);
         const newIndex = this.pointManager.getPoints().length - 1;
-        setTimeout(() => this.focusInputForPoint(newIndex), 30);
+        setTimeout(() => UIHelper.focusInputForPoint(newIndex), 30);
     }
 
     /**
@@ -504,7 +485,7 @@ export class PointMarkerApp {
         this.spotManager.removeTrailingEmptySpots();
         this.spotManager.addSpot(coords.x, coords.y);
         const newIndex = this.spotManager.getSpots().length - 1;
-        setTimeout(() => this.focusInputForSpot(newIndex), 30);
+        setTimeout(() => UIHelper.focusInputForSpot(newIndex), 30);
     }
 
     /**
@@ -533,7 +514,7 @@ export class PointMarkerApp {
         const pointCount = this.pointManager.getPoints().length;
         this.pointManager.clearPoints();
         this.inputManager.clearInputBoxes();
-        this.showMessage(`${pointCount}個のポイントをクリアしました`);
+        UIHelper.showMessage(`${pointCount}個のポイントをクリアしました`);
     }
 
     /**
@@ -542,7 +523,7 @@ export class PointMarkerApp {
     clearRoute() {
         const waypointCount = this.routeManager.getRoutePoints().length;
         this.routeManager.clearRoute();
-        this.showMessage(`${waypointCount}個の中間点をクリアしました`);
+        UIHelper.showMessage(`${waypointCount}個の中間点をクリアしました`);
     }
 
     /**
@@ -552,39 +533,9 @@ export class PointMarkerApp {
         const spotCount = this.spotManager.getSpots().length;
         this.spotManager.clearSpots();
         this.inputManager.clearSpotInputBoxes();
-        this.showMessage(`${spotCount}個のスポットをクリアしました`);
+        UIHelper.showMessage(`${spotCount}個のスポットをクリアしました`);
     }
 
-    /**
-     * ポイントID名の重複チェック
-     * @param {Array} points - ポイント配列
-     * @returns {Object} {isValid: boolean, duplicates: Array<string>, message: string}
-     */
-    checkDuplicatePointIds(points) {
-        const idCount = {};
-        const duplicates = [];
-        
-        // 空でないIDのみをチェック対象にする
-        points.forEach(point => {
-            if (point.id && point.id.trim() !== '') {
-                const id = point.id.trim();
-                idCount[id] = (idCount[id] || 0) + 1;
-                if (idCount[id] === 2) {
-                    duplicates.push(id);
-                }
-            }
-        });
-        
-        const isValid = duplicates.length === 0;
-        let message = '';
-        
-        if (!isValid) {
-            message = `重複するポイントID名が見つかりました: ${duplicates.join(', ')}\n` +
-                     'ポイントID名を修正してから再度エクスポートしてください。';
-        }
-        
-        return { isValid, duplicates, message };
-    }
 
     /**
      * ポイントをJSON出力
@@ -597,7 +548,7 @@ export class PointMarkerApp {
         }
 
         // ポイントID名の重複チェック
-        const duplicateCheck = this.checkDuplicatePointIds(points);
+        const duplicateCheck = ValidationManager.checkDuplicatePointIds(points);
         if (!duplicateCheck.isValid) {
             alert(duplicateCheck.message);
             return;
@@ -612,10 +563,10 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height,
                 filename
             );
-            this.showMessage(`ポイントデータを「${filename}」に出力しました`);
+            UIHelper.showMessage(`ポイントデータを「${filename}」に出力しました`);
         } catch (error) {
             console.error('エクスポートエラー:', error);
-            this.showError('エクスポート中にエラーが発生しました');
+            UIHelper.showError('エクスポート中にエラーが発生しました');
         }
     }
 
@@ -627,7 +578,7 @@ export class PointMarkerApp {
         this.pointManager.formatAllPointIds();
         this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
         this.redrawCanvas();
-        this.showMessage(`${pointCount}個のポイントIDを補正しました`);
+        UIHelper.showMessage(`${pointCount}個のポイントIDを補正しました`);
     }
 
     /**
@@ -661,10 +612,10 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height,
                 filename
             );
-            this.showMessage(`ルートデータを「${filename}」に出力しました`);
+            UIHelper.showMessage(`ルートデータを「${filename}」に出力しました`);
         } catch (error) {
             console.error('エクスポートエラー:', error);
-            this.showError('エクスポート中にエラーが発生しました');
+            UIHelper.showError('エクスポート中にエラーが発生しました');
         }
     }
 
@@ -689,10 +640,10 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height
             );
             const pointCount = this.pointManager.getPoints().length;
-            this.showMessage(`ポイントJSONファイルを読み込みました（${pointCount}個のポイント）`);
+            UIHelper.showMessage(`ポイントJSONファイルを読み込みました（${pointCount}個のポイント）`);
         } catch (error) {
             console.error('JSON読み込みエラー:', error);
-            this.showError('JSON読み込み中にエラーが発生しました: ' + error.message);
+            UIHelper.showError('JSON読み込み中にエラーが発生しました: ' + error.message);
         } finally {
             event.target.value = '';
         }
@@ -719,130 +670,18 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height
             );
             const waypointCount = this.routeManager.getRoutePoints().length;
-            this.showMessage(`ルートJSONファイルを読み込みました（${waypointCount}個の中間点）`);
+            UIHelper.showMessage(`ルートJSONファイルを読み込みました（${waypointCount}個の中間点）`);
         } catch (error) {
             console.error('ルートJSON読み込みエラー:', error);
-            this.showError('ルートJSON読み込み中にエラーが発生しました: ' + error.message);
+            UIHelper.showError('ルートJSON読み込み中にエラーが発生しました: ' + error.message);
         } finally {
             event.target.value = '';
         }
     }
 
 
-    /**
-     * ルートポイント入力フィールドの検証フィードバックを更新
-     * @param {HTMLInputElement} inputElement - 入力要素
-     * @param {string} value - 検証する値
-     */
-    updateRoutePointValidationFeedback(inputElement, value) {
-        // 空の場合は正常（クリア）
-        if (!value || value.trim() === '') {
-            this.clearInputElementStyles(inputElement);
-            return;
-        }
 
-        // 形式チェック
-        if (!Validators.isValidPointIdFormat(value)) {
-            this.setInputElementError(inputElement, 'X-nn形式で入力してください（例：A-01, J-12）');
-            return;
-        }
 
-        // 既存ポイントIDの存在チェック
-        const existingPointIds = this.pointManager.getRegisteredIds();
-        if (!existingPointIds.includes(value)) {
-            this.setInputElementError(inputElement,
-                `ポイントID「${value}」は存在しません。先にポイント編集でポイントを作成してください。`,
-                true);
-        } else {
-            this.clearInputElementStyles(inputElement);
-        }
-    }
-
-    /**
-     * 入力要素のスタイルをクリア
-     * @param {HTMLInputElement} inputElement - 入力要素
-     */
-    clearInputElementStyles(inputElement) {
-        inputElement.style.backgroundColor = '';
-        inputElement.style.borderColor = '';
-        inputElement.title = '';
-    }
-
-    /**
-     * 入力要素にエラースタイルを設定
-     * @param {HTMLInputElement} inputElement - 入力要素
-     * @param {string} message - エラーメッセージ
-     * @param {boolean} redBorder - 赤枠のみ表示するか
-     */
-    setInputElementError(inputElement, message, redBorder = false) {
-        if (redBorder) {
-            inputElement.style.backgroundColor = '';
-            inputElement.style.borderColor = '#ff0000';
-        } else {
-            inputElement.style.backgroundColor = '#ffe4e4';
-            inputElement.style.borderColor = '#ff6b6b';
-        }
-        inputElement.title = message;
-    }
-
-    /**
-     * 開始・終了ポイント両方の検証を実行
-     */
-    updateBothRoutePointsValidation() {
-        const startPointInput = document.getElementById('startPointInput');
-        const endPointInput = document.getElementById('endPointInput');
-        const routePoints = this.routeManager.getStartEndPoints();
-        const startValue = routePoints.start;
-        const endValue = routePoints.end;
-
-        // 個別の検証を実行
-        this.updateRoutePointValidationFeedback(startPointInput, startValue);
-        this.updateRoutePointValidationFeedback(endPointInput, endValue);
-
-        // 重複チェック（両方が空でない場合のみ）
-        if (startValue && endValue && startValue.trim() !== '' && endValue.trim() !== '') {
-            if (startValue === endValue) {
-                const message = '開始ポイントと終了ポイントは異なるポイントIDを指定してください。';
-                this.setInputElementError(startPointInput, message, true);
-                this.setInputElementError(endPointInput, message, true);
-            }
-        }
-    }
-
-    /**
-     * ポイントIDが「X-nn」形式（英大文字1桁-数字2桁）かどうかをチェック
-     * @param {string} value - 検証する値
-     * @returns {boolean} 有効な形式かどうか
-     */
-    isValidPointIdFormat(value) {
-        return Validators.isValidPointIdFormat(value);
-    }
-
-    /**
-     * 指定したポイントに対応する入力フィールドにフォーカスを当てる
-     * @param {number} pointIndex - ポイントのインデックス
-     */
-    focusInputForPoint(pointIndex) {
-        const inputElement = document.querySelector(`input[data-point-index="${pointIndex}"]`);
-        if (inputElement) {
-            inputElement.focus();
-            // カーソルを末尾に設定
-            inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
-        }
-    }
-
-    /**
-     * 指定したスポットに対応する入力フィールドにフォーカスを当てる
-     * @param {number} spotIndex - スポットのインデックス
-     */
-    focusInputForSpot(spotIndex) {
-        const inputElement = document.querySelector(`input[data-spot-index="${spotIndex}"]`);
-        if (inputElement) {
-            inputElement.focus();
-            // カーソルを末尾に設定
-            inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
-        }
-    }
 
     /**
      * スポットをJSON出力
@@ -866,10 +705,10 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height,
                 filename
             );
-            this.showMessage(`スポットデータを「${filename}」に出力しました`);
+            UIHelper.showMessage(`スポットデータを「${filename}」に出力しました`);
         } catch (error) {
             console.error('スポットエクスポートエラー:', error);
-            this.showError('スポットエクスポート中にエラーが発生しました');
+            UIHelper.showError('スポットエクスポート中にエラーが発生しました');
         }
     }
 
@@ -894,10 +733,10 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height
             );
             const spotCount = this.spotManager.getSpots().length;
-            this.showMessage(`スポットJSONファイルを読み込みました（${spotCount}個のスポット）`);
+            UIHelper.showMessage(`スポットJSONファイルを読み込みました（${spotCount}個のスポット）`);
         } catch (error) {
             console.error('スポットJSON読み込みエラー:', error);
-            this.showError('スポットJSON読み込み中にエラーが発生しました: ' + error.message);
+            UIHelper.showError('スポットJSON読み込み中にエラーが発生しました: ' + error.message);
         } finally {
             event.target.value = '';
         }
@@ -919,53 +758,6 @@ export class PointMarkerApp {
         );
     }
 
-    /**
-     * メッセージを画面中央に表示
-     * @param {string} message - 表示するメッセージ
-     * @param {string} type - メッセージタイプ ('info', 'warning', 'error')
-     */
-    showMessage(message, type = 'info') {
-        // 既存のメッセージ要素があれば削除
-        const existingMessage = document.getElementById('messageOverlay');
-        if (existingMessage) {
-            existingMessage.remove();
-        }
-
-        // メッセージオーバーレイ要素を作成
-        const messageOverlay = document.createElement('div');
-        messageOverlay.id = 'messageOverlay';
-        messageOverlay.className = `message-overlay message-${type}`;
-        messageOverlay.textContent = message;
-
-        // body要素に追加
-        document.body.appendChild(messageOverlay);
-
-        // 表示時間の設定
-        let displayDuration = 3000; // デフォルト3秒
-        switch (type) {
-            case 'warning':
-                displayDuration = 4500; // 警告は4.5秒
-                break;
-            case 'error':
-                displayDuration = 6000; // エラーは6秒
-                break;
-        }
-
-        // 指定時間後に自動削除
-        setTimeout(() => {
-            if (messageOverlay.parentNode) {
-                messageOverlay.remove();
-            }
-        }, displayDuration);
-    }
-
-    /**
-     * エラーメッセージを表示
-     * @param {string} message - エラーメッセージ
-     */
-    showError(message) {
-        this.showMessage(message, 'error');
-    }
 }
 
 // DOM読み込み完了後にアプリケーションを初期化

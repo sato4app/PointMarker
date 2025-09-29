@@ -57,13 +57,6 @@ export class InputManager {
         this.updateSpotInputsState();
     }
 
-    /**
-     * ルート編集モードを設定（後方互換性のため）
-     * @param {boolean} isRouteEditMode - ルート編集モードかどうか
-     */
-    setRouteEditMode(isRouteEditMode) {
-        this.setEditMode(isRouteEditMode ? 'route' : 'point');
-    }
 
     /**
      * 指定したポイントIDを強調表示
