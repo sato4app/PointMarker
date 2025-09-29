@@ -669,9 +669,9 @@ header p {
 }
 
 .message-overlay.message-info {
-    background-color: #2196f3;
-    color: white;
-    border: 2px solid #1976d2;
+    background-color: #b3e5fc;
+    color: #0d47a1;
+    border: 2px solid #4fc3f7;
 }
 
 .message-overlay.message-warning {
