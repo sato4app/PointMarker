@@ -218,6 +218,37 @@ export class PointMarkerApp {
         
         document.getElementById('spotJsonInput').addEventListener('change', (e) => this.handleSpotJSONLoad(e));
 
+        // ズーム・パンコントロール
+        document.getElementById('zoomInBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleZoomIn();
+        });
+
+        document.getElementById('zoomOutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleZoomOut();
+        });
+
+        document.getElementById('panUpBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handlePanUp();
+        });
+
+        document.getElementById('panDownBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handlePanDown();
+        });
+
+        document.getElementById('panLeftBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handlePanLeft();
+        });
+
+        document.getElementById('panRightBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handlePanRight();
+        });
+
         // 開始・終了ポイント入力
         const startPointInput = document.getElementById('startPointInput');
         const endPointInput = document.getElementById('endPointInput');
@@ -278,6 +309,14 @@ export class PointMarkerApp {
         document.getElementById('clearBtn').disabled = false;
         document.getElementById('formatBtn').disabled = false;
         document.getElementById('exportBtn').disabled = false;
+
+        // ズーム・パンボタンを有効化
+        document.getElementById('zoomInBtn').disabled = false;
+        document.getElementById('zoomOutBtn').disabled = false;
+        document.getElementById('panUpBtn').disabled = false;
+        document.getElementById('panDownBtn').disabled = false;
+        document.getElementById('panLeftBtn').disabled = false;
+        document.getElementById('panRightBtn').disabled = false;
     }
 
     /**
@@ -756,6 +795,54 @@ export class PointMarkerApp {
             this.spotManager,
             () => this.redrawCanvas()
         );
+    }
+
+    /**
+     * ズームイン処理
+     */
+    handleZoomIn() {
+        this.canvasRenderer.zoomIn();
+        this.redrawCanvas();
+    }
+
+    /**
+     * ズームアウト処理
+     */
+    handleZoomOut() {
+        this.canvasRenderer.zoomOut();
+        this.redrawCanvas();
+    }
+
+    /**
+     * 上に移動処理
+     */
+    handlePanUp() {
+        this.canvasRenderer.panUp();
+        this.redrawCanvas();
+    }
+
+    /**
+     * 下に移動処理
+     */
+    handlePanDown() {
+        this.canvasRenderer.panDown();
+        this.redrawCanvas();
+    }
+
+    /**
+     * 左に移動処理
+     */
+    handlePanLeft() {
+        this.canvasRenderer.panLeft();
+        this.redrawCanvas();
+    }
+
+    /**
+     * 右に移動処理
+     */
+    handlePanRight() {
+        this.canvasRenderer.panRight();
+        this.redrawCanvas();
     }
 
 }

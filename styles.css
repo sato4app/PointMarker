@@ -152,6 +152,73 @@ header p {
 }
 
 /* =====================================
+   Zoom and Pan Controls
+   ===================================== */
+.zoom-pan-controls {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: var(--light-gray);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    align-items: center;
+}
+
+.zoom-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.pan-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+}
+
+.pan-horizontal {
+    display: flex;
+    gap: 2px;
+}
+
+.btn-zoom,
+.btn-pan {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    background: white;
+    color: var(--secondary-color);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-zoom:hover:not(:disabled),
+.btn-pan:hover:not(:disabled) {
+    background: var(--primary-color);
+    color: white;
+    transform: scale(1.05);
+}
+
+.btn-zoom:active:not(:disabled),
+.btn-pan:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.btn-zoom:disabled,
+.btn-pan:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* =====================================
    Form Elements
    ===================================== */
 .file-input-wrapper {

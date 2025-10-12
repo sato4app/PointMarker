@@ -10,6 +10,15 @@ export class CanvasRenderer {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.currentImage = null;
+
+        // ズーム・パン用の状態管理
+        this.scale = 1.0;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.minScale = 0.1;
+        this.maxScale = 5.0;
+        this.zoomStep = 0.2;
+        this.panStep = 50;  // ピクセル単位での移動量
     }
 
     /**
@@ -25,9 +34,17 @@ export class CanvasRenderer {
      */
     drawImage() {
         if (!this.currentImage) return;
-        
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.drawImage(this.currentImage, 0, 0, this.canvas.width, this.canvas.height);
+
+        // 変換を適用
+        this.ctx.save();
+        this.ctx.translate(this.offsetX, this.offsetY);
+        this.ctx.scale(this.scale, this.scale);
+
+        this.ctx.drawImage(this.currentImage, 0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
+
+        this.ctx.restore();
     }
 
     /**
@@ -161,12 +178,12 @@ export class CanvasRenderer {
      */
     setupCanvas(layout = 'sidebar') {
         if (!this.currentImage) return;
-        
+
         const container = this.canvas.parentElement;
         const containerRect = container.getBoundingClientRect();
-        
+
         let availableWidth, availableHeight;
-        
+
         if (layout === 'sidebar') {
             availableWidth = containerRect.width - 40;
             availableHeight = window.innerHeight - 140;
@@ -174,22 +191,90 @@ export class CanvasRenderer {
             availableWidth = window.innerWidth - 40;
             availableHeight = window.innerHeight - 140;
         }
-        
+
         const imageAspectRatio = this.currentImage.height / this.currentImage.width;
-        
+
         let canvasWidth = availableWidth;
         let canvasHeight = canvasWidth * imageAspectRatio;
-        
+
         if (canvasHeight > availableHeight) {
             canvasHeight = availableHeight;
             canvasWidth = canvasHeight / imageAspectRatio;
         }
-        
+
         this.canvas.width = canvasWidth;
         this.canvas.height = canvasHeight;
         this.canvas.style.width = canvasWidth + 'px';
         this.canvas.style.height = canvasHeight + 'px';
         this.canvas.style.display = 'block';
         this.canvas.style.visibility = 'visible';
+
+        // ズーム・パン状態をリセット
+        this.resetTransform();
+    }
+
+    /**
+     * ズームイン
+     */
+    zoomIn() {
+        this.scale = Math.min(this.scale + this.zoomStep, this.maxScale);
+    }
+
+    /**
+     * ズームアウト
+     */
+    zoomOut() {
+        this.scale = Math.max(this.scale - this.zoomStep, this.minScale);
+    }
+
+    /**
+     * 上に移動
+     */
+    panUp() {
+        this.offsetY += this.panStep;
+    }
+
+    /**
+     * 下に移動
+     */
+    panDown() {
+        this.offsetY -= this.panStep;
+    }
+
+    /**
+     * 左に移動
+     */
+    panLeft() {
+        this.offsetX += this.panStep;
+    }
+
+    /**
+     * 右に移動
+     */
+    panRight() {
+        this.offsetX -= this.panStep;
+    }
+
+    /**
+     * 変換をリセット
+     */
+    resetTransform() {
+        this.scale = 1.0;
+        this.offsetX = 0;
+        this.offsetY = 0;
+    }
+
+    /**
+     * 現在のスケールを取得
+     */
+    getScale() {
+        return this.scale;
+    }
+
+    /**
+     * 現在のオフセットを取得
+     */
+    getOffset() {
+        return { x: this.offsetX, y: this.offsetY };
     }
 }

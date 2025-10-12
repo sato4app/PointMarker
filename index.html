@@ -24,6 +24,23 @@
             <!-- コントロールパネル（オーバーレイ） -->
             <aside class="controls-sidebar">
                 <h2>Points/Spots/Routes Maker</h2>
+
+                <!-- ズーム・移動コントロール -->
+                <div class="zoom-pan-controls">
+                    <div class="zoom-controls">
+                        <button type="button" id="zoomInBtn" class="btn-zoom" title="ズームイン" disabled>＋</button>
+                        <button type="button" id="zoomOutBtn" class="btn-zoom" title="ズームアウト" disabled>－</button>
+                    </div>
+                    <div class="pan-controls">
+                        <button type="button" id="panUpBtn" class="btn-pan" title="上に移動" disabled>↑</button>
+                        <div class="pan-horizontal">
+                            <button type="button" id="panLeftBtn" class="btn-pan" title="左に移動" disabled>←</button>
+                            <button type="button" id="panRightBtn" class="btn-pan" title="右に移動" disabled>→</button>
+                        </div>
+                        <button type="button" id="panDownBtn" class="btn-pan" title="下に移動" disabled>↓</button>
+                    </div>
+                </div>
+
                 <!-- 画像ファイル入力 -->
                 <div class="file-input-wrapper">
                     <input type="file" id="imageInput" accept="image/png" class="file-input" aria-label="PNG画像を選択">
