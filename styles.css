@@ -152,70 +152,54 @@ header p {
 }
 
 /* =====================================
-   Zoom and Pan Controls
+   Navigation Controls (Zoom and Pan)
    ===================================== */
-.zoom-pan-controls {
+.navigation {
     display: flex;
-    gap: 10px;
-    padding: 10px;
-    background: var(--light-gray);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
+    justify-content: center;
     align-items: center;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 15px;
 }
 
-.zoom-controls {
-    display: flex;
+.nav-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 5px;
 }
 
-.pan-controls {
+.zoom-group {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    align-items: center;
+    gap: 5px;
 }
 
-.pan-horizontal {
-    display: flex;
-    gap: 2px;
-}
-
-.btn-zoom,
-.btn-pan {
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: none;
-    border-radius: var(--border-radius-sm);
-    background: white;
-    color: var(--secondary-color);
-    font-size: 16px;
-    font-weight: bold;
+.nav-btn {
+    width: 45px;
+    height: 45px;
+    border: 2px solid #333;
+    background-color: white;
     cursor: pointer;
-    transition: var(--transition);
+    font-size: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s;
 }
 
-.btn-zoom:hover:not(:disabled),
-.btn-pan:hover:not(:disabled) {
-    background: var(--primary-color);
-    color: white;
-    transform: scale(1.05);
+.nav-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
 }
 
-.btn-zoom:active:not(:disabled),
-.btn-pan:active:not(:disabled) {
-    transform: scale(0.95);
+.nav-btn:active:not(:disabled) {
+    background-color: #e0e0e0;
 }
 
-.btn-zoom:disabled,
-.btn-pan:disabled {
-    opacity: 0.4;
+.nav-btn:disabled {
+    opacity: 0.3;
     cursor: not-allowed;
+    background-color: #f5f5f5;
 }
 
 /* =====================================
