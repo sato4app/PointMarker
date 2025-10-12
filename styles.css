@@ -158,7 +158,7 @@ header p {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
     margin-top: auto;
     padding-top: 15px;
 }
@@ -167,39 +167,108 @@ header p {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 5px;
+    padding: 10px;
+    background: #e8f4f8;
+    border: 2px solid #4a90e2;
+    border-radius: 8px;
 }
 
 .zoom-group {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    padding: 10px;
+    background: #fff4e6;
+    border: 2px solid #f39c12;
+    border-radius: 8px;
 }
 
 .nav-btn {
     width: 45px;
     height: 45px;
     border: 2px solid #333;
+    border-radius: 6px;
     background-color: white;
     cursor: pointer;
-    font-size: 20px;
+    font-size: 24px;
+    font-weight: bold;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-group .nav-btn {
+    background-color: #4a90e2;
+    color: white;
+    border-color: #2980b9;
+}
+
+.zoom-group .nav-btn {
+    background-color: #f39c12;
+    color: white;
+    border-color: #d68910;
 }
 
 .nav-btn:hover:not(:disabled) {
-    background-color: #f0f0f0;
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nav-group .nav-btn:hover:not(:disabled) {
+    background-color: #357abd;
+}
+
+.zoom-group .nav-btn:hover:not(:disabled) {
+    background-color: #d68910;
 }
 
 .nav-btn:active:not(:disabled) {
-    background-color: #e0e0e0;
+    transform: scale(0.95);
 }
 
 .nav-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
-    background-color: #f5f5f5;
+    background-color: #d3d3d3;
+    color: #888;
+    border-color: #999;
+    box-shadow: none;
+}
+
+/* ナビゲーショングループのラベル */
+.nav-group::before {
+    content: "移動";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #4a90e2;
+    border-radius: 4px;
+}
+
+.zoom-group::before {
+    content: "拡大縮小";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #f39c12;
+    border-radius: 4px;
+}
+
+.nav-group,
+.zoom-group {
+    position: relative;
 }
 
 /* =====================================
