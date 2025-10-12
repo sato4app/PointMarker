@@ -3,7 +3,7 @@
  */
 export class LayoutManager {
     constructor() {
-        this.currentLayout = 'overlay';
+        this.currentLayout = 'sidebar';
         this.currentEditingMode = 'point';
         this.callbacks = {
             onLayoutChange: null,
