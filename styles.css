@@ -237,6 +237,13 @@ header p {
     box-shadow: none;
 }
 
+/* ナビゲーションボタン内のSVGアイコン */
+.nav-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
 /* ナビゲーショングループのラベル */
 .nav-group::before {
     content: "移動";
