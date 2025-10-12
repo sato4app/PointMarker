@@ -167,30 +167,22 @@ header p {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 5px;
-    padding: 10px;
-    background: #e8f4f8;
-    border: 2px solid #4a90e2;
-    border-radius: 8px;
 }
 
 .zoom-group {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    padding: 10px;
-    background: #fff4e6;
-    border: 2px solid #f39c12;
-    border-radius: 8px;
 }
 
 .nav-btn {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     border: 2px solid #333;
     border-radius: 6px;
     background-color: white;
     cursor: pointer;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -244,39 +236,6 @@ header p {
     display: block;
 }
 
-/* ナビゲーショングループのラベル */
-.nav-group::before {
-    content: "移動";
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: bold;
-    color: #4a90e2;
-    border-radius: 4px;
-}
-
-.zoom-group::before {
-    content: "拡大縮小";
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: bold;
-    color: #f39c12;
-    border-radius: 4px;
-}
-
-.nav-group,
-.zoom-group {
-    position: relative;
-}
 
 /* =====================================
    Form Elements
