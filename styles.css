@@ -142,10 +142,10 @@ header p {
    ===================================== */
 .controls-sidebar h2 {
     margin: 0 0 15px 0;
-    padding-bottom: 14px;
+    padding-bottom: 12px;
     border-bottom: 2px solid var(--primary-color);
     color: var(--secondary-color);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     text-align: center;
     line-height: 1.3;
