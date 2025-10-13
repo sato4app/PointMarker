@@ -192,15 +192,15 @@ header p {
 }
 
 .nav-group .nav-btn {
-    background-color: #4a90e2;
-    color: white;
-    border-color: #2980b9;
+    background-color: white;
+    color: white;   /* #4a90e2; */
+    border-color: #4a90e2;
 }
 
 .zoom-group .nav-btn {
-    background-color: #f39c12;
-    color: white;
-    border-color: #d68910;
+    background-color: white;
+    color: white;   /* #f39c12; */
+    border-color: #f39c12;
 }
 
 .nav-btn:hover:not(:disabled) {
@@ -209,11 +209,11 @@ header p {
 }
 
 .nav-group .nav-btn:hover:not(:disabled) {
-    background-color: #357abd;
+    background-color: rgba(74, 144, 226, 0.1);
 }
 
 .zoom-group .nav-btn:hover:not(:disabled) {
-    background-color: #d68910;
+    background-color: rgba(243, 156, 18, 0.1);
 }
 
 .nav-btn:active:not(:disabled) {
@@ -223,9 +223,9 @@ header p {
 .nav-btn:disabled {
     opacity: 1.0;
     cursor: not-allowed;
-    background-color: #d3d3d3;
-    color: #888;
-    border-color: #999;
+    background-color: white;
+    color: #d3d3d3;
+    border-color: #d3d3d3;
     box-shadow: none;
 }
 

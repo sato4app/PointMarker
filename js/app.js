@@ -306,17 +306,22 @@ export class PointMarkerApp {
      * 画像読み込み後のコントロールを有効化
      */
     enableImageControls() {
+        console.log('[DEBUG] enableImageControls() 開始 - ボタンのdisabled属性を解除します');
+
         document.getElementById('clearBtn').disabled = false;
         document.getElementById('formatBtn').disabled = false;
         document.getElementById('exportBtn').disabled = false;
 
         // ズーム・パンボタンを有効化
+        console.log('[DEBUG] ズーム・移動ボタンを有効化中...');
         document.getElementById('zoomInBtn').disabled = false;
         document.getElementById('zoomOutBtn').disabled = false;
         document.getElementById('panUpBtn').disabled = false;
         document.getElementById('panDownBtn').disabled = false;
         document.getElementById('panLeftBtn').disabled = false;
         document.getElementById('panRightBtn').disabled = false;
+
+        console.log('[DEBUG] enableImageControls() 完了 - CSSスタイルが.nav-btn:disabledから通常の.nav-btnに切り替わります');
     }
 
     /**
@@ -340,13 +345,20 @@ export class PointMarkerApp {
      * @param {string} fileName - ファイル名
      */
     async processLoadedImage(image, fileName) {
+        console.log('[DEBUG] processLoadedImage() 開始 - ファイル名:', fileName);
+
         this.currentImage = image;
         this.canvasRenderer.setImage(image);
         this.canvasRenderer.setupCanvas(this.layoutManager.getCurrentLayout());
         this.canvasRenderer.drawImage();
+
+        console.log('[DEBUG] enableImageControls()を呼び出してボタンを有効化します');
         this.enableImageControls();
+
         this.layoutManager.setDefaultPointMode();
         UIHelper.showMessage(`画像「${fileName}」を読み込みました`);
+
+        console.log('[DEBUG] processLoadedImage() 完了');
     }
 
     /**
