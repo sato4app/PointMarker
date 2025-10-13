@@ -249,6 +249,11 @@ export class PointMarkerApp {
             this.handlePanRight();
         });
 
+        document.getElementById('resetViewBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleResetView();
+        });
+
         // 開始・終了ポイント入力
         const startPointInput = document.getElementById('startPointInput');
         const endPointInput = document.getElementById('endPointInput');
@@ -317,6 +322,7 @@ export class PointMarkerApp {
         document.getElementById('panDownBtn').disabled = false;
         document.getElementById('panLeftBtn').disabled = false;
         document.getElementById('panRightBtn').disabled = false;
+        document.getElementById('resetViewBtn').disabled = false;
     }
 
     /**
@@ -842,6 +848,14 @@ export class PointMarkerApp {
      */
     handlePanRight() {
         this.canvasRenderer.panRight();
+        this.redrawCanvas();
+    }
+
+    /**
+     * 表示リセット処理
+     */
+    handleResetView() {
+        this.canvasRenderer.resetTransform();
         this.redrawCanvas();
     }
 

@@ -193,14 +193,25 @@ header p {
 
 .nav-group .nav-btn {
     background-color: white;
-    color: white;   /* #4a90e2; */
+    color: #4a90e2;
     border-color: #4a90e2;
 }
 
 .zoom-group .nav-btn {
     background-color: white;
-    color: white;   /* #f39c12; */
+    color: #f39c12;
     border-color: #f39c12;
+}
+
+/* リセットボタン専用スタイル */
+#resetViewBtn {
+    background-color: white;
+    color: #27ae60;
+    border-color: #27ae60;
+}
+
+#resetViewBtn:hover:not(:disabled) {
+    background-color: rgba(39, 174, 96, 0.1);
 }
 
 .nav-btn:hover:not(:disabled) {
