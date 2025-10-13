@@ -317,7 +317,8 @@ export class PointMarkerApp {
 
         // ズーム・パンボタンを有効化
         document.getElementById('zoomInBtn').disabled = false;
-        document.getElementById('zoomOutBtn').disabled = false;
+        // ズームアウトは初期状態（1.0倍）では無効
+        document.getElementById('zoomOutBtn').disabled = true;
         document.getElementById('panUpBtn').disabled = false;
         document.getElementById('panDownBtn').disabled = false;
         document.getElementById('panLeftBtn').disabled = false;
@@ -808,6 +809,8 @@ export class PointMarkerApp {
      */
     handleZoomIn() {
         this.canvasRenderer.zoomIn();
+        this.updateZoomButtonStates();
+        this.updatePopupPositions();
         this.redrawCanvas();
     }
 
@@ -816,7 +819,37 @@ export class PointMarkerApp {
      */
     handleZoomOut() {
         this.canvasRenderer.zoomOut();
+        this.updateZoomButtonStates();
+        this.updatePopupPositions();
         this.redrawCanvas();
+    }
+
+    /**
+     * ポップアップ位置を更新
+     */
+    updatePopupPositions() {
+        const scale = this.canvasRenderer.getScale();
+        const offset = this.canvasRenderer.getOffset();
+        const points = this.pointManager.getPoints();
+        const spots = this.spotManager.getSpots();
+
+        this.inputManager.updateTransform(scale, offset.x, offset.y, points, spots);
+    }
+
+    /**
+     * ズームボタンの状態を更新
+     */
+    updateZoomButtonStates() {
+        const scale = this.canvasRenderer.getScale();
+        const minScale = this.canvasRenderer.minScale;
+
+        // 表示倍率が1.0倍（最小値）の時、ズームアウトボタンを無効化
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        if (scale <= minScale) {
+            zoomOutBtn.disabled = true;
+        } else {
+            zoomOutBtn.disabled = false;
+        }
     }
 
     /**
@@ -824,6 +857,7 @@ export class PointMarkerApp {
      */
     handlePanUp() {
         this.canvasRenderer.panUp();
+        this.updatePopupPositions();
         this.redrawCanvas();
     }
 
@@ -832,6 +866,7 @@ export class PointMarkerApp {
      */
     handlePanDown() {
         this.canvasRenderer.panDown();
+        this.updatePopupPositions();
         this.redrawCanvas();
     }
 
@@ -840,6 +875,7 @@ export class PointMarkerApp {
      */
     handlePanLeft() {
         this.canvasRenderer.panLeft();
+        this.updatePopupPositions();
         this.redrawCanvas();
     }
 
@@ -848,6 +884,7 @@ export class PointMarkerApp {
      */
     handlePanRight() {
         this.canvasRenderer.panRight();
+        this.updatePopupPositions();
         this.redrawCanvas();
     }
 
@@ -856,6 +893,8 @@ export class PointMarkerApp {
      */
     handleResetView() {
         this.canvasRenderer.resetTransform();
+        this.updateZoomButtonStates();
+        this.updatePopupPositions();
         this.redrawCanvas();
     }
 

@@ -12,6 +12,10 @@ export class InputManager {
         this.isRouteEditMode = false;
         this.isSpotEditMode = false;
         this.highlightedPointIds = new Set(); // 強調表示するポイントIDのセット
+        // ズーム・パン状態
+        this.scale = 1.0;
+        this.offsetX = 0;
+        this.offsetY = 0;
         this.callbacks = {
             onPointIdChange: null,
             onPointRemove: null,
@@ -222,6 +226,33 @@ export class InputManager {
     }
 
     /**
+     * ズーム・パン状態を更新し、全ポップアップ位置を再計算
+     * @param {number} scale - ズーム倍率
+     * @param {number} offsetX - X方向オフセット
+     * @param {number} offsetY - Y方向オフセット
+     * @param {Array} points - ポイント配列
+     * @param {Array} spots - スポット配列
+     */
+    updateTransform(scale, offsetX, offsetY, points = [], spots = []) {
+        this.scale = scale;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+
+        // 既存のポップアップを全て削除
+        this.clearAllInputs();
+        this.clearAllSpotInputs();
+
+        // ポップアップを再作成
+        points.forEach((point, index) => {
+            this.createInputBox(point, index, false);
+        });
+
+        spots.forEach((spot, index) => {
+            this.createSpotInputBox(spot, index, false);
+        });
+    }
+
+    /**
      * 入力ボックスの最適な表示位置を計算・設定
      * @param {HTMLInputElement} input - 入力要素
      * @param {Object} point - ポイントオブジェクト
@@ -230,10 +261,14 @@ export class InputManager {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = rect.width / this.canvas.width;
         const scaleY = rect.height / this.canvas.height;
-        
-        const inputX = this.findOptimalInputPosition(point.x, point.y, scaleX, rect.left);
-        const inputY = point.y * scaleY + rect.top - 15;
-        
+
+        // ズーム・パン変換を適用
+        const transformedX = point.x * this.scale + this.offsetX;
+        const transformedY = point.y * this.scale + this.offsetY;
+
+        const inputX = this.findOptimalInputPosition(transformedX, transformedY, scaleX, rect.left);
+        const inputY = transformedY * scaleY + rect.top - 15;
+
         container.style.left = inputX + 'px';
         container.style.top = inputY + 'px';
     }
@@ -371,10 +406,14 @@ export class InputManager {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = rect.width / this.canvas.width;
         const scaleY = rect.height / this.canvas.height;
-        
-        const inputX = this.findOptimalInputPosition(spot.x, spot.y, scaleX, rect.left);
-        const inputY = spot.y * scaleY + rect.top - 15;
-        
+
+        // ズーム・パン変換を適用
+        const transformedX = spot.x * this.scale + this.offsetX;
+        const transformedY = spot.y * this.scale + this.offsetY;
+
+        const inputX = this.findOptimalInputPosition(transformedX, transformedY, scaleX, rect.left);
+        const inputY = transformedY * scaleY + rect.top - 15;
+
         container.style.left = inputX + 'px';
         container.style.top = inputY + 'px';
     }

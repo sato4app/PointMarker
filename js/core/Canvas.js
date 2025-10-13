@@ -15,7 +15,7 @@ export class CanvasRenderer {
         this.scale = 1.0;
         this.offsetX = 0;
         this.offsetY = 0;
-        this.minScale = 0.1;
+        this.minScale = 1.0;  // 最小倍率を1.0倍に設定
         this.maxScale = 5.0;
         this.zoomStep = 0.2;
         this.panStep = 50;  // ピクセル単位での移動量
@@ -168,9 +168,17 @@ export class CanvasRenderer {
      */
     redraw(points = [], routePoints = [], spots = [], options = {}) {
         this.drawImage();
+
+        // マーカー描画時にズーム・パン変換を適用
+        this.ctx.save();
+        this.ctx.translate(this.offsetX, this.offsetY);
+        this.ctx.scale(this.scale, this.scale);
+
         this.drawPoints(points, options);
         this.drawRoutePoints(routePoints);
         this.drawSpots(spots, options);
+
+        this.ctx.restore();
     }
 
     /**
@@ -186,11 +194,11 @@ export class CanvasRenderer {
         let availableWidth, availableHeight;
 
         if (layout === 'sidebar') {
-            availableWidth = containerRect.width - 40;
-            availableHeight = window.innerHeight - 140;
+            availableWidth = containerRect.width - 20;
+            availableHeight = window.innerHeight - 100;
         } else {
-            availableWidth = window.innerWidth - 40;
-            availableHeight = window.innerHeight - 140;
+            availableWidth = window.innerWidth - 20;
+            availableHeight = window.innerHeight - 100;
         }
 
         const imageAspectRatio = this.currentImage.height / this.currentImage.width;
