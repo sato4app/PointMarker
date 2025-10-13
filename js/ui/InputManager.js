@@ -247,9 +247,12 @@ export class InputManager {
             this.createInputBox(point, index, false);
         });
 
-        spots.forEach((spot, index) => {
-            this.createSpotInputBox(spot, index, false);
-        });
+        // スポット編集モードの時のみスポット入力ボックスを再作成
+        if (this.isSpotEditMode) {
+            spots.forEach((spot, index) => {
+                this.createSpotInputBox(spot, index, false);
+            });
+        }
     }
 
     /**

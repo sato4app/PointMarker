@@ -393,7 +393,12 @@ export class PointMarkerApp {
     handleCanvasMouseMove(event) {
         if (!this.currentImage) return;
 
-        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
+        // ズーム・パン情報を取得
+        const scale = this.canvasRenderer.getScale();
+        const offset = this.canvasRenderer.getOffset();
+
+        // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
+        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
 
         // ドラッグ中の処理
         if (this.dragDropHandler.updateDrag(coords.x, coords.y, this.pointManager, this.spotManager)) {
@@ -424,7 +429,12 @@ export class PointMarkerApp {
     handleCanvasMouseDown(event) {
         if (!this.currentImage) return;
 
-        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
+        // ズーム・パン情報を取得
+        const scale = this.canvasRenderer.getScale();
+        const offset = this.canvasRenderer.getOffset();
+
+        // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
+        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
         const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
         const mode = this.layoutManager.getCurrentEditingMode();
 
@@ -466,7 +476,12 @@ export class PointMarkerApp {
     handleCanvasClick(event) {
         if (!this.currentImage || this.dragDropHandler.isDraggingObject()) return;
 
-        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas);
+        // ズーム・パン情報を取得
+        const scale = this.canvasRenderer.getScale();
+        const offset = this.canvasRenderer.getOffset();
+
+        // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
+        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
         const mode = this.layoutManager.getCurrentEditingMode();
         const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
 

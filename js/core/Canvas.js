@@ -116,7 +116,7 @@ export class CanvasRenderer {
      */
     drawRoutePoints(routePoints) {
         routePoints.forEach(point => {
-            this.drawDiamond(point.x, point.y, 4, '#ff9500', '#ffffff', 1);
+            this.drawDiamond(point.x, point.y, 5, '#ff9500', '#ffffff', 1);
         });
     }
 

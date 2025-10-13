@@ -41,16 +41,23 @@ export class CoordinateUtils {
     }
 
     /**
-     * マウス座標をキャンバス座標に変換
+     * マウス座標をキャンバス座標に変換（ズーム・パン対応）
      * @param {MouseEvent} event - マウスイベント
      * @param {HTMLCanvasElement} canvas - キャンバス要素
+     * @param {number} scale - ズーム倍率（デフォルト: 1.0）
+     * @param {number} offsetX - X方向オフセット（デフォルト: 0）
+     * @param {number} offsetY - Y方向オフセット（デフォルト: 0）
      * @returns {{x: number, y: number}} キャンバス座標
      */
-    static mouseToCanvas(event, canvas) {
+    static mouseToCanvas(event, canvas, scale = 1.0, offsetX = 0, offsetY = 0) {
         const rect = canvas.getBoundingClientRect();
+        const rawX = (event.clientX - rect.left) * (canvas.width / rect.width);
+        const rawY = (event.clientY - rect.top) * (canvas.height / rect.height);
+
+        // ズーム・パンの逆変換を適用
         return {
-            x: (event.clientX - rect.left) * (canvas.width / rect.width),
-            y: (event.clientY - rect.top) * (canvas.height / rect.height)
+            x: (rawX - offsetX) / scale,
+            y: (rawY - offsetY) / scale
         };
     }
 
