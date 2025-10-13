@@ -239,8 +239,8 @@ export class InputManager {
         this.offsetY = offsetY;
 
         // 既存のポップアップを全て削除
-        this.clearAllInputs();
-        this.clearAllSpotInputs();
+        this.clearInputBoxes();
+        this.clearSpotInputBoxes();
 
         // ポップアップを再作成
         points.forEach((point, index) => {
