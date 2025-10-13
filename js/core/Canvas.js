@@ -42,7 +42,8 @@ export class CanvasRenderer {
         this.ctx.translate(this.offsetX, this.offsetY);
         this.ctx.scale(this.scale, this.scale);
 
-        this.ctx.drawImage(this.currentImage, 0, 0, this.canvas.width / this.scale, this.canvas.height / this.scale);
+        // キャンバスサイズに合わせて画像を描画
+        this.ctx.drawImage(this.currentImage, 0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.restore();
     }
