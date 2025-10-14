@@ -102,7 +102,11 @@ export class PointMarkerApp {
             this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
             // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
             if (!data.skipDisplay) {
-                this.inputManager.updatePointIdDisplay(data.index, data.id);
+                // フォーマット処理後の値を取得して表示
+                const point = this.pointManager.getPoints()[data.index];
+                if (point) {
+                    this.inputManager.updatePointIdDisplay(data.index, point.id);
+                }
             }
         });
         
@@ -179,12 +183,7 @@ export class PointMarkerApp {
             e.preventDefault();
             this.clearPoints();
         });
-        
-        document.getElementById('formatBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.formatAllPointIds();
-        });
-        
+
         document.getElementById('exportBtn').addEventListener('click', async (e) => {
             e.preventDefault();
             await this.exportPoints();
@@ -312,7 +311,6 @@ export class PointMarkerApp {
      */
     enableImageControls() {
         document.getElementById('clearBtn').disabled = false;
-        document.getElementById('formatBtn').disabled = false;
         document.getElementById('exportBtn').disabled = false;
 
         // ズーム・パンボタンを有効化
@@ -629,17 +627,6 @@ export class PointMarkerApp {
             console.error('エクスポートエラー:', error);
             UIHelper.showError('エクスポート中にエラーが発生しました');
         }
-    }
-
-    /**
-     * 全ポイントID名を補正
-     */
-    formatAllPointIds() {
-        const pointCount = this.pointManager.getPoints().length;
-        this.pointManager.formatAllPointIds();
-        this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
-        this.redrawCanvas();
-        UIHelper.showMessage(`${pointCount}個のポイントIDを補正しました`);
     }
 
     /**

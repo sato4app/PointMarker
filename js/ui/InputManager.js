@@ -168,9 +168,8 @@ export class InputManager {
         input.addEventListener('blur', (e) => {
             const value = e.target.value.trim();
 
-            // フォーマット処理を実行して更新
-            const formattedValue = Validators.formatPointId(value);
-            this.notify('onPointIdChange', { index, id: formattedValue, skipFormatting: false });
+            // フォーマット処理なしで通知（PointManager側で処理）
+            this.notify('onPointIdChange', { index, id: value, skipFormatting: false });
             container.classList.remove('is-editing');
         });
         
