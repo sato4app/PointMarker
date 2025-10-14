@@ -435,6 +435,10 @@ header p {
     font-size: 1.1em;
 }
 
+.route-editor h3 {
+    margin-bottom: 12px;
+}
+
 .editor-controls {
     display: flex;
     flex-direction: column;
