@@ -164,12 +164,13 @@ export class InputManager {
             this.notify('onPointIdChange', { index, id: value, skipFormatting: true, skipDisplay: true });
         });
         
-        // blur時は単純に値を保存するのみ（フォーマット処理なし）
+        // blur時はフォーマット処理を実行して保存
         input.addEventListener('blur', (e) => {
             const value = e.target.value.trim();
-            
-            // フォーマット処理なしで更新
-            this.notify('onPointIdChange', { index, id: value, skipFormatting: true });
+
+            // フォーマット処理を実行して更新
+            const formattedValue = Validators.formatPointId(value);
+            this.notify('onPointIdChange', { index, id: formattedValue, skipFormatting: false });
             container.classList.remove('is-editing');
         });
         
