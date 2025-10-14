@@ -36,7 +36,11 @@ export class PointMarkerApp {
 
         // ホバー状態管理
         this.isHoveringPoint = false;
-        
+
+        // ルート編集用の編集前ポイントID保存
+        this.previousStartPoint = '';
+        this.previousEndPoint = '';
+
         this.initializeCallbacks();
         this.initializeEventListeners();
         this.enableBasicControls();
@@ -256,37 +260,52 @@ export class PointMarkerApp {
         // 開始・終了ポイント入力
         const startPointInput = document.getElementById('startPointInput');
         const endPointInput = document.getElementById('endPointInput');
-        
+
+        // focus時に編集前の値を保存
+        startPointInput.addEventListener('focus', (e) => {
+            this.previousStartPoint = e.target.value.trim();
+        });
+
+        endPointInput.addEventListener('focus', (e) => {
+            this.previousEndPoint = e.target.value.trim();
+        });
+
         // input時は変換処理を一切行わない（フォーマット処理もしない）
         startPointInput.addEventListener('input', (e) => {
             const value = e.target.value;
             // 入力中は変換処理なし、フォーマット処理をスキップして設定
             this.routeManager.setStartPoint(value, true);
         });
-        
+
         endPointInput.addEventListener('input', (e) => {
             const value = e.target.value;
             // 入力中は変換処理なし、フォーマット処理をスキップして設定
             this.routeManager.setEndPoint(value, true);
         });
-        
+
         // blur時にX-nn形式のフォーマット処理を実行
         startPointInput.addEventListener('blur', (e) => {
             this.routeManager.setStartPoint(e.target.value);
             const newValue = this.routeManager.getStartEndPoints().start;
             e.target.value = newValue;
-            
+
             // 開始・終了ポイント両方の検証フィードバック
             ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
+
+            // 値が変更された場合の処理
+            this.checkRoutePointChange(this.previousStartPoint, newValue, '開始ポイント');
         });
-        
+
         endPointInput.addEventListener('blur', (e) => {
             this.routeManager.setEndPoint(e.target.value);
             const newValue = this.routeManager.getStartEndPoints().end;
             e.target.value = newValue;
-            
+
             // 開始・終了ポイント両方の検証フィードバック
             ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
+
+            // 値が変更された場合の処理
+            this.checkRoutePointChange(this.previousEndPoint, newValue, '終了ポイント');
         });
 
         // ウィンドウリサイズ
@@ -583,6 +602,26 @@ export class PointMarkerApp {
         const waypointCount = this.routeManager.getRoutePoints().length;
         this.routeManager.clearRoute();
         UIHelper.showMessage(`${waypointCount}個の中間点をクリアしました`);
+    }
+
+    /**
+     * ルートポイント変更チェック
+     * @param {string} previousValue - 編集前の値
+     * @param {string} newValue - 編集後の値
+     * @param {string} pointType - ポイントタイプ（'開始ポイント' or '終了ポイント'）
+     */
+    checkRoutePointChange(previousValue, newValue, pointType) {
+        // 値が変更され、かつ中間点が存在する場合
+        if (previousValue !== newValue && this.routeManager.getRoutePoints().length > 0) {
+            const waypointCount = this.routeManager.getRoutePoints().length;
+            const message = `${pointType}が変更されました（${previousValue || '(空)'} → ${newValue || '(空)'}）。\n\n` +
+                `ルート上の中間点（${waypointCount}個）をクリアしますか？`;
+
+            if (confirm(message)) {
+                this.routeManager.clearRoutePoints();
+                UIHelper.showMessage(`${waypointCount}個の中間点をクリアしました`);
+            }
+        }
     }
 
     /**

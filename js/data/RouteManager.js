@@ -55,7 +55,16 @@ export class RouteManager {
     }
 
     /**
-     * ルート情報を全てクリア
+     * ルート中間点のみをクリア（開始・終了ポイントは保持）
+     */
+    clearRoutePoints() {
+        this.routePoints = [];
+        this.notify('onChange', this.routePoints);
+        this.notify('onCountChange', 0);
+    }
+
+    /**
+     * ルート情報を全てクリア（開始・終了ポイント含む）
      */
     clearRoute() {
         this.routePoints = [];
