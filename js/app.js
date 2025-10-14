@@ -147,6 +147,8 @@ export class PointMarkerApp {
         
         this.layoutManager.setCallback('onModeChange', (mode) => {
             this.inputManager.setEditMode(mode);
+            const checkbox = document.getElementById('showPointIdsCheckbox');
+
             if (mode === 'route') {
                 // ルート編集モードに切り替えた時、既存の開始・終了ポイントを強調表示
                 const startEndPoints = this.routeManager.getStartEndPoints();
@@ -154,10 +156,26 @@ export class PointMarkerApp {
                 if (startEndPoints.start && startEndPoints.start.trim()) highlightIds.push(startEndPoints.start);
                 if (startEndPoints.end && startEndPoints.end.trim()) highlightIds.push(startEndPoints.end);
                 this.inputManager.setHighlightedPoints(highlightIds);
+
+                // チェックボックスをオンにしてポイントIDを表示
+                if (checkbox) {
+                    checkbox.checked = true;
+                    this.handlePointIdVisibilityChange(true);
+                }
             } else if (mode === 'spot') {
                 // スポット編集モードに切り替えた時、スポット入力ボックスを表示
                 this.inputManager.redrawSpotInputBoxes(this.spotManager.getSpots());
+
+                // ポイントIDポップアップを非表示
+                this.handlePointIdVisibilityChange(false);
+            } else if (mode === 'point') {
+                // ポイント編集モードに切り替えた時、チェックボックスをオンにする
+                if (checkbox && !checkbox.checked) {
+                    checkbox.checked = true;
+                    this.handlePointIdVisibilityChange(true);
+                }
             }
+
             this.redrawCanvas();
         });
     }

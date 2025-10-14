@@ -86,12 +86,16 @@ export class InputManager {
             const inputValue = input.value;
             const isHighlighted = this.highlightedPointIds.has(inputValue);
             const container = input._container;
-            
+
             if (this.isSpotEditMode) {
-                // スポット編集モード時はポイントID名ポップアップを完全に非表示
+                // スポット編集モード時は編集不可にする（表示/非表示はチェックボックスで制御）
+                input.disabled = true;
+                input.style.backgroundColor = '#f0f0f0';
                 if (container) {
-                    container.style.display = 'none';
+                    container.style.backgroundColor = '#f0f0f0';
+                    container.style.border = '1px solid #ccc';
                 }
+                input.title = 'スポット編集モード中はポイントID名の編集はできません';
             } else if (this.isRouteEditMode) {
                 // ルート編集モードでは表示し、開始・終了ポイントを強調
                 if (container) {
@@ -526,7 +530,15 @@ export class InputManager {
         this.inputElements.forEach(input => {
             const container = input._container;
             if (container) {
-                container.style.display = visible ? 'block' : 'none';
+                // visibleがtrueの場合は表示、falseの場合は非表示
+                // ただし、updateInputsState()で設定されたスタイルは維持
+                if (visible) {
+                    // スポット編集モード時でもチェックボックスがオンなら表示
+                    container.style.display = 'block';
+                } else {
+                    // チェックボックスがオフなら非表示
+                    container.style.display = 'none';
+                }
             }
         });
     }
