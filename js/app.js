@@ -787,6 +787,13 @@ export class PointMarkerApp {
             );
             const waypointCount = this.routeManager.getRoutePoints().length;
             UIHelper.showMessage(`ルートJSONファイルを読み込みました（${waypointCount}個の中間点）`);
+
+            // ポイントID表示チェックボックスをオンにする
+            const checkbox = document.getElementById('showPointIdsCheckbox');
+            if (checkbox && !checkbox.checked) {
+                checkbox.checked = true;
+                this.handlePointIdVisibilityChange(true);
+            }
         } catch (error) {
             console.error('ルートJSON読み込みエラー:', error);
             UIHelper.showError('ルートJSON読み込み中にエラーが発生しました: ' + error.message);
@@ -904,6 +911,12 @@ export class PointMarkerApp {
         const spots = this.spotManager.getSpots();
 
         this.inputManager.updateTransform(scale, offset.x, offset.y, points, spots);
+
+        // チェックボックスの状態を反映
+        const checkbox = document.getElementById('showPointIdsCheckbox');
+        if (checkbox && !checkbox.checked) {
+            this.inputManager.setPointIdVisibility(false);
+        }
     }
 
     /**
