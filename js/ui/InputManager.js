@@ -517,4 +517,17 @@ export class InputManager {
         this.clearInputBoxes();
         this.clearSpotInputBoxes();
     }
+
+    /**
+     * ポイントID入力ボックスの表示/非表示を切り替え
+     * @param {boolean} visible - 表示するかどうか
+     */
+    setPointIdVisibility(visible) {
+        this.inputElements.forEach(input => {
+            const container = input._container;
+            if (container) {
+                container.style.display = visible ? 'block' : 'none';
+            }
+        });
+    }
 }

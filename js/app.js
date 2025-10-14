@@ -292,8 +292,16 @@ export class PointMarkerApp {
             // 開始・終了ポイント両方の検証フィードバック
             ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
 
-            // 値が変更された場合の処理
-            this.checkRoutePointChange(this.previousStartPoint, newValue, '開始ポイント');
+            // 値が変更された場合の処理（ブランクも含む）
+            if (this.previousStartPoint !== newValue) {
+                this.checkRoutePointChange(this.previousStartPoint, newValue, '開始ポイント');
+                // ポイントID表示チェックボックスをオンにする
+                const checkbox = document.getElementById('showPointIdsCheckbox');
+                if (!checkbox.checked) {
+                    checkbox.checked = true;
+                    this.handlePointIdVisibilityChange(true);
+                }
+            }
         });
 
         endPointInput.addEventListener('blur', (e) => {
@@ -304,8 +312,21 @@ export class PointMarkerApp {
             // 開始・終了ポイント両方の検証フィードバック
             ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
 
-            // 値が変更された場合の処理
-            this.checkRoutePointChange(this.previousEndPoint, newValue, '終了ポイント');
+            // 値が変更された場合の処理（ブランクも含む）
+            if (this.previousEndPoint !== newValue) {
+                this.checkRoutePointChange(this.previousEndPoint, newValue, '終了ポイント');
+                // ポイントID表示チェックボックスをオンにする
+                const checkbox = document.getElementById('showPointIdsCheckbox');
+                if (!checkbox.checked) {
+                    checkbox.checked = true;
+                    this.handlePointIdVisibilityChange(true);
+                }
+            }
+        });
+
+        // ポイントID表示切り替えチェックボックス
+        document.getElementById('showPointIdsCheckbox').addEventListener('change', (e) => {
+            this.handlePointIdVisibilityChange(e.target.checked);
         });
 
         // ウィンドウリサイズ
@@ -632,6 +653,14 @@ export class PointMarkerApp {
         this.spotManager.clearSpots();
         this.inputManager.clearSpotInputBoxes();
         UIHelper.showMessage(`${spotCount}個のスポットをクリアしました`);
+    }
+
+    /**
+     * ポイントID表示/非表示切り替え処理
+     * @param {boolean} visible - 表示するかどうか
+     */
+    handlePointIdVisibilityChange(visible) {
+        this.inputManager.setPointIdVisibility(visible);
     }
 
 
