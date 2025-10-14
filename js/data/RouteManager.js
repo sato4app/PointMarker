@@ -43,15 +43,50 @@ export class RouteManager {
      * @returns {Object} 追加されたポイント
      */
     addRoutePoint(x, y) {
-        const point = { 
-            x: Math.round(x), 
+        const point = {
+            x: Math.round(x),
             y: Math.round(y)
         };
-        
+
         this.routePoints.push(point);
         this.notify('onChange', this.routePoints);
         this.notify('onCountChange', this.routePoints.length);
         return point;
+    }
+
+    /**
+     * 指定位置に最も近いルート中間点を検索
+     * @param {number} x - X座標（キャンバス座標）
+     * @param {number} y - Y座標（キャンバス座標）
+     * @param {number} threshold - 判定閾値（デフォルト: 10px）
+     * @returns {{index: number, point: Object} | null} 見つかった中間点と配列インデックス、見つからない場合はnull
+     */
+    findRoutePointAt(x, y, threshold = 10) {
+        for (let i = 0; i < this.routePoints.length; i++) {
+            const point = this.routePoints[i];
+            const dx = point.x - x;
+            const dy = point.y - y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= threshold) {
+                return { index: i, point: point };
+            }
+        }
+        return null;
+    }
+
+    /**
+     * ルート中間点の座標を更新
+     * @param {number} index - 中間点の配列インデックス
+     * @param {number} x - 新しいX座標
+     * @param {number} y - 新しいY座標
+     */
+    updateRoutePoint(index, x, y) {
+        if (index >= 0 && index < this.routePoints.length) {
+            this.routePoints[index].x = Math.round(x);
+            this.routePoints[index].y = Math.round(y);
+            this.notify('onChange', this.routePoints);
+        }
     }
 
     /**

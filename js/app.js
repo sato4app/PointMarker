@@ -457,13 +457,20 @@ export class PointMarkerApp {
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
 
         // ドラッグ中の処理
-        if (this.dragDropHandler.updateDrag(coords.x, coords.y, this.pointManager, this.spotManager)) {
+        if (this.dragDropHandler.updateDrag(coords.x, coords.y, this.pointManager, this.spotManager, this.routeManager)) {
             this.redrawCanvas();
             return;
         }
 
         // ホバー処理
-        const hasObject = this.findObjectAtMouse(coords.x, coords.y) !== null;
+        const mode = this.layoutManager.getCurrentEditingMode();
+        let hasObject = this.findObjectAtMouse(coords.x, coords.y) !== null;
+
+        // ルート編集モード時は中間点もホバー対象
+        if (mode === 'route' && !hasObject) {
+            hasObject = this.routeManager.findRoutePointAt(coords.x, coords.y) !== null;
+        }
+
         this.updateCursor(hasObject);
     }
 
@@ -491,9 +498,26 @@ export class PointMarkerApp {
 
         // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
-        const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
         const mode = this.layoutManager.getCurrentEditingMode();
 
+        // ルート編集モードの場合、中間点ドラッグを優先チェック
+        if (mode === 'route') {
+            const routePointInfo = this.routeManager.findRoutePointAt(coords.x, coords.y);
+            if (routePointInfo) {
+                this.dragDropHandler.startDrag(
+                    'routePoint',
+                    routePointInfo.index,
+                    coords.x,
+                    coords.y,
+                    routePointInfo.point
+                );
+                event.preventDefault();
+                return;
+            }
+        }
+
+        // ポイント・スポットのドラッグ処理
+        const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
         if (!objectInfo) return;
 
         // 適切なモードでのドラッグ開始をチェック
@@ -539,6 +563,15 @@ export class PointMarkerApp {
         // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
         const mode = this.layoutManager.getCurrentEditingMode();
+
+        // ルート編集モードの場合、中間点上のクリックは無視（ドラッグ専用）
+        if (mode === 'route') {
+            const routePointInfo = this.routeManager.findRoutePointAt(coords.x, coords.y);
+            if (routePointInfo) {
+                return;
+            }
+        }
+
         const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
 
         // 既存オブジェクトクリック時の処理
