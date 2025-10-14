@@ -855,40 +855,29 @@ export class PointMarkerApp {
     }
 
     /**
-     * 上に移動処理
+     * パン処理（汎用）
+     * @param {string} direction - 方向 ('up', 'down', 'left', 'right')
      */
-    handlePanUp() {
-        this.canvasRenderer.panUp();
-        this.updatePopupPositions();
-        this.redrawCanvas();
+    handlePan(direction) {
+        const panMethods = {
+            'up': () => this.canvasRenderer.panUp(),
+            'down': () => this.canvasRenderer.panDown(),
+            'left': () => this.canvasRenderer.panLeft(),
+            'right': () => this.canvasRenderer.panRight()
+        };
+
+        if (panMethods[direction]) {
+            panMethods[direction]();
+            this.updatePopupPositions();
+            this.redrawCanvas();
+        }
     }
 
-    /**
-     * 下に移動処理
-     */
-    handlePanDown() {
-        this.canvasRenderer.panDown();
-        this.updatePopupPositions();
-        this.redrawCanvas();
-    }
-
-    /**
-     * 左に移動処理
-     */
-    handlePanLeft() {
-        this.canvasRenderer.panLeft();
-        this.updatePopupPositions();
-        this.redrawCanvas();
-    }
-
-    /**
-     * 右に移動処理
-     */
-    handlePanRight() {
-        this.canvasRenderer.panRight();
-        this.updatePopupPositions();
-        this.redrawCanvas();
-    }
+    // 後方互換性のための個別メソッド
+    handlePanUp() { this.handlePan('up'); }
+    handlePanDown() { this.handlePan('down'); }
+    handlePanLeft() { this.handlePan('left'); }
+    handlePanRight() { this.handlePan('right'); }
 
     /**
      * 表示リセット処理
