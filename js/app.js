@@ -347,6 +347,11 @@ export class PointMarkerApp {
             this.handlePointIdVisibilityChange(e.target.checked);
         });
 
+        // スポット名表示切り替えチェックボックス
+        document.getElementById('showSpotNamesCheckbox').addEventListener('change', (e) => {
+            this.handleSpotNameVisibilityChange(e.target.checked);
+        });
+
         // ウィンドウリサイズ
         window.addEventListener('resize', () => {
             if (this.currentImage) {
@@ -712,6 +717,14 @@ export class PointMarkerApp {
      */
     handlePointIdVisibilityChange(visible) {
         this.inputManager.setPointIdVisibility(visible);
+    }
+
+    /**
+     * スポット名表示/非表示切り替え処理
+     * @param {boolean} visible - 表示するかどうか
+     */
+    handleSpotNameVisibilityChange(visible) {
+        this.inputManager.setSpotNameVisibility(visible);
     }
 
 

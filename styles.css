@@ -537,7 +537,7 @@ header p {
     font-weight: bold;
 }
 
-.point-id-visibility-control {
+.popup-visibility-control {
     padding: 8px;
     background: white;
     border-radius: var(--border-radius-sm);
@@ -545,7 +545,7 @@ header p {
     font-size: 0.9em;
 }
 
-.point-id-visibility-control label {
+.popup-visibility-control label {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -553,7 +553,7 @@ header p {
     user-select: none;
 }
 
-.point-id-visibility-control input[type="checkbox"] {
+.popup-visibility-control input[type="checkbox"] {
     cursor: pointer;
 }
 

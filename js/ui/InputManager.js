@@ -542,4 +542,22 @@ export class InputManager {
             }
         });
     }
+
+    /**
+     * スポット名入力ボックスの表示/非表示を切り替え
+     * @param {boolean} visible - 表示するかどうか
+     */
+    setSpotNameVisibility(visible) {
+        this.spotInputElements.forEach(input => {
+            const container = input._container;
+            if (container) {
+                // visibleがtrueの場合は表示、falseの場合は非表示
+                if (visible) {
+                    container.style.display = 'block';
+                } else {
+                    container.style.display = 'none';
+                }
+            }
+        });
+    }
 }
