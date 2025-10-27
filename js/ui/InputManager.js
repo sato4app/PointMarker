@@ -365,13 +365,14 @@ export class InputManager {
         input.addEventListener('input', (e) => {
             const value = e.target.value;
             // 入力中は変換処理なし、そのまま保存（表示更新なし）
-            this.notify('onSpotNameChange', { index, name: value, skipDisplay: true });
+            this.notify('onSpotNameChange', { index, name: value, skipFormatting: true, skipDisplay: true });
         });
-        
-        // blur時は単純に値を保存するのみ
+
+        // blur時はフォーマット処理を実行して保存
         input.addEventListener('blur', (e) => {
             const value = e.target.value.trim();
-            this.notify('onSpotNameChange', { index, name: value });
+            // フォーマット処理を実行（SpotManager側で処理）
+            this.notify('onSpotNameChange', { index, name: value, skipFormatting: false });
             container.classList.remove('is-editing');
         });
         

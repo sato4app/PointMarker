@@ -122,11 +122,15 @@ export class PointMarkerApp {
         
         // スポット名変更のコールバック
         this.inputManager.setCallback('onSpotNameChange', (data) => {
-            // 入力中はスポット入力ボックス再生成をスキップ
-            this.spotManager.updateSpotName(data.index, data.name, !!data.skipDisplay);
+            // フォーマット処理を実行（blur時のみ、input時はスキップ）
+            this.spotManager.updateSpotName(data.index, data.name, !!data.skipFormatting, !!data.skipDisplay);
             // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
             if (!data.skipDisplay) {
-                this.inputManager.updateSpotNameDisplay(data.index, data.name);
+                // フォーマット処理後の値を取得して表示
+                const spot = this.spotManager.getSpots()[data.index];
+                if (spot) {
+                    this.inputManager.updateSpotNameDisplay(data.index, spot.name);
+                }
             }
         });
         
