@@ -12,6 +12,7 @@ export class InputManager {
         this.isRouteEditMode = false;
         this.isSpotEditMode = false;
         this.highlightedPointIds = new Set(); // 強調表示するポイントIDのセット
+        this.spotNameVisibility = false; // スポット名表示チェックボックスの状態
         // ズーム・パン状態
         this.scale = 1.0;
         this.offsetX = 0;
@@ -251,8 +252,8 @@ export class InputManager {
             this.createInputBox(point, index, false);
         });
 
-        // スポット編集モードの時のみスポット入力ボックスを再作成
-        if (this.isSpotEditMode) {
+        // スポット編集モードまたはスポット名表示チェックボックスがオンの時、スポット入力ボックスを再作成
+        if (this.isSpotEditMode || this.spotNameVisibility) {
             spots.forEach((spot, index) => {
                 this.createSpotInputBox(spot, index, false);
             });
@@ -432,17 +433,20 @@ export class InputManager {
     updateSpotInputsState() {
         this.spotInputElements.forEach(input => {
             const container = input._container;
-            
-            if (!this.isSpotEditMode) {
-                // スポット編集モード以外では非表示
-                if (container) {
-                    container.style.display = 'none';
-                }
+
+            if (!container) return;
+
+            // スポット編集モードの場合は常に表示
+            if (this.isSpotEditMode) {
+                container.style.display = 'block';
+                return;
+            }
+
+            // スポット編集モード以外では、チェックボックスの状態に応じて表示/非表示
+            if (this.spotNameVisibility) {
+                container.style.display = 'block';
             } else {
-                // スポット編集モードでは表示
-                if (container) {
-                    container.style.display = 'block';
-                }
+                container.style.display = 'none';
             }
         });
     }
@@ -468,8 +472,9 @@ export class InputManager {
      */
     redrawSpotInputBoxes(spots) {
         this.clearSpotInputBoxes();
-        
-        if (this.isSpotEditMode) {
+
+        // スポット編集モードまたはスポット名表示チェックボックスがオンの時のみ再作成
+        if (this.isSpotEditMode || this.spotNameVisibility) {
             setTimeout(() => {
                 spots.forEach((spot, index) => {
                     this.createSpotInputBox(spot, index);
@@ -549,16 +554,9 @@ export class InputManager {
      * @param {boolean} visible - 表示するかどうか
      */
     setSpotNameVisibility(visible) {
-        this.spotInputElements.forEach(input => {
-            const container = input._container;
-            if (container) {
-                // visibleがtrueの場合は表示、falseの場合は非表示
-                if (visible) {
-                    container.style.display = 'block';
-                } else {
-                    container.style.display = 'none';
-                }
-            }
-        });
+        // チェックボックスの状態を保存
+        this.spotNameVisibility = visible;
+        // スポット入力状態を更新
+        this.updateSpotInputsState();
     }
 }

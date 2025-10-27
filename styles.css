@@ -543,6 +543,9 @@ header p {
     border-radius: var(--border-radius-sm);
     border: 1px solid var(--border-color);
     font-size: 0.9em;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .popup-visibility-control label {
