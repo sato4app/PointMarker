@@ -329,28 +329,32 @@ export class PointMarkerApp {
 
         // blur時にX-nn形式のフォーマット処理を実行
         startPointInput.addEventListener('blur', (e) => {
-            this.routeManager.setStartPoint(e.target.value);
-            let newValue = this.routeManager.getStartEndPoints().start;
+            const inputValue = e.target.value.trim();
 
-            // ポイントIDが存在しない場合、スポット名で部分一致検索
-            if (newValue && newValue.trim() !== '') {
-                const registeredIds = this.pointManager.getRegisteredIds();
-                if (!registeredIds.includes(newValue)) {
-                    // スポット名で部分一致検索
-                    const matchingSpots = this.spotManager.findSpotsByPartialName(newValue);
-                    if (matchingSpots.length === 1) {
-                        // 1件のみ該当する場合、そのスポット名を設定
-                        newValue = matchingSpots[0].name;
-                        this.routeManager.setStartPoint(newValue);
-                    } else if (matchingSpots.length > 1) {
-                        // 複数件該当する場合、警告メッセージを表示
-                        const spotNames = matchingSpots.map(s => s.name).join('、');
-                        UIHelper.showWarning(`複数のスポット名が該当します: ${spotNames}`);
-                    }
+            // 入力値が空でない場合のみ処理
+            if (inputValue !== '') {
+                // まず元の入力値でスポット名の部分一致検索
+                const matchingSpots = this.spotManager.findSpotsByPartialName(inputValue);
+
+                if (matchingSpots.length === 1) {
+                    // 1件のみ該当する場合、そのスポット名を設定
+                    this.routeManager.setStartPoint(matchingSpots[0].name);
+                } else if (matchingSpots.length > 1) {
+                    // 複数件該当する場合、警告メッセージを表示
+                    const spotNames = matchingSpots.map(s => s.name).join('、');
+                    UIHelper.showWarning(`複数のスポット名が該当します: ${spotNames}`);
+                    // ポイントIDとしてフォーマット処理を試みる
+                    this.routeManager.setStartPoint(inputValue);
+                } else {
+                    // スポット名が該当しない場合、ポイントIDとしてフォーマット処理
+                    this.routeManager.setStartPoint(inputValue);
                 }
+            } else {
+                // 空の場合はそのまま設定
+                this.routeManager.setStartPoint(inputValue);
             }
 
-            newValue = this.routeManager.getStartEndPoints().start;
+            const newValue = this.routeManager.getStartEndPoints().start;
             e.target.value = newValue;
 
             // 開始・終了ポイント両方の検証フィードバック
@@ -369,28 +373,32 @@ export class PointMarkerApp {
         });
 
         endPointInput.addEventListener('blur', (e) => {
-            this.routeManager.setEndPoint(e.target.value);
-            let newValue = this.routeManager.getStartEndPoints().end;
+            const inputValue = e.target.value.trim();
 
-            // ポイントIDが存在しない場合、スポット名で部分一致検索
-            if (newValue && newValue.trim() !== '') {
-                const registeredIds = this.pointManager.getRegisteredIds();
-                if (!registeredIds.includes(newValue)) {
-                    // スポット名で部分一致検索
-                    const matchingSpots = this.spotManager.findSpotsByPartialName(newValue);
-                    if (matchingSpots.length === 1) {
-                        // 1件のみ該当する場合、そのスポット名を設定
-                        newValue = matchingSpots[0].name;
-                        this.routeManager.setEndPoint(newValue);
-                    } else if (matchingSpots.length > 1) {
-                        // 複数件該当する場合、警告メッセージを表示
-                        const spotNames = matchingSpots.map(s => s.name).join('、');
-                        UIHelper.showWarning(`複数のスポット名が該当します: ${spotNames}`);
-                    }
+            // 入力値が空でない場合のみ処理
+            if (inputValue !== '') {
+                // まず元の入力値でスポット名の部分一致検索
+                const matchingSpots = this.spotManager.findSpotsByPartialName(inputValue);
+
+                if (matchingSpots.length === 1) {
+                    // 1件のみ該当する場合、そのスポット名を設定
+                    this.routeManager.setEndPoint(matchingSpots[0].name);
+                } else if (matchingSpots.length > 1) {
+                    // 複数件該当する場合、警告メッセージを表示
+                    const spotNames = matchingSpots.map(s => s.name).join('、');
+                    UIHelper.showWarning(`複数のスポット名が該当します: ${spotNames}`);
+                    // ポイントIDとしてフォーマット処理を試みる
+                    this.routeManager.setEndPoint(inputValue);
+                } else {
+                    // スポット名が該当しない場合、ポイントIDとしてフォーマット処理
+                    this.routeManager.setEndPoint(inputValue);
                 }
+            } else {
+                // 空の場合はそのまま設定
+                this.routeManager.setEndPoint(inputValue);
             }
 
-            newValue = this.routeManager.getStartEndPoints().end;
+            const newValue = this.routeManager.getStartEndPoints().end;
             e.target.value = newValue;
 
             // 開始・終了ポイント両方の検証フィードバック
