@@ -436,15 +436,36 @@ export class InputManager {
 
             if (!container) return;
 
-            // スポット編集モードの場合は常に表示
+            // スポット編集モードの場合は常に表示・編集可能
             if (this.isSpotEditMode) {
                 container.style.display = 'block';
+                input.disabled = false;
+                input.style.backgroundColor = '';
+                container.style.backgroundColor = '';
+                container.style.border = '';
+                input.title = '';
                 return;
             }
 
-            // スポット編集モード以外では、チェックボックスの状態に応じて表示/非表示
+            // ルート編集モードでチェックボックスがオンの場合
+            if (this.isRouteEditMode && this.spotNameVisibility) {
+                container.style.display = 'block';
+                input.disabled = true;
+                input.style.backgroundColor = '#e0e0e0';
+                container.style.backgroundColor = '#e0e0e0';
+                container.style.border = '2px solid #999';
+                input.title = 'ルート編集モード中はスポット名の編集はできません';
+                return;
+            }
+
+            // その他のモードでチェックボックスがオンの場合
             if (this.spotNameVisibility) {
                 container.style.display = 'block';
+                input.disabled = false;
+                input.style.backgroundColor = '';
+                container.style.backgroundColor = '';
+                container.style.border = '';
+                input.title = '';
             } else {
                 container.style.display = 'none';
             }
