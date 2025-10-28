@@ -213,4 +213,21 @@ export class SpotManager {
         const baseFileName = imageFileName || 'spots';
         return `${baseFileName}_spots.json`;
     }
+
+    /**
+     * スポット名で部分一致検索を行う
+     * @param {string} searchText - 検索テキスト
+     * @returns {Array} 部分一致したスポットの配列
+     */
+    findSpotsByPartialName(searchText) {
+        if (!searchText || searchText.trim() === '') {
+            return [];
+        }
+
+        const searchLower = searchText.toLowerCase();
+        return this.spots.filter(spot => {
+            const spotName = (spot.name || '').toLowerCase();
+            return spotName.includes(searchLower);
+        });
+    }
 }
