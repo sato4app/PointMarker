@@ -74,13 +74,35 @@ export class PointMarkerApp {
         this.routeManager.setCallback('onStartEndChange', (data) => {
             document.getElementById('startPointInput').value = data.start;
             document.getElementById('endPointInput').value = data.end;
-            
+
             // InputManagerに開始・終了ポイントの強調表示を更新
             const highlightIds = [];
-            if (data.start && data.start.trim()) highlightIds.push(data.start);
-            if (data.end && data.end.trim()) highlightIds.push(data.end);
+            const highlightSpotNames = [];
+            const registeredIds = this.pointManager.getRegisteredIds();
+
+            // 開始ポイント
+            if (data.start && data.start.trim()) {
+                if (registeredIds.includes(data.start)) {
+                    highlightIds.push(data.start);
+                } else {
+                    // ポイントIDとして存在しない場合、スポット名として扱う
+                    highlightSpotNames.push(data.start);
+                }
+            }
+
+            // 終了ポイント
+            if (data.end && data.end.trim()) {
+                if (registeredIds.includes(data.end)) {
+                    highlightIds.push(data.end);
+                } else {
+                    // ポイントIDとして存在しない場合、スポット名として扱う
+                    highlightSpotNames.push(data.end);
+                }
+            }
+
             this.inputManager.setHighlightedPoints(highlightIds);
-            
+            this.inputManager.setHighlightedSpotNames(highlightSpotNames);
+
             this.redrawCanvas();
         });
 
@@ -320,7 +342,6 @@ export class PointMarkerApp {
                         // 1件のみ該当する場合、そのスポット名を設定
                         newValue = matchingSpots[0].name;
                         this.routeManager.setStartPoint(newValue);
-                        UIHelper.showMessage(`開始ポイント「${newValue}」を設定しました`);
                     } else if (matchingSpots.length > 1) {
                         // 複数件該当する場合、警告メッセージを表示
                         const spotNames = matchingSpots.map(s => s.name).join('、');
@@ -361,7 +382,6 @@ export class PointMarkerApp {
                         // 1件のみ該当する場合、そのスポット名を設定
                         newValue = matchingSpots[0].name;
                         this.routeManager.setEndPoint(newValue);
-                        UIHelper.showMessage(`終了ポイント「${newValue}」を設定しました`);
                     } else if (matchingSpots.length > 1) {
                         // 複数件該当する場合、警告メッセージを表示
                         const spotNames = matchingSpots.map(s => s.name).join('、');

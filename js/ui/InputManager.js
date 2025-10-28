@@ -12,6 +12,7 @@ export class InputManager {
         this.isRouteEditMode = false;
         this.isSpotEditMode = false;
         this.highlightedPointIds = new Set(); // 強調表示するポイントIDのセット
+        this.highlightedSpotNames = new Set(); // 強調表示するスポット名のセット
         this.spotNameVisibility = false; // スポット名表示チェックボックスの状態
         // ズーム・パン状態
         this.scale = 1.0;
@@ -77,6 +78,22 @@ export class InputManager {
             });
         }
         this.updateInputsState();
+    }
+
+    /**
+     * 指定したスポット名を強調表示
+     * @param {Array<string>} spotNames - 強調表示するスポット名の配列
+     */
+    setHighlightedSpotNames(spotNames) {
+        this.highlightedSpotNames.clear();
+        if (spotNames) {
+            spotNames.forEach(name => {
+                if (name && name.trim()) {
+                    this.highlightedSpotNames.add(name);
+                }
+            });
+        }
+        this.updateSpotInputsState();
     }
 
     /**
@@ -436,6 +453,9 @@ export class InputManager {
 
             if (!container) return;
 
+            const inputValue = input.value;
+            const isHighlighted = this.highlightedSpotNames.has(inputValue);
+
             // スポット編集モードの場合は常に表示・編集可能
             if (this.isSpotEditMode) {
                 container.style.display = 'block';
@@ -450,11 +470,22 @@ export class InputManager {
             // ルート編集モードでチェックボックスがオンの場合
             if (this.isRouteEditMode && this.spotNameVisibility) {
                 container.style.display = 'block';
-                input.disabled = true;
-                input.style.backgroundColor = '#e0e0e0';
-                container.style.backgroundColor = '#e0e0e0';
-                container.style.border = '2px solid #999';
-                input.title = 'ルート編集モード中はスポット名の編集はできません';
+
+                if (isHighlighted) {
+                    // 開始・終了ポイントとして指定されている場合は白背景（ポイントIDと同じ扱い）
+                    input.disabled = true;
+                    input.style.backgroundColor = 'white';
+                    container.style.backgroundColor = 'white';
+                    container.style.border = '2px solid #007bff';
+                    input.title = '開始または終了ポイントとして指定されています';
+                } else {
+                    // 通常のスポット名は灰色背景
+                    input.disabled = true;
+                    input.style.backgroundColor = '#e0e0e0';
+                    container.style.backgroundColor = '#e0e0e0';
+                    container.style.border = '2px solid #999';
+                    input.title = 'ルート編集モード中はスポット名の編集はできません';
+                }
                 return;
             }
 
