@@ -38,8 +38,9 @@ export class ValidationManager {
      * @param {HTMLElement} inputElement - 入力要素
      * @param {string} value - 入力値
      * @param {Object} pointManager - ポイントマネージャー
+     * @param {Object} spotManager - スポットマネージャー（オプション）
      */
-    static updateRoutePointValidationFeedback(inputElement, value, pointManager) {
+    static updateRoutePointValidationFeedback(inputElement, value, pointManager, spotManager = null) {
         // スタイルをクリア
         ValidationManager.clearInputElementStyles(inputElement);
 
@@ -47,25 +48,42 @@ export class ValidationManager {
             return; // 空の場合はバリデーションなし
         }
 
-        // 形式チェック
-        if (!Validators.isValidPointIdFormat(value)) {
-            ValidationManager.setInputElementError(inputElement, 'X-nn形式で入力してください（例：A-01, J-12）');
+        // まずポイントIDとして存在チェック
+        const registeredIds = pointManager.getRegisteredIds();
+        if (registeredIds.includes(value)) {
+            // ポイントIDとして存在する場合は緑の枠線
+            inputElement.style.borderColor = '#4caf50';
+            inputElement.style.borderWidth = '2px';
+            if (inputElement.title) {
+                inputElement.title = '';
+            }
             return;
         }
 
-        // 存在チェック
-        const registeredIds = pointManager.getRegisteredIds();
-        if (!registeredIds.includes(value)) {
+        // スポット名として部分一致チェック
+        if (spotManager) {
+            const matchingSpots = spotManager.findSpotsByPartialName(value);
+            if (matchingSpots.length > 0) {
+                // スポット名として該当する場合は緑の枠線
+                inputElement.style.borderColor = '#4caf50';
+                inputElement.style.borderWidth = '2px';
+                if (inputElement.title) {
+                    inputElement.title = '';
+                }
+                return;
+            }
+        }
+
+        // ポイントIDでもスポット名でも該当しない場合はエラー
+        // 形式チェック（X-nn形式かどうか）
+        if (Validators.isValidPointIdFormat(value)) {
+            // X-nn形式だが存在しない場合は赤枠
             ValidationManager.setInputElementError(inputElement,
                 `ポイント「${value}」が見つかりません`, true);
-            return;
-        }
-
-        // 正常な場合は緑の枠線
-        inputElement.style.borderColor = '#4caf50';
-        inputElement.style.borderWidth = '2px';
-        if (inputElement.title) {
-            inputElement.title = '';
+        } else {
+            // X-nn形式でもなく、スポット名でも該当しない場合はピンク背景
+            ValidationManager.setInputElementError(inputElement,
+                `該当するポイントまたはスポットが見つかりません`, false);
         }
     }
 
@@ -100,10 +118,11 @@ export class ValidationManager {
 
     /**
      * 開始・終了ポイントの両方のバリデーションを更新
-     * @param {Object} routeManager - ルートマネージャー
+     * @param {Object} routeManager - ルートマネージャー（未使用だが互換性のため残す）
      * @param {Object} pointManager - ポイントマネージャー
+     * @param {Object} spotManager - スポットマネージャー（オプション）
      */
-    static updateBothRoutePointsValidation(routeManager, pointManager) {
+    static updateBothRoutePointsValidation(routeManager, pointManager, spotManager = null) {
         const startPointInput = document.getElementById('startPointInput');
         const endPointInput = document.getElementById('endPointInput');
 
@@ -111,15 +130,11 @@ export class ValidationManager {
         const endValue = endPointInput.value.trim();
 
         // まず通常のバリデーションを実行
-        ValidationManager.updateRoutePointValidationFeedback(startPointInput, startValue, pointManager);
-        ValidationManager.updateRoutePointValidationFeedback(endPointInput, endValue, pointManager);
+        ValidationManager.updateRoutePointValidationFeedback(startPointInput, startValue, pointManager, spotManager);
+        ValidationManager.updateRoutePointValidationFeedback(endPointInput, endValue, pointManager, spotManager);
 
-        // 両方とも有効で同じ値の場合は重複エラー
-        if (startValue && endValue &&
-            Validators.isValidPointIdFormat(startValue) &&
-            Validators.isValidPointIdFormat(endValue) &&
-            startValue === endValue) {
-
+        // 両方とも同じ値の場合は重複エラー
+        if (startValue && endValue && startValue === endValue) {
             ValidationManager.setInputElementError(startPointInput,
                 '開始ポイントと終了ポイントに同じIDが設定されています', true);
             ValidationManager.setInputElementError(endPointInput,

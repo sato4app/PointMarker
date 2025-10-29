@@ -707,7 +707,7 @@ export class PointMarkerApp {
             : this.routeManager.getStartEndPoints().end;
 
         // 開始・終了ポイント両方の検証フィードバック
-        ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
+        ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager, this.spotManager);
 
         // 値が変更された場合の処理（ブランクも含む）
         if (previousValue !== newValue) {
