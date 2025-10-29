@@ -181,7 +181,7 @@ export class RouteManager {
 
             // スポット名として登録されているかチェック
             if (spotManager) {
-                const allSpots = spotManager.getAllSpots();
+                const allSpots = spotManager.getSpots();
                 isRegisteredAsSpot = allSpots.some(spot => spot.name === this.startPointId);
             }
 
@@ -200,7 +200,7 @@ export class RouteManager {
 
             // スポット名として登録されているかチェック
             if (spotManager) {
-                const allSpots = spotManager.getAllSpots();
+                const allSpots = spotManager.getSpots();
                 isRegisteredAsSpot = allSpots.some(spot => spot.name === this.endPointId);
             }
 
