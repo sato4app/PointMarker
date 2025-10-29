@@ -39,6 +39,7 @@ export class ValidationManager {
      * @param {string} value - 入力値
      * @param {Object} pointManager - ポイントマネージャー
      * @param {Object} spotManager - スポットマネージャー（オプション）
+     * @returns {Array<string>} 複数一致したスポット名の配列（なければ空配列）
      */
     static updateRoutePointValidationFeedback(inputElement, value, pointManager, spotManager = null) {
         // スタイルをクリア
@@ -46,7 +47,7 @@ export class ValidationManager {
 
         if (!value.trim()) {
             console.log(`[ルートポイント検証] 入力値: 空 - バリデーションスキップ`);
-            return; // 空の場合はバリデーションなし
+            return []; // 空の場合はバリデーションなし
         }
 
         console.log(`[ルートポイント検証] 入力値: "${value}"`);
@@ -61,7 +62,7 @@ export class ValidationManager {
             if (inputElement.title) {
                 inputElement.title = '';
             }
-            return;
+            return [];
         }
 
         // スポット名として部分一致チェック
@@ -75,14 +76,15 @@ export class ValidationManager {
                 if (inputElement.title) {
                     inputElement.title = '';
                 }
-                return;
+                return [];
             } else if (matchingSpots.length > 1) {
                 // 複数件該当する場合はピンク背景
-                const spotNames = matchingSpots.map(s => s.name).join('、');
-                console.log(`⚠ スポット名として部分一致 (複数件): ${spotNames} (合計: ${matchingSpots.length}件)`);
+                const spotNames = matchingSpots.map(s => s.name);
+                const spotNamesStr = spotNames.join('、');
+                console.log(`⚠ スポット名として部分一致 (複数件): ${spotNamesStr} (合計: ${matchingSpots.length}件)`);
                 ValidationManager.setInputElementError(inputElement,
-                    `複数のスポット名が該当します: ${spotNames}`, false);
-                return;
+                    `複数のスポット名が該当します: ${spotNamesStr}`, false);
+                return spotNames; // 複数一致したスポット名を返す
             } else {
                 console.log(`✗ スポット名として部分一致: 0件`);
             }
@@ -101,6 +103,7 @@ export class ValidationManager {
             ValidationManager.setInputElementError(inputElement,
                 `該当するポイントまたはスポットが見つかりません`, false);
         }
+        return [];
     }
 
     /**
@@ -137,6 +140,7 @@ export class ValidationManager {
      * @param {Object} routeManager - ルートマネージャー（未使用だが互換性のため残す）
      * @param {Object} pointManager - ポイントマネージャー
      * @param {Object} spotManager - スポットマネージャー（オプション）
+     * @returns {Object} 複数一致したスポット名の情報 { start: Array<string>, end: Array<string> }
      */
     static updateBothRoutePointsValidation(routeManager, pointManager, spotManager = null) {
         const startPointInput = document.getElementById('startPointInput');
@@ -145,9 +149,9 @@ export class ValidationManager {
         const startValue = startPointInput.value.trim();
         const endValue = endPointInput.value.trim();
 
-        // まず通常のバリデーションを実行
-        ValidationManager.updateRoutePointValidationFeedback(startPointInput, startValue, pointManager, spotManager);
-        ValidationManager.updateRoutePointValidationFeedback(endPointInput, endValue, pointManager, spotManager);
+        // まず通常のバリデーションを実行（複数一致したスポット名を取得）
+        const startMatchingSpots = ValidationManager.updateRoutePointValidationFeedback(startPointInput, startValue, pointManager, spotManager);
+        const endMatchingSpots = ValidationManager.updateRoutePointValidationFeedback(endPointInput, endValue, pointManager, spotManager);
 
         // 両方とも同じ値の場合は重複エラー
         if (startValue && endValue && startValue === endValue) {
@@ -156,5 +160,10 @@ export class ValidationManager {
             ValidationManager.setInputElementError(endPointInput,
                 '開始ポイントと終了ポイントに同じIDが設定されています', true);
         }
+
+        return {
+            start: startMatchingSpots,
+            end: endMatchingSpots
+        };
     }
 }

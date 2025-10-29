@@ -706,8 +706,12 @@ export class PointMarkerApp {
             ? this.routeManager.getStartEndPoints().start
             : this.routeManager.getStartEndPoints().end;
 
-        // 開始・終了ポイント両方の検証フィードバック
-        ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager, this.spotManager);
+        // 開始・終了ポイント両方の検証フィードバック（複数一致したスポット名を取得）
+        const matchingSpots = ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager, this.spotManager);
+
+        // 複数一致したスポット名をエラー状態として設定
+        const allMatchingSpotNames = [...matchingSpots.start, ...matchingSpots.end];
+        this.inputManager.setErrorSpotNames(allMatchingSpotNames);
 
         // 値が変更された場合の処理（ブランクも含む）
         if (previousValue !== newValue) {

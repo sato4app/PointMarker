@@ -13,6 +13,7 @@ export class InputManager {
         this.isSpotEditMode = false;
         this.highlightedPointIds = new Set(); // 強調表示するポイントIDのセット
         this.highlightedSpotNames = new Set(); // 強調表示するスポット名のセット
+        this.errorSpotNames = new Set(); // エラー状態のスポット名のセット
         this.spotNameVisibility = false; // スポット名表示チェックボックスの状態
         // ズーム・パン状態
         this.scale = 1.0;
@@ -53,12 +54,14 @@ export class InputManager {
     setEditMode(mode) {
         this.isRouteEditMode = (mode === 'route');
         this.isSpotEditMode = (mode === 'spot');
-        
+
         if (mode !== 'route') {
-            // ルート編集モード終了時は強調表示をクリア
+            // ルート編集モード終了時は強調表示とエラー状態をクリア
             this.highlightedPointIds.clear();
+            this.highlightedSpotNames.clear();
+            this.errorSpotNames.clear();
         }
-        
+
         this.updateInputsState();
         this.updateSpotInputsState();
     }
@@ -90,6 +93,22 @@ export class InputManager {
             spotNames.forEach(name => {
                 if (name && name.trim()) {
                     this.highlightedSpotNames.add(name);
+                }
+            });
+        }
+        this.updateSpotInputsState();
+    }
+
+    /**
+     * 指定したスポット名をエラー状態に設定
+     * @param {Array<string>} spotNames - エラー状態にするスポット名の配列
+     */
+    setErrorSpotNames(spotNames) {
+        this.errorSpotNames.clear();
+        if (spotNames) {
+            spotNames.forEach(name => {
+                if (name && name.trim()) {
+                    this.errorSpotNames.add(name);
                 }
             });
         }
@@ -455,6 +474,7 @@ export class InputManager {
 
             const inputValue = input.value;
             const isHighlighted = this.highlightedSpotNames.has(inputValue);
+            const isError = this.errorSpotNames.has(inputValue);
 
             // スポット編集モードの場合は常に表示・編集可能
             if (this.isSpotEditMode) {
@@ -471,7 +491,14 @@ export class InputManager {
             if (this.isRouteEditMode && this.spotNameVisibility) {
                 container.style.display = 'block';
 
-                if (isHighlighted) {
+                if (isError) {
+                    // エラー状態の場合はピンク背景（複数一致など）
+                    input.disabled = true;
+                    input.style.backgroundColor = '#ffebee';
+                    container.style.backgroundColor = '#ffebee';
+                    container.style.border = '2px solid #f44336';
+                    input.title = 'このスポット名は複数一致の対象です';
+                } else if (isHighlighted) {
                     // 開始・終了ポイントとして指定されている場合は白背景（ポイントIDと同じ扱い）
                     input.disabled = true;
                     input.style.backgroundColor = 'white';
