@@ -314,26 +314,7 @@ export class PointMarkerApp {
             this.previousEndPoint = e.target.value.trim();
         });
 
-        // input時は英小文字→英大文字変換のみ実行（リアルタイム変換）
-        startPointInput.addEventListener('input', (e) => {
-            const value = e.target.value;
-            // 英小文字を英大文字に変換（リアルタイム）
-            const formattedValue = Validators.formatPointId(value);
-            e.target.value = formattedValue;
-            // フォーマット処理をスキップして設定（重複処理を避ける）
-            this.routeManager.setStartPoint(formattedValue, true);
-        });
-
-        endPointInput.addEventListener('input', (e) => {
-            const value = e.target.value;
-            // 英小文字を英大文字に変換（リアルタイム）
-            const formattedValue = Validators.formatPointId(value);
-            e.target.value = formattedValue;
-            // フォーマット処理をスキップして設定（重複処理を避ける）
-            this.routeManager.setEndPoint(formattedValue, true);
-        });
-
-        // blur時にX-nn形式のフォーマット処理を実行
+        // blur時に半角・大文字変換とX-nn形式のフォーマット処理を実行
         startPointInput.addEventListener('blur', (e) => {
             const inputValue = e.target.value.trim();
             const newValue = this.handleRoutePointBlur(inputValue, 'start', this.previousStartPoint);
