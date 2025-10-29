@@ -63,13 +63,19 @@ export class ValidationManager {
         // スポット名として部分一致チェック
         if (spotManager) {
             const matchingSpots = spotManager.findSpotsByPartialName(value);
-            if (matchingSpots.length > 0) {
-                // スポット名として該当する場合は緑の枠線
+            if (matchingSpots.length === 1) {
+                // スポット名として1件のみ該当する場合は緑の枠線
                 inputElement.style.borderColor = '#4caf50';
                 inputElement.style.borderWidth = '2px';
                 if (inputElement.title) {
                     inputElement.title = '';
                 }
+                return;
+            } else if (matchingSpots.length > 1) {
+                // 複数件該当する場合はピンク背景
+                const spotNames = matchingSpots.map(s => s.name).join('、');
+                ValidationManager.setInputElementError(inputElement,
+                    `複数のスポット名が該当します: ${spotNames}`, false);
                 return;
             }
         }
