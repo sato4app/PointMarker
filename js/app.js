@@ -688,10 +688,8 @@ export class PointMarkerApp {
                 const formattedSpotName = Validators.formatPointId(matchingSpots[0].name);
                 this.routeManager[setPointMethod](formattedSpotName);
             } else if (matchingSpots.length > 1) {
-                // 複数件該当する場合、警告メッセージを表示
-                const spotNames = matchingSpots.map(s => s.name).join('、');
-                UIHelper.showWarning(`複数のスポット名が該当します: ${spotNames}`);
-                // ポイントIDとしてフォーマット処理を試みる
+                // 複数件該当する場合、ポイントIDとしてフォーマット処理を試みる
+                // （警告は表示せず、バリデーション時にピンク背景で表示）
                 this.routeManager[setPointMethod](inputValue);
             } else {
                 // スポット名が該当しない場合、ポイントIDとしてフォーマット処理
