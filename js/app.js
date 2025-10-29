@@ -816,7 +816,8 @@ export class PointMarkerApp {
         }
 
         const validation = this.routeManager.validateStartEndPoints(
-            this.pointManager.getRegisteredIds()
+            this.pointManager.getRegisteredIds(),
+            this.spotManager
         );
         
         if (!validation.isValid) {

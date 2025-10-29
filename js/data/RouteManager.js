@@ -170,30 +170,55 @@ export class RouteManager {
     /**
      * 開始・終了ポイントの検証
      * @param {Array} registeredIds - 登録済みポイントID配列
+     * @param {Object} spotManager - スポットマネージャー（オプション）
      * @returns {{isValid: boolean, message?: string}} 検証結果
      */
-    validateStartEndPoints(registeredIds) {
-        if (this.startPointId && !registeredIds.includes(this.startPointId)) {
-            return {
-                isValid: false,
-                message: `開始ポイント "${this.startPointId}" がポイントとして登録されていません。先にポイント編集モードでポイントを登録してください。`
-            };
+    validateStartEndPoints(registeredIds, spotManager = null) {
+        // 開始ポイントのチェック
+        if (this.startPointId) {
+            const isRegisteredAsPoint = registeredIds.includes(this.startPointId);
+            let isRegisteredAsSpot = false;
+
+            // スポット名として登録されているかチェック
+            if (spotManager) {
+                const allSpots = spotManager.getAllSpots();
+                isRegisteredAsSpot = allSpots.some(spot => spot.name === this.startPointId);
+            }
+
+            if (!isRegisteredAsPoint && !isRegisteredAsSpot) {
+                return {
+                    isValid: false,
+                    message: `開始ポイント "${this.startPointId}" がポイントまたはスポットとして登録されていません。先にポイント編集モードまたはスポット編集モードで登録してください。`
+                };
+            }
         }
-        
-        if (this.endPointId && !registeredIds.includes(this.endPointId)) {
-            return {
-                isValid: false,
-                message: `終了ポイント "${this.endPointId}" がポイントとして登録されていません。先にポイント編集モードでポイントを登録してください。`
-            };
+
+        // 終了ポイントのチェック
+        if (this.endPointId) {
+            const isRegisteredAsPoint = registeredIds.includes(this.endPointId);
+            let isRegisteredAsSpot = false;
+
+            // スポット名として登録されているかチェック
+            if (spotManager) {
+                const allSpots = spotManager.getAllSpots();
+                isRegisteredAsSpot = allSpots.some(spot => spot.name === this.endPointId);
+            }
+
+            if (!isRegisteredAsPoint && !isRegisteredAsSpot) {
+                return {
+                    isValid: false,
+                    message: `終了ポイント "${this.endPointId}" がポイントまたはスポットとして登録されていません。先にポイント編集モードまたはスポット編集モードで登録してください。`
+                };
+            }
         }
-        
+
         if (!this.startPointId || !this.endPointId) {
             return {
                 isValid: false,
                 message: '開始ポイントと終了ポイントの両方を設定してください。'
             };
         }
-        
+
         // 中間点が1つ以上あることをチェック
         if (this.routePoints.length < 1) {
             return {
@@ -201,7 +226,7 @@ export class RouteManager {
                 message: 'ルートを作成するには中間点が1つ以上必要です。地図上をクリックして中間点を追加してください。'
             };
         }
-        
+
         return { isValid: true };
     }
 
