@@ -125,6 +125,38 @@ export class PointMarkerApp {
 
         // 入力管理のコールバック
         this.inputManager.setCallback('onPointIdChange', (data) => {
+            // blur時のみ重複チェックを実行
+            if (!data.skipFormatting && data.id.trim() !== '') {
+                const registeredIds = this.pointManager.getRegisteredIds();
+
+                // 自分以外で同じIDが存在するかチェック
+                const hasDuplicate = registeredIds.some((id, idx) => {
+                    return id === data.id && idx !== data.index;
+                });
+
+                if (hasDuplicate) {
+                    // 重複エラーを表示
+                    const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
+                    if (inputElement) {
+                        inputElement.style.backgroundColor = '#ffebee'; // ピンク背景
+                        inputElement.style.borderColor = '#f44336'; // 赤枠
+                        inputElement.style.borderWidth = '2px';
+                        inputElement.title = `ポイントID "${data.id}" は既に使用されています`;
+                    }
+                    UIHelper.showError(`ポイントID "${data.id}" は既に使用されています。別のIDを入力してください。`);
+                    return; // 更新処理を中断
+                } else {
+                    // 重複がない場合はエラー表示をクリア
+                    const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
+                    if (inputElement) {
+                        inputElement.style.backgroundColor = '';
+                        inputElement.style.borderColor = '';
+                        inputElement.style.borderWidth = '';
+                        inputElement.title = '';
+                    }
+                }
+            }
+
             this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
             // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
             if (!data.skipDisplay) {
