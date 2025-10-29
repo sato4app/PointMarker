@@ -125,33 +125,40 @@ export class PointMarkerApp {
 
         // 入力管理のコールバック
         this.inputManager.setCallback('onPointIdChange', (data) => {
-            // blur時のみ重複チェックを実行
+            // まずフォーマット処理を実行（blur時もinput時も）
+            this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
+
+            // blur時のみ、フォーマット後のIDで重複チェックを実行
             if (!data.skipFormatting && data.id.trim() !== '') {
+                // フォーマット後のIDを取得
+                const point = this.pointManager.getPoints()[data.index];
+                const formattedId = point ? point.id : data.id;
+
                 const registeredIds = this.pointManager.getRegisteredIds();
 
-                console.log(`[ポイントID重複チェック] 入力値: "${data.id}" (index: ${data.index})`);
+                console.log(`[ポイントID重複チェック] 入力値(元): "${data.id}"`);
+                console.log(`[ポイントID重複チェック] 入力値(フォーマット後): "${formattedId}" (index: ${data.index})`);
                 console.log(`[ポイントID重複チェック] 登録済みID一覧:`, registeredIds);
 
                 // 自分以外で同じIDが存在するかチェック
                 const hasDuplicate = registeredIds.some((id, idx) => {
-                    return id === data.id && idx !== data.index;
+                    return id === formattedId && idx !== data.index;
                 });
 
                 if (hasDuplicate) {
                     // 重複エラーを表示
-                    console.log(`❌ [ポイントID重複チェック] 重複検出: ポイントID "${data.id}" は既に使用されています`);
+                    console.log(`❌ [ポイントID重複チェック] 重複検出: ポイントID "${formattedId}" は既に使用されています`);
                     const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
                     if (inputElement) {
                         inputElement.style.backgroundColor = '#ffebee'; // ピンク背景
                         inputElement.style.borderColor = '#f44336'; // 赤枠
                         inputElement.style.borderWidth = '2px';
-                        inputElement.title = `ポイントID "${data.id}" は既に使用されています`;
+                        inputElement.title = `ポイントID "${formattedId}" は既に使用されています`;
                     }
-                    UIHelper.showError(`ポイントID "${data.id}" は既に使用されています。別のIDを入力してください。`);
-                    return; // 更新処理を中断
+                    UIHelper.showError(`ポイントID "${formattedId}" は既に使用されています。別のIDを入力してください。`);
                 } else {
                     // 重複がない場合はエラー表示をクリア
-                    console.log(`✅ [ポイントID重複チェック] 重複なし: ポイントID "${data.id}" は使用可能です`);
+                    console.log(`✅ [ポイントID重複チェック] 重複なし: ポイントID "${formattedId}" は使用可能です`);
                     const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
                     if (inputElement) {
                         inputElement.style.backgroundColor = '';
@@ -162,7 +169,6 @@ export class PointMarkerApp {
                 }
             }
 
-            this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
             // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
             if (!data.skipDisplay) {
                 // フォーマット処理後の値を取得して表示
