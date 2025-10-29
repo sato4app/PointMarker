@@ -330,90 +330,14 @@ export class PointMarkerApp {
         // blur時にX-nn形式のフォーマット処理を実行
         startPointInput.addEventListener('blur', (e) => {
             const inputValue = e.target.value.trim();
-
-            // 入力値が空でない場合のみ処理
-            if (inputValue !== '') {
-                // まず元の入力値でスポット名の部分一致検索
-                const matchingSpots = this.spotManager.findSpotsByPartialName(inputValue);
-
-                if (matchingSpots.length === 1) {
-                    // 1件のみ該当する場合、そのスポット名を設定
-                    this.routeManager.setStartPoint(matchingSpots[0].name);
-                } else if (matchingSpots.length > 1) {
-                    // 複数件該当する場合、警告メッセージを表示
-                    const spotNames = matchingSpots.map(s => s.name).join('、');
-                    UIHelper.showWarning(`複数のスポット名が該当します: ${spotNames}`);
-                    // ポイントIDとしてフォーマット処理を試みる
-                    this.routeManager.setStartPoint(inputValue);
-                } else {
-                    // スポット名が該当しない場合、ポイントIDとしてフォーマット処理
-                    this.routeManager.setStartPoint(inputValue);
-                }
-            } else {
-                // 空の場合はそのまま設定
-                this.routeManager.setStartPoint(inputValue);
-            }
-
-            const newValue = this.routeManager.getStartEndPoints().start;
+            const newValue = this.handleRoutePointBlur(inputValue, 'start', this.previousStartPoint);
             e.target.value = newValue;
-
-            // 開始・終了ポイント両方の検証フィードバック
-            ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
-
-            // 値が変更された場合の処理（ブランクも含む）
-            if (this.previousStartPoint !== newValue) {
-                this.checkRoutePointChange(this.previousStartPoint, newValue, '開始ポイント');
-                // ポイントID表示チェックボックスをオンにする
-                const checkbox = document.getElementById('showPointIdsCheckbox');
-                if (!checkbox.checked) {
-                    checkbox.checked = true;
-                    this.handlePointIdVisibilityChange(true);
-                }
-            }
         });
 
         endPointInput.addEventListener('blur', (e) => {
             const inputValue = e.target.value.trim();
-
-            // 入力値が空でない場合のみ処理
-            if (inputValue !== '') {
-                // まず元の入力値でスポット名の部分一致検索
-                const matchingSpots = this.spotManager.findSpotsByPartialName(inputValue);
-
-                if (matchingSpots.length === 1) {
-                    // 1件のみ該当する場合、そのスポット名を設定
-                    this.routeManager.setEndPoint(matchingSpots[0].name);
-                } else if (matchingSpots.length > 1) {
-                    // 複数件該当する場合、警告メッセージを表示
-                    const spotNames = matchingSpots.map(s => s.name).join('、');
-                    UIHelper.showWarning(`複数のスポット名が該当します: ${spotNames}`);
-                    // ポイントIDとしてフォーマット処理を試みる
-                    this.routeManager.setEndPoint(inputValue);
-                } else {
-                    // スポット名が該当しない場合、ポイントIDとしてフォーマット処理
-                    this.routeManager.setEndPoint(inputValue);
-                }
-            } else {
-                // 空の場合はそのまま設定
-                this.routeManager.setEndPoint(inputValue);
-            }
-
-            const newValue = this.routeManager.getStartEndPoints().end;
+            const newValue = this.handleRoutePointBlur(inputValue, 'end', this.previousEndPoint);
             e.target.value = newValue;
-
-            // 開始・終了ポイント両方の検証フィードバック
-            ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
-
-            // 値が変更された場合の処理（ブランクも含む）
-            if (this.previousEndPoint !== newValue) {
-                this.checkRoutePointChange(this.previousEndPoint, newValue, '終了ポイント');
-                // ポイントID表示チェックボックスをオンにする
-                const checkbox = document.getElementById('showPointIdsCheckbox');
-                if (!checkbox.checked) {
-                    checkbox.checked = true;
-                    this.handlePointIdVisibilityChange(true);
-                }
-            }
         });
 
         // ポイントID表示切り替えチェックボックス
@@ -737,6 +661,62 @@ export class PointMarkerApp {
     }
 
     /**
+     * ルートポイント（開始・終了）のblur処理を統合処理
+     * @param {string} inputValue - 入力値
+     * @param {string} pointType - ポイントタイプ ('start' or 'end')
+     * @param {string} previousValue - 前回の値
+     * @returns {string} 設定された値
+     */
+    handleRoutePointBlur(inputValue, pointType, previousValue) {
+        const isStartPoint = pointType === 'start';
+        const setPointMethod = isStartPoint ? 'setStartPoint' : 'setEndPoint';
+        const pointLabel = isStartPoint ? '開始ポイント' : '終了ポイント';
+
+        // 入力値が空でない場合のみ処理
+        if (inputValue !== '') {
+            // まず元の入力値でスポット名の部分一致検索
+            const matchingSpots = this.spotManager.findSpotsByPartialName(inputValue);
+
+            if (matchingSpots.length === 1) {
+                // 1件のみ該当する場合、そのスポット名を設定
+                this.routeManager[setPointMethod](matchingSpots[0].name);
+            } else if (matchingSpots.length > 1) {
+                // 複数件該当する場合、警告メッセージを表示
+                const spotNames = matchingSpots.map(s => s.name).join('、');
+                UIHelper.showWarning(`複数のスポット名が該当します: ${spotNames}`);
+                // ポイントIDとしてフォーマット処理を試みる
+                this.routeManager[setPointMethod](inputValue);
+            } else {
+                // スポット名が該当しない場合、ポイントIDとしてフォーマット処理
+                this.routeManager[setPointMethod](inputValue);
+            }
+        } else {
+            // 空の場合はそのまま設定
+            this.routeManager[setPointMethod](inputValue);
+        }
+
+        const newValue = isStartPoint
+            ? this.routeManager.getStartEndPoints().start
+            : this.routeManager.getStartEndPoints().end;
+
+        // 開始・終了ポイント両方の検証フィードバック
+        ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager);
+
+        // 値が変更された場合の処理（ブランクも含む）
+        if (previousValue !== newValue) {
+            this.checkRoutePointChange(previousValue, newValue, pointLabel);
+            // ポイントID表示チェックボックスをオンにする
+            const checkbox = document.getElementById('showPointIdsCheckbox');
+            if (!checkbox.checked) {
+                checkbox.checked = true;
+                this.handlePointIdVisibilityChange(true);
+            }
+        }
+
+        return newValue;
+    }
+
+    /**
      * ポイントをクリア
      */
     clearPoints() {
@@ -1020,23 +1000,32 @@ export class PointMarkerApp {
     }
 
     /**
-     * ズームイン処理
+     * ズーム処理（汎用）
+     * @param {string} direction - 方向 ('in' or 'out')
      */
-    handleZoomIn() {
-        this.canvasRenderer.zoomIn();
+    handleZoom(direction) {
+        if (direction === 'in') {
+            this.canvasRenderer.zoomIn();
+        } else if (direction === 'out') {
+            this.canvasRenderer.zoomOut();
+        }
         this.updateZoomButtonStates();
         this.updatePopupPositions();
         this.redrawCanvas();
     }
 
     /**
+     * ズームイン処理
+     */
+    handleZoomIn() {
+        this.handleZoom('in');
+    }
+
+    /**
      * ズームアウト処理
      */
     handleZoomOut() {
-        this.canvasRenderer.zoomOut();
-        this.updateZoomButtonStates();
-        this.updatePopupPositions();
-        this.redrawCanvas();
+        this.handleZoom('out');
     }
 
     /**
