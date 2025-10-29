@@ -129,6 +129,9 @@ export class PointMarkerApp {
             if (!data.skipFormatting && data.id.trim() !== '') {
                 const registeredIds = this.pointManager.getRegisteredIds();
 
+                console.log(`[ポイントID重複チェック] 入力値: "${data.id}" (index: ${data.index})`);
+                console.log(`[ポイントID重複チェック] 登録済みID一覧:`, registeredIds);
+
                 // 自分以外で同じIDが存在するかチェック
                 const hasDuplicate = registeredIds.some((id, idx) => {
                     return id === data.id && idx !== data.index;
@@ -136,6 +139,7 @@ export class PointMarkerApp {
 
                 if (hasDuplicate) {
                     // 重複エラーを表示
+                    console.log(`❌ [ポイントID重複チェック] 重複検出: ポイントID "${data.id}" は既に使用されています`);
                     const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
                     if (inputElement) {
                         inputElement.style.backgroundColor = '#ffebee'; // ピンク背景
@@ -147,6 +151,7 @@ export class PointMarkerApp {
                     return; // 更新処理を中断
                 } else {
                     // 重複がない場合はエラー表示をクリア
+                    console.log(`✅ [ポイントID重複チェック] 重複なし: ポイントID "${data.id}" は使用可能です`);
                     const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
                     if (inputElement) {
                         inputElement.style.backgroundColor = '';
