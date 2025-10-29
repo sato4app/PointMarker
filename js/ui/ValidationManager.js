@@ -46,17 +46,13 @@ export class ValidationManager {
         ValidationManager.clearInputElementStyles(inputElement);
 
         if (!value.trim()) {
-            console.log(`[ルートポイント検証] 入力値: 空 - バリデーションスキップ`);
             return []; // 空の場合はバリデーションなし
         }
-
-        console.log(`[ルートポイント検証] 入力値: "${value}"`);
 
         // まずポイントIDとして存在チェック
         const registeredIds = pointManager.getRegisteredIds();
         if (registeredIds.includes(value)) {
             // ポイントIDとして存在する場合は緑の枠線
-            console.log(`✓ ポイントIDとして完全一致: "${value}" (合計: 1件)`);
             inputElement.style.borderColor = '#4caf50';
             inputElement.style.borderWidth = '2px';
             if (inputElement.title) {
@@ -70,7 +66,6 @@ export class ValidationManager {
             const matchingSpots = spotManager.findSpotsByPartialName(value);
             if (matchingSpots.length === 1) {
                 // スポット名として1件のみ該当する場合は緑の枠線
-                console.log(`✓ スポット名として部分一致 (1件): "${matchingSpots[0].name}"`);
                 inputElement.style.borderColor = '#4caf50';
                 inputElement.style.borderWidth = '2px';
                 if (inputElement.title) {
@@ -81,12 +76,9 @@ export class ValidationManager {
                 // 複数件該当する場合はピンク背景
                 const spotNames = matchingSpots.map(s => s.name);
                 const spotNamesStr = spotNames.join('、');
-                console.log(`⚠ スポット名として部分一致 (複数件): ${spotNamesStr} (合計: ${matchingSpots.length}件)`);
                 ValidationManager.setInputElementError(inputElement,
                     `複数のスポット名が該当します: ${spotNamesStr}`, false);
                 return spotNames; // 複数一致したスポット名を返す
-            } else {
-                console.log(`✗ スポット名として部分一致: 0件`);
             }
         }
 
@@ -94,12 +86,10 @@ export class ValidationManager {
         // 形式チェック（X-nn形式かどうか）
         if (Validators.isValidPointIdFormat(value)) {
             // X-nn形式だが存在しない場合は赤枠
-            console.log(`✗ X-nn形式だがポイントが未登録: "${value}"`);
             ValidationManager.setInputElementError(inputElement,
                 `ポイント「${value}」が見つかりません`, true);
         } else {
             // X-nn形式でもなく、スポット名でも該当しない場合はピンク背景
-            console.log(`✗ 該当するポイントまたはスポットなし (合計: 0件)`);
             ValidationManager.setInputElementError(inputElement,
                 `該当するポイントまたはスポットが見つかりません`, false);
         }
