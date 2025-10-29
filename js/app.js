@@ -678,8 +678,9 @@ export class PointMarkerApp {
             const matchingSpots = this.spotManager.findSpotsByPartialName(inputValue);
 
             if (matchingSpots.length === 1) {
-                // 1件のみ該当する場合、そのスポット名を設定
-                this.routeManager[setPointMethod](matchingSpots[0].name);
+                // 1件のみ該当する場合、そのスポット名を設定（フォーマット処理も適用）
+                const formattedSpotName = Validators.formatPointId(matchingSpots[0].name);
+                this.routeManager[setPointMethod](formattedSpotName);
             } else if (matchingSpots.length > 1) {
                 // 複数件該当する場合、警告メッセージを表示
                 const spotNames = matchingSpots.map(s => s.name).join('、');
