@@ -1069,11 +1069,14 @@ export class PointMarkerApp {
 
         this.inputManager.updateTransform(scale, offset.x, offset.y, points, spots);
 
-        // チェックボックスの状態を反映
+        // チェックボックスの状態を反映（ポイントID）
         const checkbox = document.getElementById('showPointIdsCheckbox');
         if (checkbox && !checkbox.checked) {
             this.inputManager.setPointIdVisibility(false);
         }
+
+        // スポット名の状態を再適用（強調表示とエラー状態を復元）
+        this.inputManager.updateSpotInputsState();
     }
 
     /**
