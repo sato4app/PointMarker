@@ -631,10 +631,27 @@ export class InputManager {
     /**
      * スポット名入力ボックスの表示/非表示を切り替え
      * @param {boolean} visible - 表示するかどうか
+     * @param {Array} spots - スポットデータの配列（オプション）
      */
-    setSpotNameVisibility(visible) {
+    setSpotNameVisibility(visible, spots = null) {
         // チェックボックスの状態を保存
         this.spotNameVisibility = visible;
+
+        // 表示する場合は、すべてのスポット入力ボックスの位置を再計算
+        if (visible && spots) {
+            this.spotInputElements.forEach(input => {
+                const container = input._container;
+                if (!container) return;
+
+                const spotIndex = parseInt(input.getAttribute('data-spot-index'));
+                const spot = spots[spotIndex];
+
+                if (spot) {
+                    this.positionSpotInputBox(container, spot);
+                }
+            });
+        }
+
         // スポット入力状態を更新
         this.updateSpotInputsState();
     }

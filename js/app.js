@@ -805,7 +805,9 @@ export class PointMarkerApp {
      * @param {boolean} visible - 表示するかどうか
      */
     handleSpotNameVisibilityChange(visible) {
-        this.inputManager.setSpotNameVisibility(visible);
+        // スポットデータを取得して渡す
+        const spots = this.spotManager.getSpots();
+        this.inputManager.setSpotNameVisibility(visible, spots);
     }
 
 
