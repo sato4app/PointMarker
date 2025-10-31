@@ -210,7 +210,8 @@ export class PointMarkerApp {
         
         this.layoutManager.setCallback('onModeChange', (mode) => {
             this.inputManager.setEditMode(mode);
-            const checkbox = document.getElementById('showPointIdsCheckbox');
+            const pointIdCheckbox = document.getElementById('showPointIdsCheckbox');
+            const spotNameCheckbox = document.getElementById('showSpotNamesCheckbox');
 
             if (mode === 'route') {
                 // ルート編集モードに切り替えた時、既存の開始・終了ポイントを強調表示
@@ -221,9 +222,15 @@ export class PointMarkerApp {
                 this.inputManager.setHighlightedPoints(highlightIds);
 
                 // チェックボックスをオンにしてポイントIDを表示
-                if (checkbox) {
-                    checkbox.checked = true;
+                if (pointIdCheckbox) {
+                    pointIdCheckbox.checked = true;
                     this.handlePointIdVisibilityChange(true);
+                }
+
+                // スポット名表示チェックボックスをOFFにする
+                if (spotNameCheckbox && spotNameCheckbox.checked) {
+                    spotNameCheckbox.checked = false;
+                    this.handleSpotNameVisibilityChange(false);
                 }
             } else if (mode === 'spot') {
                 // スポット編集モードに切り替えた時、スポット入力ボックスを表示
@@ -233,9 +240,15 @@ export class PointMarkerApp {
                 this.handlePointIdVisibilityChange(false);
             } else if (mode === 'point') {
                 // ポイント編集モードに切り替えた時、チェックボックスをオンにする
-                if (checkbox && !checkbox.checked) {
-                    checkbox.checked = true;
+                if (pointIdCheckbox && !pointIdCheckbox.checked) {
+                    pointIdCheckbox.checked = true;
                     this.handlePointIdVisibilityChange(true);
+                }
+
+                // スポット名表示チェックボックスをOFFにする
+                if (spotNameCheckbox && spotNameCheckbox.checked) {
+                    spotNameCheckbox.checked = false;
+                    this.handleSpotNameVisibilityChange(false);
                 }
             }
 
