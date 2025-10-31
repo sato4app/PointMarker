@@ -863,7 +863,7 @@ export class PointMarkerApp {
     async exportRoute() {
         const routePoints = this.routeManager.getRoutePoints();
         if (routePoints.length === 0) {
-            alert('ルートポイントが選択されていません');
+            alert('ルート中間点が設定されていません');
             return;
         }
 
