@@ -288,12 +288,10 @@ export class InputManager {
             this.createInputBox(point, index, false);
         });
 
-        // スポット編集モードまたはスポット名表示チェックボックスがオンの時、スポット入力ボックスを再作成
-        if (this.isSpotEditMode || this.spotNameVisibility) {
-            spots.forEach((spot, index) => {
-                this.createSpotInputBox(spot, index, false);
-            });
-        }
+        // スポット入力ボックスを常に再作成（表示・非表示はupdateSpotInputsStateで制御）
+        spots.forEach((spot, index) => {
+            this.createSpotInputBox(spot, index, false);
+        });
     }
 
     /**
