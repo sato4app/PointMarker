@@ -187,7 +187,11 @@ PointMarker/
 - **バリデーション**:
   - Validatorsクラスによる統一バリデーション
   - 不正形式時の視覚的エラーフィードバック
-  - **重複チェック**: JSON出力時に同一ID存在をエラー検出
+  - **重複チェック（新機能）**:
+    - blur時のリアルタイム重複検証（自分以外で同一ID検索）
+    - 重複時: ピンク背景（#ffebee）+ 赤枠（#f44336）表示
+    - エラーメッセージ表示とtitle属性設定
+    - JSON出力時にも同一ID存在をエラー検出
 
 #### 3.3.3 動的ポップアップUI
 - **ポップアップコンテナ**: 入力フィールド＋コンテナの統合デザイン
@@ -238,7 +242,15 @@ PointMarker/
   - 最大10文字制限
   - リアルタイム表示・即座反映
   - trim処理による空白文字除去
-- **バリデーション**: 基本的な文字列検証のみ
+- **フォーマット処理**:
+  - 全角→半角変換
+  - 小文字→大文字変換
+  - **X-nn形式の自動補正なし**（ポイントIDとは異なる処理）
+  - Validators.formatSpotName()による処理
+- **バリデーション**: 基本的な文字列検証のみ（重複チェックなし）
+- **ルート編集での利用**:
+  - 開始・終了ポイント入力欄でスポット名として部分一致検索可能
+  - スポット名として設定された場合、JSON出力時のvalidateStartEndPoints()で検証
 
 #### 3.4.3 スポット視覚表示
 - **マーカー形状**: 四角形（■）
@@ -249,6 +261,11 @@ PointMarker/
 #### 3.4.4 スポット編集モード時のUI制御
 - **ポイントIDポップアップ**: チェックボックスで制御可能
 - **スポット入力ボックス**: 表示・編集可能
+- **スポット名表示制御（新機能）**:
+  - スポット名表示チェックボックスによる表示/非表示切り替え
+  - チェックON時: 全スポット名をポップアップ表示
+  - ズーム・パン操作後も表示状態を維持
+  - 強調表示（白背景）・エラー表示（ピンク背景）の状態保持
 
 #### 3.4.5 一括操作
 - **全スポットクリア**: 確認なし即座削除・UI状態リセット
@@ -258,8 +275,10 @@ PointMarker/
 - `SpotManager.addSpot()`: スポット追加・座標設定
 - `SpotManager.updateSpotName()`: スポット名前更新
 - `SpotManager.findSpotAt()`: マウス座標でのスポット検出
+- `SpotManager.findSpotsByPartialName()`: スポット名部分一致検索
 - `InputManager.createSpotInputBox()`: 動的スポット名前入力ボックス生成
 - `InputManager.updateSpotInputsState()`: スポット入力表示制御
+- `InputManager.setSpotNameVisibility()`: スポット名表示/非表示切り替え
 - `CanvasRenderer.drawSpots()`: スポット描画処理
 
 ### 3.5 ルート編集機能
@@ -277,12 +296,23 @@ PointMarker/
   - 統一されたスタイル関数による視覚的フィードバック
 
 #### 3.5.3 開始・終了ポイント入力制御とバリデーション
-- **input時処理**: フォーマット処理スキップ・リアルタイム表示
-- **blur時処理**: X-nn形式自動補正・存在確認・重複チェック・視覚フィードバック更新
+- **input時処理**: フォーマット処理スキップ・リアルタイム表示のみ
+- **blur時処理**:
+  - スポット名部分一致検索（1件のみ該当時は自動設定）
+  - X-nn形式自動補正
+  - ポイントIDまたはスポット名として存在確認
+  - 開始・終了ポイント重複チェック
+  - 視覚フィードバック更新（緑枠/赤枠/ピンク背景）
+- **スポット名部分一致処理**:
+  - 1件のみ該当: スポット名を自動設定・緑枠表示
+  - 複数件該当: ピンク背景で警告表示・警告ポップアップなし
+  - 該当なし: ポイントIDとしてフォーマット処理・バリデーション
 - **統合バリデーション**:
   - ValidationManagerクラスによる形式チェック
+  - ポイントIDとスポット名の統合検証
   - 統一されたスタイル関数によるエラー表示
   - 重複チェック機能の強化
+  - 複数一致スポット名のエラー状態管理
 - **中間点クリア確認ダイアログ（新機能）**:
   - 開始・終了ポイント変更時、中間点が存在する場合に確認ダイアログ表示
   - 変更前後のポイントIDを表示
@@ -315,12 +345,14 @@ PointMarker/
 - `RouteManager.findRoutePointAt()`: 中間点検索・近接判定
 - `RouteManager.updateRoutePoint()`: 中間点座標更新
 - `RouteManager.setStartPoint()` / `setEndPoint()`: 開始終了ポイント設定・フォーマット
-- `RouteManager.validateStartEndPoints()`: ポイント存在検証・重複検証
-- `PointMarkerApp.updateBothRoutePointsValidation()`: 統合バリデーション（ValidationManager経由）
+- `RouteManager.validateStartEndPoints()`: ポイントIDまたはスポット名の存在検証・重複検証
+- `PointMarkerApp.handleRoutePointBlur()`: ルートポイントblur時の統合処理（スポット名検索・フォーマット・バリデーション）
 - `PointMarkerApp.checkRoutePointChange()`: 開始・終了ポイント変更時の中間点クリア確認
-- `ValidationManager.updateBothRoutePointsValidation()`: 統合バリデーション処理
+- `ValidationManager.updateBothRoutePointsValidation()`: 統合バリデーション処理（ポイントID・スポット名）
+- `ValidationManager.updateRoutePointValidationFeedback()`: ルートポイント個別バリデーション
 - `ValidationManager.clearInputElementStyles()`: 統一スタイル管理
 - `ValidationManager.setInputElementError()`: 統一エラー表示
+- `SpotManager.findSpotsByPartialName()`: スポット名部分一致検索
 
 ### 3.6 データ検証機能
 
@@ -332,9 +364,13 @@ PointMarker/
 - **空ポイント検出**: ID未入力ポイントの自動検出・削除
 
 #### 3.6.2 ルート検証
-- **開始ポイント存在確認**: 指定IDが登録済みポイントとして存在するか検証
-- **終了ポイント存在確認**: 指定IDが登録済みポイントとして存在するか検証
-- **重複チェック**: 開始・終了ポイントが同一IDでないか検証
+- **開始ポイント存在確認**: 指定値が登録済みポイントIDまたはスポット名として存在するか検証
+- **終了ポイント存在確認**: 指定値が登録済みポイントIDまたはスポット名として存在するか検証
+- **スポット名部分一致検証**:
+  - 1件のみ該当: 自動設定・緑枠表示
+  - 複数件該当: ピンク背景でエラー表示
+  - 該当なし: ポイントID形式で検証
+- **重複チェック**: 開始・終了ポイントが同一値でないか検証（両フィールド赤枠表示）
 - **中間点数確認**: 最低1つ以上の中間点存在チェック
 - **統合検証**: 全条件クリア確認・詳細エラーメッセージ生成
 
@@ -344,12 +380,15 @@ PointMarker/
 
 #### 実装メソッド
 - `Validators.isValidPointIdFormat()`: 統一ポイントID形式検証
-- `Validators.formatPointId()`: 統一フォーマット処理
-- `ValidationManager.updateBothRoutePointsValidation()`: ルートポイント総合検証
-- `ValidationManager.checkDuplicatePointIds()`: 重複検証・分析
-- `ValidationManager.updateRoutePointValidationFeedback()`: ルートポイントバリデーション
+- `Validators.formatPointId()`: ポイントID統一フォーマット処理
+- `Validators.formatSpotName()`: スポット名フォーマット処理（全角→半角、小文字→大文字、X-nn補正なし）
+- `ValidationManager.updateBothRoutePointsValidation()`: ルートポイント総合検証（ポイントID・スポット名統合）
+- `ValidationManager.checkDuplicatePointIds()`: ポイントID重複検証・分析
+- `ValidationManager.updateRoutePointValidationFeedback()`: ルートポイント個別バリデーション（スポット名部分一致対応）
 - `ValidationManager.clearInputElementStyles()`: スタイルクリア
 - `ValidationManager.setInputElementError()`: エラー表示設定
+- `SpotManager.findSpotsByPartialName()`: スポット名部分一致検索
+- `RouteManager.validateStartEndPoints()`: ポイントIDまたはスポット名の存在検証
 
 ### 3.7 ファイル操作機能
 
@@ -578,46 +617,72 @@ PointMarker/
 - **Favicon 404エラー**: SVG + ICO形式の統合対応により解決済み
 - **ズーム・パン操作不具合**: リセットボタンによる初期化・ページ再読み込み
 
-## 11. v5.1（2025年10月版）の主な新機能
+## 11. v5.2（2025年10月版）の主な新機能・改善
 
 ### 11.1 ルート編集機能の強化
 - **中間点ドラッグ移動機能**: RouteManager.findRoutePointAt()とupdateRoutePoint()による中間点の位置調整
 - **開始・終了ポイント変更時の中間点クリア確認**: 確認ダイアログによる誤操作防止
 - **中間点検出システム**: 10ピクセル閾値による近接判定・優先度制御
+- **スポット名部分一致機能**: ルート開始・終了ポイント入力でスポット名の部分一致検索
+  - 1件のみ該当する場合、自動的にスポット名を設定
+  - 複数件該当する場合、ピンク背景で警告表示（警告ポップアップなし）
+  - スポット名部分一致はblur時のみ処理
 
 ### 11.2 UI制御の改善
 - **ポイントID表示チェックボックス**: ルート編集パネル内に配置
-- **表示/非表示切り替え**: InputManager.setPointIdVisibility()による制御
-- **自動表示制御**: ルート編集・ポイント編集モード切り替え時の自動オン
+- **スポット名表示チェックボックス**: ルート編集パネル内に配置
+- **表示/非表示切り替え**: InputManager.setPointIdVisibility() / setSpotNameVisibility()による制御
+- **自動表示制御**:
+  - ルート編集モード切り替え時: ポイントID表示ONに自動設定、スポット名表示OFF
+  - ポイント編集モード切り替え時: ポイントID表示ONに自動設定、スポット名表示OFF
+  - スポット編集モード時: スポット名表示チェックボックスで制御可能
 
-### 11.3 バリデーション機能の統合
+### 11.3 バリデーション機能の統合・強化
 - **ValidationManagerクラス導入**: バリデーション処理の一元管理
 - **統一エラー表示**: clearInputElementStyles()とsetInputElementError()による一貫性
-- **重複チェック強化**: checkDuplicatePointIds()による詳細分析
+- **重複チェック強化**:
+  - checkDuplicatePointIds()によるJSON出力前の重複検証
+  - ポイントID入力時のリアルタイム重複チェック（blur時）
+- **ルートポイント統合バリデーション**:
+  - ポイントIDとスポット名の両方で検証
+  - 複数一致スポット名のエラー状態管理
+  - 開始・終了ポイント重複チェック
+- **ルートポイント入力フォーマット制御**:
+  - input時: フォーマット処理スキップ（リアルタイム表示）
+  - blur時のみ: X-nn形式自動補正、スポット名部分一致検索、バリデーション実行
 
 ### 11.4 ズーム・パン機能の追加
 - **ズーム操作**: 1.0倍～5.0倍、0.2倍刻み
 - **パン操作**: 上下左右50ピクセル単位
 - **リセット機能**: ワンクリックで初期状態復帰
-- **ポップアップ連動**: 変換に応じた入力ボックス位置自動更新
+- **ポップアップ連動**: ズーム・パン時の入力ボックス位置自動更新
+- **スポット名表示対応**: ズーム・パン後もスポット名表示状態の維持
 
 ### 11.5 コード構造の改善
 - **UIHelperクラス追加**: UI補助機能の統合管理
 - **ValidationManagerクラス追加**: バリデーション処理の分離
 - **責任分離の徹底**: データ管理・UI制御・バリデーションの明確な境界
+- **スポット名部分一致検索**: SpotManager.findSpotsByPartialName()による効率的検索
+
+### 11.6 スポット編集機能の改善
+- **スポット名表示制御**: チェックボックスによる表示/非表示切り替え
+- **ポイント編集モード時**: スポット名表示を自動的にOFF
+- **ルート編集モード時**: スポット名表示を自動的にOFF、必要に応じてユーザーが手動でON可能
+- **ズーム・パン対応**: 変換後もスポット名位置の正確な表示維持
 
 ---
 
-**最終更新**: 2025年10月14日
-**バージョン**: 5.1 (2025年10月版)
+**最終更新**: 2025年10月31日
+**バージョン**: 5.2 (2025年10月版)
 **作成者**: Claude Code Analysis
 **更新内容**:
-- ルート編集における中間点ドラッグ移動機能の追加
-- ポイントID表示チェックボックス機能の実装
-- 開始・終了ポイント変更時の中間点クリア確認ダイアログ
-- ValidationManagerクラスによるバリデーション統合
-- UIHelperクラスによるUI補助機能の分離
-- ズーム・パン機能の詳細仕様追加
-- 座標系管理にズーム・パン座標系を追加
-- アーキテクチャセクションにValidationManagerとUIHelperを追加
+- スポット名部分一致機能の実装と詳細仕様追加
+- ルートポイント入力時のスポット名検索処理
+- スポット名表示チェックボックス機能の実装
+- ポイントID重複チェックのリアルタイム検証
+- ルートポイント入力のフォーマット制御（blur時のみ）
+- バリデーション強化（ポイントID・スポット名統合検証）
+- ズーム・パン対応のスポット名表示機能
+- 編集モード切り替え時のUI自動制御（スポット名表示OFF）
+- ValidationManager・UIHelperによるコード構造改善
 - 全体的な機能仕様の最新化と詳細化
