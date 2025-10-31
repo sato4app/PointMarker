@@ -882,14 +882,16 @@ export class PointMarkerApp {
                 this.fileHandler.getCurrentImageFileName()
             );
 
-            await this.fileHandler.exportRouteData(
+            const saved = await this.fileHandler.exportRouteData(
                 this.routeManager,
                 this.fileHandler.getCurrentImageFileName() + '.png',
                 this.canvas.width, this.canvas.height,
                 this.currentImage.width, this.currentImage.height,
                 filename
             );
-            UIHelper.showMessage(`ルートデータを「${filename}」に出力しました`);
+            if (saved) {
+                UIHelper.showMessage(`ルートデータを「${filename}」に出力しました`);
+            }
         } catch (error) {
             console.error('エクスポートエラー:', error);
             UIHelper.showError('エクスポート中にエラーが発生しました');
