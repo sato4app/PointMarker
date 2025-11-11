@@ -11,6 +11,10 @@ export class CanvasRenderer {
         this.ctx = canvas.getContext('2d');
         this.currentImage = null;
 
+        // devicePixelRatio による補正係数（Windowsの拡大/縮小設定に対応）
+        // 100%: 1.0, 125%: 1.25, 150%: 1.5, 175%: 1.75, 200%: 2.0
+        this.dpr = window.devicePixelRatio || 1.0;
+
         // ズーム・パン用の状態管理
         this.scale = 1.0;
         this.offsetX = 0;
@@ -56,12 +60,16 @@ export class CanvasRenderer {
      * @param {number} strokeWidth - 線の太さ (デフォルト: 1.5)
      */
     drawPoint(point, color = '#ff0000', radius = 6, strokeWidth = 1.5) {
+        // devicePixelRatio で補正（ディスプレイ設定によらず一貫したサイズ）
+        const adjustedRadius = radius / this.dpr;
+        const adjustedStrokeWidth = strokeWidth / this.dpr;
+
         this.ctx.fillStyle = color;
         this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = strokeWidth;
-        
+        this.ctx.lineWidth = adjustedStrokeWidth;
+
         this.ctx.beginPath();
-        this.ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI);
+        this.ctx.arc(point.x, point.y, adjustedRadius, 0, 2 * Math.PI);
         this.ctx.fill();
         this.ctx.stroke();
     }
@@ -95,17 +103,21 @@ export class CanvasRenderer {
      * @param {number} strokeWidth - 枠線の太さ
      */
     drawDiamond(cx, cy, radius, fillColor = '#ff0000', strokeColor = '#ffffff', strokeWidth = 1) {
+        // devicePixelRatio で補正（ディスプレイ設定によらず一貫したサイズ）
+        const adjustedRadius = radius / this.dpr;
+        const adjustedStrokeWidth = strokeWidth / this.dpr;
+
         this.ctx.fillStyle = fillColor;
         this.ctx.strokeStyle = strokeColor;
-        this.ctx.lineWidth = strokeWidth;
-        
+        this.ctx.lineWidth = adjustedStrokeWidth;
+
         this.ctx.beginPath();
-        this.ctx.moveTo(cx, cy - radius);  // 上
-        this.ctx.lineTo(cx + radius, cy);  // 右
-        this.ctx.lineTo(cx, cy + radius);  // 下
-        this.ctx.lineTo(cx - radius, cy);  // 左
+        this.ctx.moveTo(cx, cy - adjustedRadius);  // 上
+        this.ctx.lineTo(cx + adjustedRadius, cy);  // 右
+        this.ctx.lineTo(cx, cy + adjustedRadius);  // 下
+        this.ctx.lineTo(cx - adjustedRadius, cy);  // 左
         this.ctx.closePath();
-        
+
         this.ctx.fill();
         this.ctx.stroke();
     }
@@ -131,14 +143,17 @@ export class CanvasRenderer {
      * @param {number} strokeWidth - 枠線の太さ
      */
     drawSquare(cx, cy, size, fillColor = '#ff9500', strokeColor = '#ffffff', strokeWidth = 1) {
-        const halfSize = size / 2;
-        
+        // devicePixelRatio で補正（ディスプレイ設定によらず一貫したサイズ）
+        const adjustedSize = size / this.dpr;
+        const adjustedStrokeWidth = strokeWidth / this.dpr;
+        const halfSize = adjustedSize / 2;
+
         this.ctx.fillStyle = fillColor;
         this.ctx.strokeStyle = strokeColor;
-        this.ctx.lineWidth = strokeWidth;
-        
-        this.ctx.fillRect(cx - halfSize, cy - halfSize, size, size);
-        this.ctx.strokeRect(cx - halfSize, cy - halfSize, size, size);
+        this.ctx.lineWidth = adjustedStrokeWidth;
+
+        this.ctx.fillRect(cx - halfSize, cy - halfSize, adjustedSize, adjustedSize);
+        this.ctx.strokeRect(cx - halfSize, cy - halfSize, adjustedSize, adjustedSize);
     }
 
     /**
