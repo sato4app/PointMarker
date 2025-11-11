@@ -110,6 +110,9 @@ header p {
 /* オーバーレイモード用の地図コンテナ */
 .main-content[data-layout="overlay"] .map-container {
     width: 100vw;
+    justify-content: flex-start;  /* 左寄せ */
+    align-items: flex-start;      /* 上寄せ */
+    padding: 10px;                /* 少し余白を追加 */
 }
 
 .map-canvas {
