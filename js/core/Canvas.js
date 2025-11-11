@@ -23,11 +23,6 @@ export class CanvasRenderer {
         this.maxScale = 5.0;
         this.zoomStep = 0.2;
         this.panStep = 50;  // ピクセル単位での移動量
-
-        // 初期キャンバスサイズ（ズーム計算用）
-        this.baseWidth = 0;
-        this.baseHeight = 0;
-        this.currentLayout = 'sidebar';
     }
 
     /**
@@ -46,9 +41,10 @@ export class CanvasRenderer {
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // パン（translate）のみを適用（スケールはキャンバスサイズで対応済み）
+        // 変換を適用
         this.ctx.save();
         this.ctx.translate(this.offsetX, this.offsetY);
+        this.ctx.scale(this.scale, this.scale);
 
         // キャンバスサイズに合わせて画像を描画
         this.ctx.drawImage(this.currentImage, 0, 0, this.canvas.width, this.canvas.height);
@@ -197,12 +193,12 @@ export class CanvasRenderer {
     redraw(points = [], routePoints = [], spots = [], options = {}) {
         this.drawImage();
 
-        // ポイント座標をスケールに合わせて変換
+        // マーカー描画時にズーム・パン変換を適用
         this.ctx.save();
         this.ctx.translate(this.offsetX, this.offsetY);
         this.ctx.scale(this.scale, this.scale);
 
-        // マーカーサイズはスケールで補正（固定サイズ表示のため）
+        // 現在のスケール値をマーカー描画メソッドに渡す
         this.drawPoints(points, options, this.scale);
         this.drawRoutePoints(routePoints, this.scale);
         this.drawSpots(spots, options, this.scale);
@@ -216,8 +212,6 @@ export class CanvasRenderer {
      */
     setupCanvas(layout = 'sidebar') {
         if (!this.currentImage) return;
-
-        this.currentLayout = layout;
 
         const container = this.canvas.parentElement;
         const containerRect = container.getBoundingClientRect();
@@ -242,10 +236,6 @@ export class CanvasRenderer {
             canvasWidth = canvasHeight / imageAspectRatio;
         }
 
-        // 初期サイズを保存（ズーム計算用）
-        this.baseWidth = canvasWidth;
-        this.baseHeight = canvasHeight;
-
         this.canvas.width = canvasWidth;
         this.canvas.height = canvasHeight;
         this.canvas.style.width = canvasWidth + 'px';
@@ -258,26 +248,10 @@ export class CanvasRenderer {
     }
 
     /**
-     * キャンバスサイズをスケールに応じて更新
-     */
-    updateCanvasSize() {
-        if (this.baseWidth === 0 || this.baseHeight === 0) return;
-
-        const scaledWidth = this.baseWidth * this.scale;
-        const scaledHeight = this.baseHeight * this.scale;
-
-        this.canvas.width = scaledWidth;
-        this.canvas.height = scaledHeight;
-        this.canvas.style.width = scaledWidth + 'px';
-        this.canvas.style.height = scaledHeight + 'px';
-    }
-
-    /**
      * ズームイン
      */
     zoomIn() {
         this.scale = Math.min(this.scale + this.zoomStep, this.maxScale);
-        this.updateCanvasSize();
     }
 
     /**
@@ -285,7 +259,6 @@ export class CanvasRenderer {
      */
     zoomOut() {
         this.scale = Math.max(this.scale - this.zoomStep, this.minScale);
-        this.updateCanvasSize();
     }
 
     /**
