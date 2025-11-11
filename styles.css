@@ -112,7 +112,7 @@ header p {
     width: 100vw;
     justify-content: flex-start;  /* 左寄せ */
     align-items: flex-start;      /* 上寄せ */
-    padding: 2px;                 /* 余白を最小限に */
+    padding: 10px;                /* 余白を最小限に */
 }
 
 .map-canvas {
@@ -126,8 +126,8 @@ header p {
 
 /* オーバーレイモード用のキャンバス */
 .main-content[data-layout="overlay"] .map-canvas {
-    max-width: calc(100vw - 4px);  /* 余白を最小限に（2px padding × 2） */
-    max-height: calc(100vh - 4px);  /* 余白を最小限に（2px padding × 2） */
+    max-width: calc(100vw - 20px);  /* 余白を最小限に（2px padding × 2） */
+    max-height: calc(100vh - 20px);  /* 余白を最小限に（2px padding × 2） */
 }
 
 .map-canvas:hover {
