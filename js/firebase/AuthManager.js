@@ -19,7 +19,6 @@ export class AuthManager {
         try {
             const result = await this.auth.signInAnonymously();
             this.currentUser = result.user;
-            console.log('匿名ログイン成功:', this.currentUser.uid);
             return this.currentUser;
         } catch (error) {
             console.error('匿名ログイン失敗:', error);

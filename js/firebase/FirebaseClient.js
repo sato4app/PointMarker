@@ -41,7 +41,6 @@ export class FirebaseClient {
                 });
 
             this.initialized = true;
-            console.log('Firebase initialized successfully');
         } catch (error) {
             console.error('Firebase initialization failed:', error);
             throw new Error('Firebaseの初期化に失敗しました: ' + error.message);

@@ -225,17 +225,13 @@
 
         // アプリケーション初期化
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('PointMarker アプリケーション起動中...');
-
             try {
                 // Firebaseクライアント初期化
                 const firebaseClient = new FirebaseClient(firebaseConfig);
                 await firebaseClient.initialize();
-                console.log('✅ Firebase初期化完了');
 
                 // 認証マネージャー初期化
                 const authManager = new AuthManager(firebaseClient.getApp());
-                console.log('✅ 認証マネージャー初期化完了');
 
                 // 匿名ログイン
                 const authStatusEl = document.getElementById('authStatus');
@@ -246,7 +242,6 @@
                 authTextEl.textContent = '認証中...';
 
                 await authManager.signInAnonymously();
-                console.log('✅ 匿名ログイン成功');
 
                 authIconEl.textContent = '✅';
                 authTextEl.textContent = 'ログイン済み';
@@ -257,7 +252,6 @@
                     firebaseClient.getFirestore(),
                     userId
                 );
-                console.log('✅ Firestoreデータマネージャー初期化完了');
 
                 // グローバルスコープに配置
                 window.firebaseClient = firebaseClient;
@@ -267,8 +261,6 @@
                 // PointMarkerアプリ起動
                 const app = new PointMarkerApp();
                 window.pointMarkerApp = app;
-
-                console.log('🎉 PointMarker アプリケーション起動完了！');
 
                 // 3秒後に認証状態表示を非表示
                 setTimeout(() => {
@@ -280,7 +272,7 @@
                 }, 3000);
 
             } catch (error) {
-                console.error('❌ アプリケーション初期化エラー:', error);
+                console.error('アプリケーション初期化エラー:', error);
                 const authStatusEl = document.getElementById('authStatus');
                 const authTextEl = document.getElementById('authText');
                 const authIconEl = document.getElementById('authIcon');
