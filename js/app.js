@@ -47,6 +47,9 @@ export class PointMarkerApp {
         // ホバー状態管理
         this.isHoveringPoint = false;
 
+        // ファイルピッカーのアクティブ状態管理（重複呼び出し防止）
+        this.isFilePickerActive = false;
+
         // ルート編集用の編集前ポイントID保存
         this.previousStartPoint = '';
         this.previousEndPoint = '';
@@ -442,7 +445,13 @@ export class PointMarkerApp {
      * 画像選択処理
      */
     async handleImageSelection() {
+        // 既にファイルピッカーが開いている場合は何もしない
+        if (this.isFilePickerActive) {
+            return;
+        }
+
         try {
+            this.isFilePickerActive = true;
             const result = await this.fileHandler.selectImage();
             await this.processLoadedImage(result.image, result.fileName);
         } catch (error) {
@@ -450,6 +459,8 @@ export class PointMarkerApp {
                 console.error('画像選択エラー:', error);
                 alert('画像選択中にエラーが発生しました: ' + error.message);
             }
+        } finally {
+            this.isFilePickerActive = false;
         }
     }
 

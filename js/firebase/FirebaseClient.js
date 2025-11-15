@@ -29,6 +29,8 @@ export class FirebaseClient {
             this.db = firebase.firestore();
 
             // Firestore設定（オフライン永続化を有効化）
+            // 注: enablePersistence()は将来非推奨となる予定だが、Compat版SDKでは
+            // 新しいFirestoreSettings.cacheがサポートされていないため、現行のAPIを使用
             this.db.enablePersistence({synchronizeTabs: true})
                 .catch((err) => {
                     if (err.code === 'failed-precondition') {
