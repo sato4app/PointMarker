@@ -1173,8 +1173,3 @@ export class PointMarkerApp {
     }
 
 }
-
-// DOM読み込み完了後にアプリケーションを初期化
-document.addEventListener('DOMContentLoaded', () => {
-    new PointMarkerApp();
-});
