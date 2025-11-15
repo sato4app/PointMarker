@@ -36,7 +36,19 @@
                         PNG画像を選択
                     </button>
                 </div>
-                
+
+                <!-- データ操作ボタン -->
+                <div class="firebase-controls" style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" id="loadFromFirebaseBtn" class="btn btn-secondary" disabled
+                            aria-label="データ読み込み" title="保存されているデータを読み込みます">
+                        読み込み
+                    </button>
+                    <button type="button" id="saveToFirebaseBtn" class="btn btn-primary" disabled
+                            aria-label="データ保存" title="現在のデータを保存します">
+                        保存
+                    </button>
+                </div>
+
                 <!-- 編集モード選択 -->
                 <fieldset class="editing-mode-selector">
                     <legend class="sr-only">編集モード選択</legend>
@@ -57,25 +69,7 @@
                 <!-- ポイント編集パネル -->
                 <section class="point-editor" id="pointEditor">
                     <h3>ポイント編集</h3>
-                    
-                    <div class="editor-controls">
-                        <button type="button" id="clearBtn" class="btn btn-clear" disabled
-                                aria-label="全ポイントをクリア" title="地図上の全てのポイントを削除します">
-                            全ポイントをクリア
-                        </button>
-                        <button type="button" id="exportBtn" class="btn btn-export" disabled
-                                aria-label="ポイントをJSONで出力" title="現在のポイントデータをJSONファイルとして出力します">
-                            ポイントをJSON出力
-                        </button>
-                    </div>
-                    
-                    <div class="file-input-wrapper">
-                        <input type="file" id="jsonInput" accept="application/json" class="file-input" aria-label="ポイントJSONファイルを読み込み">
-                        <label for="jsonInput" class="file-input-label" title="以前に保存したポイントJSONファイルを選択して読み込みます">
-                            ポイントのJSON読込
-                        </label>
-                    </div>
-                    
+
                     <div class="point-count" aria-live="polite">
                         ポイント数: <span id="pointCount">0</span>
                     </div>
@@ -116,53 +110,13 @@
                                 </label>
                             </div>
                         </div>
-                        
-                        <!-- ルート制御ボタン -->
-                        <div class="route-controls">
-                            <button type="button" id="clearRouteBtn" class="btn btn-clear-route" 
-                                    aria-label="ルート中間点をクリア" title="ルートの中間点を全てクリアします">
-                                ルートをクリア
-                            </button>
-                            <button type="button" id="exportRouteBtn" class="btn btn-export-route" 
-                                    aria-label="ルートをJSONで出力" title="現在のルートデータをJSONファイルとして出力します">
-                                ルートをJSON出力
-                            </button>
-                        </div>
-                        
-                        <!-- ルートJSON読込 -->
-                        <div class="file-input-wrapper">
-                            <input type="file" id="routeJsonInput" accept="application/json" class="file-input" 
-                                   aria-label="ルートJSONファイルを読み込み">
-                            <label for="routeJsonInput" class="file-input-label" title="以前に保存したルートJSONファイルを選択して読み込みます">
-                                ルートのJSON読込
-                            </label>
-                        </div>
                     </div>
                 </section>
                 
                 <!-- スポット編集パネル -->
                 <section class="spot-editor" id="spotEditor" style="display: none;">
                     <h3>スポット編集</h3>
-                    
-                    <div class="editor-controls">
-                        <button type="button" id="clearSpotBtn" class="btn btn-clear" 
-                                aria-label="全スポットをクリア" title="地図上の全てのスポットを削除します">
-                            スポットをクリア
-                        </button>
-                        <button type="button" id="exportSpotBtn" class="btn btn-export" 
-                                aria-label="スポットをJSONで出力" title="現在のスポットデータをJSONファイルとしてダウンロードします">
-                            スポットをJSON出力
-                        </button>
-                    </div>
-                    
-                    <div class="file-input-wrapper">
-                        <input type="file" id="spotJsonInput" accept="application/json" class="file-input" 
-                               aria-label="スポットJSONファイルを読み込み">
-                        <label for="spotJsonInput" class="file-input-label" title="以前に保存したスポットJSONファイルを選択して読み込みます">
-                            スポットのJSON読込
-                        </label>
-                    </div>
-                    
+
                     <div class="spot-count" aria-live="polite">
                         スポット数: <span id="spotCount">0</span>
                     </div>

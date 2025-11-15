@@ -29,6 +29,7 @@ export class PointMarkerApp {
         this.fileHandler = new FileHandler();
         this.inputManager = new InputManager(this.canvas);
         this.layoutManager = new LayoutManager();
+        this.validationManager = new ValidationManager();
         this.dragDropHandler = new DragDropHandler();
         this.resizeHandler = new ResizeHandler();
         this.duplicateDialog = new DuplicateDialog();
@@ -295,44 +296,6 @@ export class PointMarkerApp {
         this.canvas.addEventListener('mouseup', (e) => this.handleCanvasMouseUp(e));
         
 
-        // ポイント編集コントロール
-        document.getElementById('clearBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.clearPoints();
-        });
-
-        document.getElementById('exportBtn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await this.exportPoints();
-        });
-        
-        document.getElementById('jsonInput').addEventListener('change', (e) => this.handlePointJSONLoad(e));
-
-        // ルート編集コントロール
-        document.getElementById('clearRouteBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.clearRoute();
-        });
-        
-        document.getElementById('exportRouteBtn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await this.exportRoute();
-        });
-        
-        document.getElementById('routeJsonInput').addEventListener('change', (e) => this.handleRouteJSONLoad(e));
-
-        // スポット編集コントロール
-        document.getElementById('clearSpotBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.clearSpots();
-        });
-        
-        document.getElementById('exportSpotBtn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await this.exportSpots();
-        });
-        
-        document.getElementById('spotJsonInput').addEventListener('change', (e) => this.handleSpotJSONLoad(e));
 
         // ズーム・パンコントロール
         document.getElementById('zoomInBtn').addEventListener('click', (e) => {
@@ -406,6 +369,17 @@ export class PointMarkerApp {
             this.handleSpotNameVisibilityChange(e.target.checked);
         });
 
+        // データ操作ボタン（読み込み・保存）
+        document.getElementById('loadFromFirebaseBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await this.loadFromFirebase();
+        });
+
+        document.getElementById('saveToFirebaseBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await this.saveToFirebase();
+        });
+
         // ウィンドウリサイズ
         window.addEventListener('resize', () => {
             if (this.currentImage) {
@@ -427,8 +401,9 @@ export class PointMarkerApp {
      * 画像読み込み後のコントロールを有効化
      */
     enableImageControls() {
-        document.getElementById('clearBtn').disabled = false;
-        document.getElementById('exportBtn').disabled = false;
+        // データ操作ボタンを有効化
+        document.getElementById('loadFromFirebaseBtn').disabled = false;
+        document.getElementById('saveToFirebaseBtn').disabled = false;
 
         // ズーム・パンボタンを有効化
         document.getElementById('zoomInBtn').disabled = false;
@@ -783,24 +758,6 @@ export class PointMarkerApp {
         return newValue;
     }
 
-    /**
-     * ポイントをクリア
-     */
-    clearPoints() {
-        const pointCount = this.pointManager.getPoints().length;
-        this.pointManager.clearPoints();
-        this.inputManager.clearInputBoxes();
-        UIHelper.showMessage(`${pointCount}個のポイントをクリアしました`);
-    }
-
-    /**
-     * ルートをクリア
-     */
-    clearRoute() {
-        const waypointCount = this.routeManager.getRoutePoints().length;
-        this.routeManager.clearRoute();
-        UIHelper.showMessage(`${waypointCount}個の中間点をクリアしました`);
-    }
 
     /**
      * ルートポイント変更チェック
@@ -822,15 +779,6 @@ export class PointMarkerApp {
         }
     }
 
-    /**
-     * スポットをクリア
-     */
-    clearSpots() {
-        const spotCount = this.spotManager.getSpots().length;
-        this.spotManager.clearSpots();
-        this.inputManager.clearSpotInputBoxes();
-        UIHelper.showMessage(`${spotCount}個のスポットをクリアしました`);
-    }
 
     /**
      * ポイントID表示/非表示切り替え処理
@@ -848,211 +796,6 @@ export class PointMarkerApp {
         // スポットデータを取得して渡す
         const spots = this.spotManager.getSpots();
         this.inputManager.setSpotNameVisibility(visible, spots);
-    }
-
-
-    /**
-     * ポイントをJSON出力
-     */
-    async exportPoints() {
-        const points = this.pointManager.getPoints();
-        if (points.length === 0) {
-            alert('ポイントが選択されていません');
-            return;
-        }
-
-        // ポイントID名の重複チェック
-        const duplicateCheck = ValidationManager.checkDuplicatePointIds(points);
-        if (!duplicateCheck.isValid) {
-            alert(duplicateCheck.message);
-            return;
-        }
-
-        try {
-            const filename = `${this.fileHandler.getCurrentImageFileName()}_points.json`;
-            await this.fileHandler.exportPointData(
-                this.pointManager,
-                this.fileHandler.getCurrentImageFileName() + '.png',
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height,
-                filename
-            );
-            UIHelper.showMessage(`ポイントデータを「${filename}」に出力しました`);
-        } catch (error) {
-            console.error('エクスポートエラー:', error);
-            UIHelper.showError('エクスポート中にエラーが発生しました');
-        }
-    }
-
-    /**
-     * ルートをJSON出力
-     */
-    async exportRoute() {
-        const routePoints = this.routeManager.getRoutePoints();
-        if (routePoints.length === 0) {
-            alert('ルート中間点が設定されていません');
-            return;
-        }
-
-        const validation = this.routeManager.validateStartEndPoints(
-            this.pointManager.getRegisteredIds(),
-            this.spotManager
-        );
-        
-        if (!validation.isValid) {
-            alert(validation.message);
-            return;
-        }
-
-        try {
-            const filename = this.routeManager.generateRouteFilename(
-                this.fileHandler.getCurrentImageFileName()
-            );
-
-            const saved = await this.fileHandler.exportRouteData(
-                this.routeManager,
-                this.fileHandler.getCurrentImageFileName() + '.png',
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height,
-                filename
-            );
-            if (saved) {
-                UIHelper.showMessage(`ルートデータを「${filename}」に出力しました`);
-            }
-        } catch (error) {
-            console.error('エクスポートエラー:', error);
-            UIHelper.showError('エクスポート中にエラーが発生しました');
-        }
-    }
-
-    /**
-     * ポイントJSONファイル読み込み処理
-     * @param {Event} event - ファイル選択イベント
-     */
-    async handlePointJSONLoad(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        if (!this.currentImage) {
-            alert('先に画像を読み込んでください');
-            return;
-        }
-
-        try {
-            await this.fileHandler.importPointData(
-                this.pointManager,
-                file,
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-            const pointCount = this.pointManager.getPoints().length;
-            UIHelper.showMessage(`ポイントJSONファイルを読み込みました（${pointCount}個のポイント）`);
-        } catch (error) {
-            console.error('JSON読み込みエラー:', error);
-            UIHelper.showError('JSON読み込み中にエラーが発生しました: ' + error.message);
-        } finally {
-            event.target.value = '';
-        }
-    }
-
-    /**
-     * ルートJSONファイル読み込み処理
-     * @param {Event} event - ファイル選択イベント
-     */
-    async handleRouteJSONLoad(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        if (!this.currentImage) {
-            alert('先に画像を読み込んでください');
-            return;
-        }
-
-        try {
-            await this.fileHandler.importRouteData(
-                this.routeManager,
-                file,
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-            const waypointCount = this.routeManager.getRoutePoints().length;
-            UIHelper.showMessage(`ルートJSONファイルを読み込みました（${waypointCount}個の中間点）`);
-
-            // ポイントID表示チェックボックスをオンにする
-            const checkbox = document.getElementById('showPointIdsCheckbox');
-            if (checkbox && !checkbox.checked) {
-                checkbox.checked = true;
-                this.handlePointIdVisibilityChange(true);
-            }
-        } catch (error) {
-            console.error('ルートJSON読み込みエラー:', error);
-            UIHelper.showError('ルートJSON読み込み中にエラーが発生しました: ' + error.message);
-        } finally {
-            event.target.value = '';
-        }
-    }
-
-
-
-
-
-    /**
-     * スポットをJSON出力
-     */
-    async exportSpots() {
-        const spots = this.spotManager.getSpots();
-        if (spots.length === 0) {
-            alert('スポットが選択されていません');
-            return;
-        }
-
-        try {
-            const filename = this.spotManager.generateSpotFilename(
-                this.fileHandler.getCurrentImageFileName()
-            );
-
-            await this.fileHandler.exportSpotData(
-                this.spotManager,
-                this.fileHandler.getCurrentImageFileName() + '.png',
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height,
-                filename
-            );
-            UIHelper.showMessage(`スポットデータを「${filename}」に出力しました`);
-        } catch (error) {
-            console.error('スポットエクスポートエラー:', error);
-            UIHelper.showError('スポットエクスポート中にエラーが発生しました');
-        }
-    }
-
-    /**
-     * スポットJSONファイル読み込み処理
-     * @param {Event} event - ファイル選択イベント
-     */
-    async handleSpotJSONLoad(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        if (!this.currentImage) {
-            alert('先に画像を読み込んでください');
-            return;
-        }
-
-        try {
-            await this.fileHandler.importSpotData(
-                this.spotManager,
-                file,
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-            const spotCount = this.spotManager.getSpots().length;
-            UIHelper.showMessage(`スポットJSONファイルを読み込みました（${spotCount}個のスポット）`);
-        } catch (error) {
-            console.error('スポットJSON読み込みエラー:', error);
-            UIHelper.showError('スポットJSON読み込み中にエラーが発生しました: ' + error.message);
-        } finally {
-            event.target.value = '';
-        }
     }
 
     /**
@@ -1170,6 +913,299 @@ export class PointMarkerApp {
         this.updateZoomButtonStates();
         this.updatePopupPositions();
         this.redrawCanvas();
+    }
+
+    // ========================================
+    // Firebase連携機能
+    // ========================================
+
+    /**
+     * 現在のデータをFirebaseに保存
+     */
+    async saveToFirebase() {
+        // Firebaseマネージャーの存在確認
+        if (!window.firestoreManager) {
+            UIHelper.showError('Firebase接続が利用できません');
+            return;
+        }
+
+        // 画像が読み込まれているか確認
+        if (!this.currentImage) {
+            UIHelper.showError('先に画像を読み込んでください');
+            return;
+        }
+
+        try {
+            // ポイントの重複チェック（JSONエクスポートと同じ）
+            const points = this.pointManager.getPoints();
+            const duplicateCheck = ValidationManager.checkDuplicatePointIds(points);
+            if (!duplicateCheck.isValid) {
+                UIHelper.showError(duplicateCheck.message);
+                return;
+            }
+
+            // プロジェクトIDを画像ファイル名から取得
+            const projectId = this.fileHandler.getCurrentImageFileName();
+            if (!projectId) {
+                UIHelper.showError('画像ファイル名を取得できません');
+                return;
+            }
+
+            // プロジェクトメタデータを作成/更新
+            const metadata = {
+                projectName: projectId,
+                imageName: projectId + '.png',
+                imageWidth: this.currentImage.width,
+                imageHeight: this.currentImage.height
+            };
+
+            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
+            if (!existingProject) {
+                await window.firestoreManager.createProjectMetadata(projectId, metadata);
+            } else {
+                await window.firestoreManager.updateProjectMetadata(projectId, metadata);
+            }
+
+            // 既存データを全て削除（上書き保存）
+            const existingPoints = await window.firestoreManager.getPoints(projectId);
+            for (const point of existingPoints) {
+                await window.firestoreManager.deletePoint(projectId, point.firestoreId);
+            }
+
+            const existingRoutes = await window.firestoreManager.getRoutes(projectId);
+            for (const route of existingRoutes) {
+                await window.firestoreManager.deleteRoute(projectId, route.firestoreId);
+            }
+
+            const existingSpots = await window.firestoreManager.getSpots(projectId);
+            for (const spot of existingSpots) {
+                await window.firestoreManager.deleteSpot(projectId, spot.firestoreId);
+            }
+
+            // 保存カウンター
+            let savedPoints = 0;
+            let savedRoutes = 0;
+            let savedSpots = 0;
+
+            // ポイントを保存（キャンバス座標→画像座標に変換）
+            for (const point of points) {
+                // 空白IDのポイントはスキップ（JSONエクスポートと同じ）
+                if (!point.id || point.id.trim() === '') {
+                    continue;
+                }
+
+                // キャンバス座標から画像座標に変換
+                const imageCoords = CoordinateUtils.canvasToImage(
+                    point.x, point.y,
+                    this.canvas.width, this.canvas.height,
+                    this.currentImage.width, this.currentImage.height
+                );
+
+                const result = await window.firestoreManager.addPoint(projectId, {
+                    id: point.id,
+                    x: imageCoords.x,
+                    y: imageCoords.y,
+                    index: point.index || 0,
+                    isMarker: false
+                });
+
+                if (result.status === 'success') {
+                    savedPoints++;
+                }
+            }
+
+            // ルートを保存（キャンバス座標→画像座標に変換）
+            const startEndPoints = this.routeManager.getStartEndPoints();
+            const routePoints = this.routeManager.getRoutePoints();
+            if (startEndPoints.start && startEndPoints.end && routePoints.length > 0) {
+                // 中間点の座標を画像座標に変換
+                const waypointsInImageCoords = routePoints.map(waypoint => {
+                    const imageCoords = CoordinateUtils.canvasToImage(
+                        waypoint.x, waypoint.y,
+                        this.canvas.width, this.canvas.height,
+                        this.currentImage.width, this.currentImage.height
+                    );
+                    return { x: imageCoords.x, y: imageCoords.y };
+                });
+
+                const result = await window.firestoreManager.addRoute(projectId, {
+                    routeName: `${startEndPoints.start} → ${startEndPoints.end}`,
+                    startPoint: startEndPoints.start,
+                    endPoint: startEndPoints.end,
+                    waypoints: waypointsInImageCoords,
+                    description: ''
+                });
+
+                if (result.status === 'success') {
+                    savedRoutes++;
+                }
+            }
+
+            // スポットを保存（キャンバス座標→画像座標に変換）
+            const spots = this.spotManager.getSpots();
+            for (const spot of spots) {
+                // 空白名のスポットはスキップ
+                if (!spot.name || spot.name.trim() === '') {
+                    continue;
+                }
+
+                // キャンバス座標から画像座標に変換
+                const imageCoords = CoordinateUtils.canvasToImage(
+                    spot.x, spot.y,
+                    this.canvas.width, this.canvas.height,
+                    this.currentImage.width, this.currentImage.height
+                );
+
+                const result = await window.firestoreManager.addSpot(projectId, {
+                    name: spot.name,
+                    x: imageCoords.x,
+                    y: imageCoords.y,
+                    index: spot.index || 0,
+                    description: '',
+                    category: ''
+                });
+
+                if (result.status === 'success') {
+                    savedSpots++;
+                }
+            }
+
+            // 結果メッセージ
+            UIHelper.showMessage(
+                `保存完了: ポイント${savedPoints}件、ルート${savedRoutes}件、スポット${savedSpots}件`
+            );
+
+        } catch (error) {
+            console.error('Firebase保存エラー:', error);
+            UIHelper.showError('保存中にエラーが発生しました: ' + error.message);
+        }
+    }
+
+    /**
+     * Firebaseからデータを読み込み
+     */
+    async loadFromFirebase() {
+        // Firebaseマネージャーの存在確認
+        if (!window.firestoreManager) {
+            UIHelper.showError('Firebase接続が利用できません');
+            return;
+        }
+
+        // 画像が読み込まれているか確認
+        if (!this.currentImage) {
+            UIHelper.showError('先に画像を読み込んでください');
+            return;
+        }
+
+        try {
+            // プロジェクトIDを画像ファイル名から取得
+            const projectId = this.fileHandler.getCurrentImageFileName();
+            if (!projectId) {
+                UIHelper.showError('画像ファイル名を取得できません');
+                return;
+            }
+
+            // プロジェクトの存在確認
+            const projectMetadata = await window.firestoreManager.getProjectMetadata(projectId);
+            if (!projectMetadata) {
+                UIHelper.showError(`プロジェクト「${projectId}」のデータが見つかりません`);
+                return;
+            }
+
+            // 既存データをクリア
+            if (this.pointManager.getPoints().length > 0 ||
+                this.routeManager.getRoutePoints().length > 0 ||
+                this.spotManager.getSpots().length > 0) {
+                const confirmed = confirm('現在のデータを削除して読み込みますか？');
+                if (!confirmed) {
+                    return;
+                }
+            }
+
+            this.pointManager.clearPoints();
+            this.routeManager.clearRoute();
+            this.spotManager.clearSpots();
+
+            // ポイントを読み込み（画像座標→キャンバス座標に変換）
+            const points = await window.firestoreManager.getPoints(projectId);
+            let loadedPoints = 0;
+            for (const point of points) {
+                // 空白IDはスキップ
+                if (!point.id || point.id.trim() === '') {
+                    continue;
+                }
+
+                // 画像座標からキャンバス座標に変換
+                const canvasCoords = CoordinateUtils.imageToCanvas(
+                    point.x, point.y,
+                    this.canvas.width, this.canvas.height,
+                    this.currentImage.width, this.currentImage.height
+                );
+
+                this.pointManager.addPoint(canvasCoords.x, canvasCoords.y, point.id);
+                loadedPoints++;
+            }
+
+            // ルートを読み込み（画像座標→キャンバス座標に変換）
+            const routes = await window.firestoreManager.getRoutes(projectId);
+            let loadedRoutes = 0;
+            if (routes.length > 0) {
+                // 最初のルートのみ読み込み（現在の仕様では1ルートのみサポート）
+                const route = routes[0];
+                this.routeManager.setStartPoint(route.startPoint);
+                this.routeManager.setEndPoint(route.endPoint);
+                for (const waypoint of route.waypoints) {
+                    // 画像座標からキャンバス座標に変換
+                    const canvasCoords = CoordinateUtils.imageToCanvas(
+                        waypoint.x, waypoint.y,
+                        this.canvas.width, this.canvas.height,
+                        this.currentImage.width, this.currentImage.height
+                    );
+                    this.routeManager.addRoutePoint(canvasCoords.x, canvasCoords.y);
+                }
+                loadedRoutes++;
+            }
+
+            // スポットを読み込み（画像座標→キャンバス座標に変換）
+            const spots = await window.firestoreManager.getSpots(projectId);
+            let loadedSpots = 0;
+            for (const spot of spots) {
+                // 空白名はスキップ
+                if (!spot.name || spot.name.trim() === '') {
+                    continue;
+                }
+
+                // 画像座標からキャンバス座標に変換
+                const canvasCoords = CoordinateUtils.imageToCanvas(
+                    spot.x, spot.y,
+                    this.canvas.width, this.canvas.height,
+                    this.currentImage.width, this.currentImage.height
+                );
+
+                this.spotManager.addSpot(canvasCoords.x, canvasCoords.y, spot.name);
+                loadedSpots++;
+            }
+
+            // UIを更新
+            this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
+            this.inputManager.redrawSpotInputBoxes(this.spotManager.getSpots());
+            this.updatePopupPositions();
+            this.redrawCanvas();
+
+            // ポイント数・スポット数・中間点数を更新
+            document.getElementById('pointCount').textContent = loadedPoints;
+            document.getElementById('spotCount').textContent = loadedSpots;
+            document.getElementById('waypointCount').textContent =
+                this.routeManager.getRoutePoints().length;
+
+            UIHelper.showMessage(
+                `読み込み完了: ポイント${loadedPoints}件、ルート${loadedRoutes}件、スポット${loadedSpots}件`
+            );
+
+        } catch (error) {
+            console.error('Firebase読み込みエラー:', error);
+            UIHelper.showError('読み込み中にエラーが発生しました: ' + error.message);
+        }
     }
 
 }
