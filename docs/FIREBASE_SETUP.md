@@ -37,7 +37,7 @@ const firebaseConfig = {
 ```
 
 ### 2.3 firebase.config.js の作成
-1. PointMarkerプロジェクトのルートディレクトリに `firebase.config.js` を作成
+1. PointMarkerプロジェクトの `js/firebase/` ディレクトリに `firebase.config.js` を作成
 2. 上記の設定情報を以下の形式で貼り付け：
 
 ```javascript
@@ -53,8 +53,9 @@ export const firebaseConfig = {
 ```
 
 **⚠️ セキュリティ注意:**
-- `firebase.config.js` は `.gitignore` に追加してください
-- APIキーはGitにコミットしないでください
+- GitHub Pagesで公開する場合は、Google Cloud ConsoleでHTTPリファラー制限を設定してください
+- 制限設定: `https://<ユーザー名>.github.io/PointMarker/*` と `http://localhost/*`
+- APIキーに適切な制限をかければ、公開リポジトリにコミットしても安全です
 
 ## 3. Firebase Authentication の設定
 
@@ -185,12 +186,15 @@ Firebaseの無料枠（Sparkプラン）で利用可能な範囲：
 ## 8. セキュリティのベストプラクティス
 
 1. **APIキーの管理**
-   - `firebase.config.js` を `.gitignore` に追加
-   - GitHubなどの公開リポジトリにコミットしない
+   - Google Cloud ConsoleでHTTPリファラー制限を設定
+   - 許可ドメイン: `https://<ユーザー名>.github.io/PointMarker/*` と `http://localhost/*`
+   - API制限: Identity Toolkit API, Cloud Firestore API, Token Service API
+   - 制限を設定すれば、`firebase.config.js` を公開リポジトリにコミットしても安全
 
 2. **セキュリティルール**
    - 本番環境では必ず適切なセキュリティルールを設定
    - `allow read, write: if true;` は絶対に使わない
+   - 認証済みユーザーのみアクセス可能にする
 
 3. **定期的な確認**
    - Firebaseコンソールで使用量を定期的に確認
