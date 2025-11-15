@@ -11,6 +11,11 @@
     <link rel="icon" href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" type="image/x-icon">
 
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div class="container">
@@ -196,7 +201,97 @@
             </aside>
         </main>
     </div>
-    
-    <script type="module" src="js/app.js"></script>
+
+    <!-- 認証状態表示（オーバーレイパネルに追加される） -->
+    <div id="authStatus" style="display: none; position: fixed; top: 10px; right: 10px; background-color: white; padding: 10px 15px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10002; font-size: 12px;">
+        <div id="authUserInfo">
+            <span id="authIcon">🔒</span>
+            <span id="authText">認証中...</span>
+        </div>
+    </div>
+
+    <!-- Firebase設定とモジュールのインポート -->
+    <script type="module">
+        import { firebaseConfig } from './firebase.config.js';
+        import { FirebaseClient } from './js/firebase/FirebaseClient.js';
+        import { AuthManager } from './js/firebase/AuthManager.js';
+        import { FirestoreDataManager } from './js/firebase/FirestoreDataManager.js';
+        import { PointMarkerApp } from './js/app.js';
+
+        // グローバルスコープに配置（app.jsからアクセス可能にする）
+        window.firebaseConfig = firebaseConfig;
+        window.FirebaseClient = FirebaseClient;
+        window.AuthManager = AuthManager;
+        window.FirestoreDataManager = FirestoreDataManager;
+
+        // アプリケーション初期化
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('PointMarker アプリケーション起動中...');
+
+            try {
+                // Firebaseクライアント初期化
+                const firebaseClient = new FirebaseClient(firebaseConfig);
+                await firebaseClient.initialize();
+                console.log('✅ Firebase初期化完了');
+
+                // 認証マネージャー初期化
+                const authManager = new AuthManager(firebaseClient.getApp());
+                console.log('✅ 認証マネージャー初期化完了');
+
+                // 匿名ログイン
+                const authStatusEl = document.getElementById('authStatus');
+                const authTextEl = document.getElementById('authText');
+                const authIconEl = document.getElementById('authIcon');
+
+                authStatusEl.style.display = 'block';
+                authTextEl.textContent = '認証中...';
+
+                await authManager.signInAnonymously();
+                console.log('✅ 匿名ログイン成功');
+
+                authIconEl.textContent = '✅';
+                authTextEl.textContent = 'ログイン済み';
+
+                // Firestoreデータマネージャー初期化
+                const userId = authManager.getUserId();
+                const firestoreManager = new FirestoreDataManager(
+                    firebaseClient.getFirestore(),
+                    userId
+                );
+                console.log('✅ Firestoreデータマネージャー初期化完了');
+
+                // グローバルスコープに配置
+                window.firebaseClient = firebaseClient;
+                window.authManager = authManager;
+                window.firestoreManager = firestoreManager;
+
+                // PointMarkerアプリ起動
+                const app = new PointMarkerApp();
+                window.pointMarkerApp = app;
+
+                console.log('🎉 PointMarker アプリケーション起動完了！');
+
+                // 3秒後に認証状態表示を非表示
+                setTimeout(() => {
+                    authStatusEl.style.opacity = '0';
+                    authStatusEl.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => {
+                        authStatusEl.style.display = 'none';
+                    }, 500);
+                }, 3000);
+
+            } catch (error) {
+                console.error('❌ アプリケーション初期化エラー:', error);
+                const authStatusEl = document.getElementById('authStatus');
+                const authTextEl = document.getElementById('authText');
+                const authIconEl = document.getElementById('authIcon');
+
+                authStatusEl.style.display = 'block';
+                authStatusEl.style.backgroundColor = '#fee';
+                authIconEl.textContent = '❌';
+                authTextEl.textContent = '初期化失敗: ' + error.message;
+            }
+        });
+    </script>
 </body>
 </html>

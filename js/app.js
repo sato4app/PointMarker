@@ -7,6 +7,7 @@ import { InputManager } from './ui/InputManager.js';
 import { LayoutManager } from './ui/LayoutManager.js';
 import { UIHelper } from './ui/UIHelper.js';
 import { ValidationManager } from './ui/ValidationManager.js';
+import { DuplicateDialog } from './ui/DuplicateDialog.js';
 import { CoordinateUtils } from './utils/Coordinates.js';
 import { Validators } from './utils/Validators.js';
 import { DragDropHandler } from './utils/DragDropHandler.js';
@@ -19,7 +20,7 @@ export class PointMarkerApp {
     constructor() {
         // DOM要素の初期化
         this.canvas = document.getElementById('mapCanvas');
-        
+
         // コアコンポーネントの初期化
         this.canvasRenderer = new CanvasRenderer(this.canvas);
         this.pointManager = new PointManager();
@@ -30,6 +31,15 @@ export class PointMarkerApp {
         this.layoutManager = new LayoutManager();
         this.dragDropHandler = new DragDropHandler();
         this.resizeHandler = new ResizeHandler();
+        this.duplicateDialog = new DuplicateDialog();
+
+        // Firebase関連（グローバルスコープから取得）
+        this.firebaseClient = window.firebaseClient || null;
+        this.authManager = window.authManager || null;
+        this.firestoreManager = window.firestoreManager || null;
+
+        // プロジェクトID（画像ファイル名ベース）
+        this.currentProjectId = null;
 
         // 現在の画像情報
         this.currentImage = null;
