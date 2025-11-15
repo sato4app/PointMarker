@@ -283,6 +283,7 @@ export class PointMarkerApp {
         const imageInputLabel = document.querySelector('label[for="imageInput"]');
         imageInputLabel.addEventListener('click', async (e) => {
             e.preventDefault();
+            e.stopPropagation();
             await this.handleImageSelection();
         });
 
