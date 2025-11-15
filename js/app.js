@@ -280,10 +280,9 @@ export class PointMarkerApp {
      */
     initializeEventListeners() {
         // 画像選択
-        const imageInputLabel = document.querySelector('label[for="imageInput"]');
-        imageInputLabel.addEventListener('click', async (e) => {
+        const imageInputBtn = document.getElementById('imageInputBtn');
+        imageInputBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            e.stopPropagation();
             await this.handleImageSelection();
         });
 
