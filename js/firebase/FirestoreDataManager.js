@@ -1,12 +1,17 @@
 /**
  * FirestoreDataManager.js
  * Firestoreデータ操作と重複検出を管理するクラス
+ *
+ * 【共有設定】
+ * - ユーザーID階層なし: projects/{projectId}/ に直接保存
+ * - 認証済みユーザーなら誰でも全プロジェクトを読み書き可能
+ * - PNG画像ファイル名がプロジェクトキー
  */
 
 export class FirestoreDataManager {
     constructor(firestore, userId) {
         this.db = firestore;
-        this.userId = userId;
+        this.userId = userId; // 認証確認用のみ（パス構築には使用しない）
         this.currentProjectId = null;
         this.listeners = new Map(); // リアルタイムリスナーの管理
     }
@@ -40,8 +45,6 @@ export class FirestoreDataManager {
     async createProjectMetadata(projectId, metadata) {
         try {
             await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .set({
@@ -49,9 +52,11 @@ export class FirestoreDataManager {
                     imageName: metadata.imageName || '',
                     imageWidth: metadata.imageWidth || 0,
                     imageHeight: metadata.imageHeight || 0,
+                    createdBy: this.userId, // 最初に作成したユーザーID
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     lastAccessedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastUpdatedBy: this.userId, // 最後に更新したユーザーID
                     pointCount: 0,
                     routeCount: 0,
                     spotCount: 0
@@ -73,13 +78,12 @@ export class FirestoreDataManager {
     async updateProjectMetadata(projectId, updates) {
         try {
             await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .update({
                     ...updates,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastUpdatedBy: this.userId // 最後に更新したユーザーID
                 });
         } catch (error) {
             console.error('プロジェクトメタデータ更新失敗:', error);
@@ -95,8 +99,6 @@ export class FirestoreDataManager {
     async getProjectMetadata(projectId) {
         try {
             const doc = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .get();
@@ -115,8 +117,6 @@ export class FirestoreDataManager {
     async getAllProjects() {
         try {
             const snapshot = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .orderBy('lastAccessedAt', 'desc')
                 .get();
@@ -158,8 +158,6 @@ export class FirestoreDataManager {
 
             // 新規追加
             const docRef = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('points')
@@ -195,8 +193,6 @@ export class FirestoreDataManager {
     async findPointById(projectId, pointId) {
         try {
             const snapshot = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('points')
@@ -229,8 +225,6 @@ export class FirestoreDataManager {
     async updatePoint(projectId, firestoreId, updates) {
         try {
             await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('points')
@@ -254,8 +248,6 @@ export class FirestoreDataManager {
     async deletePoint(projectId, firestoreId) {
         try {
             await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('points')
@@ -278,8 +270,6 @@ export class FirestoreDataManager {
     async getPoints(projectId) {
         try {
             const snapshot = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('points')
@@ -304,8 +294,6 @@ export class FirestoreDataManager {
      */
     onPointsSnapshot(projectId, callback) {
         const unsubscribe = this.db
-            .collection('users')
-            .doc(this.userId)
             .collection('projects')
             .doc(projectId)
             .collection('points')
@@ -354,8 +342,6 @@ export class FirestoreDataManager {
 
             // 新規追加
             const docRef = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('routes')
@@ -393,8 +379,6 @@ export class FirestoreDataManager {
     async findRouteByStartEnd(projectId, startPoint, endPoint) {
         try {
             const snapshot = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('routes')
@@ -433,8 +417,6 @@ export class FirestoreDataManager {
             }
 
             await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('routes')
@@ -458,8 +440,6 @@ export class FirestoreDataManager {
     async deleteRoute(projectId, firestoreId) {
         try {
             await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('routes')
@@ -482,8 +462,6 @@ export class FirestoreDataManager {
     async getRoutes(projectId) {
         try {
             const snapshot = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('routes')
@@ -507,8 +485,6 @@ export class FirestoreDataManager {
      */
     onRoutesSnapshot(projectId, callback) {
         const unsubscribe = this.db
-            .collection('users')
-            .doc(this.userId)
             .collection('projects')
             .doc(projectId)
             .collection('routes')
@@ -557,8 +533,6 @@ export class FirestoreDataManager {
 
             // 新規追加
             const docRef = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('spots')
@@ -597,8 +571,6 @@ export class FirestoreDataManager {
     async findSpotByNameAndCoords(projectId, name, x, y) {
         try {
             const snapshot = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('spots')
@@ -633,8 +605,6 @@ export class FirestoreDataManager {
     async updateSpot(projectId, firestoreId, updates) {
         try {
             await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('spots')
@@ -658,8 +628,6 @@ export class FirestoreDataManager {
     async deleteSpot(projectId, firestoreId) {
         try {
             await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('spots')
@@ -682,8 +650,6 @@ export class FirestoreDataManager {
     async getSpots(projectId) {
         try {
             const snapshot = await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .collection('spots')
@@ -708,8 +674,6 @@ export class FirestoreDataManager {
      */
     onSpotsSnapshot(projectId, callback) {
         const unsubscribe = this.db
-            .collection('users')
-            .doc(this.userId)
             .collection('projects')
             .doc(projectId)
             .collection('spots')
@@ -742,8 +706,6 @@ export class FirestoreDataManager {
     async incrementCounter(projectId, field, increment) {
         try {
             await this.db
-                .collection('users')
-                .doc(this.userId)
                 .collection('projects')
                 .doc(projectId)
                 .update({

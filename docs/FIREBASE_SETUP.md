@@ -1,6 +1,11 @@
-# Firebase セットアップガイド
+# Firebase セットアップガイド（共有プロジェクト版）
 
 このガイドでは、PointMarkerアプリでFirebaseを使用するための環境構築手順を説明します。
+
+**【重要】共有プロジェクト設定**
+- ユーザーID階層なし、`projects/{projectId}` に直接保存
+- 認証済みユーザーなら誰でも全プロジェクトを読み書き可能
+- PNG画像ファイル名がプロジェクトキー（画像配布によるアクセス制御）
 
 ## 1. Firebaseプロジェクトの作成
 
@@ -78,7 +83,10 @@ export const firebaseConfig = {
 4. **ロケーション**: `asia-northeast1`（東京）を選択
 5. 「有効にする」をクリック
 
-### 4.2 セキュリティルールの設定
+### 4.2 セキュリティルールの設定（共有プロジェクト版）
+
+**⚠️ 重要**: 共有プロジェクト用のセキュリティルールを設定してください
+
 1. 「ルール」タブを選択
 2. 以下のルールに置き換え：
 
@@ -86,18 +94,15 @@ export const firebaseConfig = {
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ユーザーは自分のデータのみアクセス可能
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      // プロジェクトデータ
-      match /projects/{projectId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+    // 共有プロジェクト: 認証済みユーザーなら誰でも読み書き可能
+    match /projects/{projectId} {
+      // 認証必須（匿名認証でもOK）
+      allow read, write: if request.auth != null;
 
-        // ポイント・ルート・スポット
-        match /{document=**} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
+      // ポイント・ルート・スポットのサブコレクション
+      match /{document=**} {
+        allow read, write: if request.auth != null;
       }
     }
   }
@@ -105,6 +110,11 @@ service cloud.firestore {
 ```
 
 3. 「公開」をクリック
+
+**セキュリティの説明**:
+- 認証済みユーザーなら誰でも全プロジェクトを読み書き可能
+- PNG画像ファイルをメンバーにのみ配布することでアクセスを制限
+- 画像ファイル名を知らない第三者はデータにアクセス不可
 
 ### 4.3 インデックスの作成（オプション）
 パフォーマンス向上のため、以下のインデックスを作成します：
