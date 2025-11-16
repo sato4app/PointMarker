@@ -180,6 +180,9 @@ export class PointMarkerApp {
                         inputElement.style.borderWidth = '';
                         inputElement.title = '';
                     }
+
+                    // 【リアルタイムFirebase更新】blur時、重複がなく、空白でない場合にFirebase更新
+                    this.updatePointToFirebase(data.index);
                 }
             }
 
@@ -588,7 +591,13 @@ export class PointMarkerApp {
      * @param {MouseEvent} event - マウスイベント
      */
     handleCanvasMouseUp(event) {
-        this.dragDropHandler.endDrag(this.inputManager, this.pointManager);
+        // ポイントドラッグ終了時のコールバック
+        const onPointDragEnd = (pointIndex) => {
+            // 【リアルタイムFirebase更新】ポイント移動完了時にFirebase更新
+            this.updatePointToFirebase(pointIndex);
+        };
+
+        this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd);
     }
 
     /**
@@ -918,6 +927,103 @@ export class PointMarkerApp {
     // ========================================
     // Firebase連携機能
     // ========================================
+
+    /**
+     * 単一ポイントをFirebaseにリアルタイム更新
+     * @param {number} pointIndex - ポイントのインデックス
+     */
+    async updatePointToFirebase(pointIndex) {
+        // Firebaseマネージャーの存在確認
+        if (!window.firestoreManager) {
+            console.log('[Firebase] Firestore manager not available');
+            return;
+        }
+
+        // 画像が読み込まれているか確認
+        if (!this.currentImage) {
+            console.log('[Firebase] No image loaded');
+            return;
+        }
+
+        // プロジェクトIDを画像ファイル名から取得
+        const projectId = this.fileHandler.getCurrentImageFileName();
+        if (!projectId) {
+            console.log('[Firebase] Cannot get project ID');
+            return;
+        }
+
+        const points = this.pointManager.getPoints();
+        if (pointIndex < 0 || pointIndex >= points.length) {
+            console.log('[Firebase] Invalid point index:', pointIndex);
+            return;
+        }
+
+        const point = points[pointIndex];
+
+        // 空白IDのポイントは更新対象外
+        if (!point.id || point.id.trim() === '') {
+            console.log('[Firebase] Point ID is blank, skipping update. Index:', pointIndex);
+            return;
+        }
+
+        try {
+            // キャンバス座標から画像座標に変換
+            const imageCoords = CoordinateUtils.canvasToImage(
+                point.x, point.y,
+                this.canvas.width, this.canvas.height,
+                this.currentImage.width, this.currentImage.height
+            );
+
+            // デバッグログ出力
+            console.log(`[Firebase] Updating point - ID: "${point.id}", Canvas: (${point.x}, ${point.y}), Image: (${imageCoords.x}, ${imageCoords.y})`);
+
+            // プロジェクトメタデータの存在確認・作成
+            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
+            if (!existingProject) {
+                const metadata = {
+                    projectName: projectId,
+                    imageName: projectId + '.png',
+                    imageWidth: this.currentImage.width,
+                    imageHeight: this.currentImage.height
+                };
+                await window.firestoreManager.createProjectMetadata(projectId, metadata);
+                console.log(`[Firebase] Created project metadata: ${projectId}`);
+            }
+
+            // 既存ポイントを検索
+            const existingPoint = await window.firestoreManager.findPointById(projectId, point.id);
+
+            if (existingPoint) {
+                // 既存ポイントを更新
+                await window.firestoreManager.updatePoint(projectId, existingPoint.firestoreId, {
+                    x: imageCoords.x,
+                    y: imageCoords.y,
+                    index: point.index || 0,
+                    isMarker: false
+                });
+                console.log(`[Firebase] Updated existing point: ${point.id} (firestoreId: ${existingPoint.firestoreId})`);
+            } else {
+                // 新規ポイントを追加
+                const result = await window.firestoreManager.addPoint(projectId, {
+                    id: point.id,
+                    x: imageCoords.x,
+                    y: imageCoords.y,
+                    index: point.index || 0,
+                    isMarker: false
+                });
+
+                if (result.status === 'success') {
+                    console.log(`[Firebase] Added new point: ${point.id} (firestoreId: ${result.firestoreId})`);
+                } else if (result.status === 'duplicate') {
+                    console.warn(`[Firebase] Duplicate point detected: ${point.id}`);
+                }
+            }
+
+        } catch (error) {
+            console.error('[Firebase] Error updating point:', error);
+            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
+        }
+    }
 
     /**
      * 現在のデータをFirebaseに保存

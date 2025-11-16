@@ -65,18 +65,26 @@ export class DragDropHandler {
      * ドラッグ終了処理
      * @param {Object} inputManager - InputManagerインスタンス
      * @param {Object} pointManager - PointManagerインスタンス
+     * @param {Function} onPointDragEndCallback - ポイントドラッグ終了時のコールバック（オプション）
      * @returns {boolean} ドラッグが終了されたかどうか
      */
-    endDrag(inputManager, pointManager) {
+    endDrag(inputManager, pointManager, onPointDragEndCallback) {
         if (!this.isDragging) return false;
 
         const wasDragging = true;
+        const draggedIndex = this.draggedObjectIndex;
+        const draggedType = this.draggedObjectType;
 
         // ポイント移動後に入力ボックスを再描画
         if (this.draggedObjectType === 'point') {
             inputManager.redrawInputBoxes(pointManager.getPoints());
             // ポイントデータ変更を通知
             pointManager.notify('onChange', pointManager.getPoints());
+
+            // ドラッグ終了コールバック実行（ポイントインデックスを渡す）
+            if (onPointDragEndCallback && typeof onPointDragEndCallback === 'function') {
+                onPointDragEndCallback(draggedIndex);
+            }
         }
 
         this.reset();
