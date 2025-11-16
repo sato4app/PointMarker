@@ -216,6 +216,39 @@ export class FirestoreDataManager {
     }
 
     /**
+     * 座標でポイントを検索
+     * @param {string} projectId - プロジェクトID
+     * @param {number} x - X座標（画像座標系）
+     * @param {number} y - Y座標（画像座標系）
+     * @returns {Promise<Object|null>} ポイントデータ（firestoreIdを含む）またはnull
+     */
+    async findPointByCoords(projectId, x, y) {
+        try {
+            const snapshot = await this.db
+                .collection('projects')
+                .doc(projectId)
+                .collection('points')
+                .where('x', '==', x)
+                .where('y', '==', y)
+                .limit(1)
+                .get();
+
+            if (snapshot.empty) {
+                return null;
+            }
+
+            const doc = snapshot.docs[0];
+            return {
+                firestoreId: doc.id,
+                ...doc.data()
+            };
+        } catch (error) {
+            console.error('座標でポイント検索失敗:', error);
+            throw error;
+        }
+    }
+
+    /**
      * ポイントを更新
      * @param {string} projectId - プロジェクトID
      * @param {string} firestoreId - FirestoreドキュメントID
