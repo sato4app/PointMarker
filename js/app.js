@@ -141,6 +141,14 @@ export class PointMarkerApp {
         this.inputManager.setCallback('onPointIdChange', (data) => {
             // blur時にIDが空白の場合はポイントを削除
             if (!data.skipFormatting && data.id.trim() === '') {
+                // Firebaseからも削除するため、削除前に座標を取得
+                const points = this.pointManager.getPoints();
+                if (data.index >= 0 && data.index < points.length) {
+                    const point = points[data.index];
+                    // Firebase削除処理（非同期だが待たない）
+                    this.deletePointFromFirebase(point.x, point.y);
+                }
+                // 画面から削除
                 this.pointManager.removePoint(data.index);
                 return;
             }
@@ -1021,6 +1029,62 @@ export class PointMarkerApp {
 
         } catch (error) {
             console.error('[Firebase] Error updating point:', error);
+            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
+        }
+    }
+
+    /**
+     * 座標でポイントをFirebaseから削除
+     * @param {number} x - キャンバスX座標
+     * @param {number} y - キャンバスY座標
+     */
+    async deletePointFromFirebase(x, y) {
+        // Firebaseマネージャーの存在確認
+        if (!window.firestoreManager) {
+            console.log('[Firebase] Firestore manager not available');
+            return;
+        }
+
+        // 画像が読み込まれているか確認
+        if (!this.currentImage) {
+            console.log('[Firebase] No image loaded');
+            return;
+        }
+
+        // プロジェクトIDを画像ファイル名から取得
+        const projectId = this.fileHandler.getCurrentImageFileName();
+        if (!projectId) {
+            console.log('[Firebase] Cannot get project ID');
+            return;
+        }
+
+        try {
+            // キャンバス座標から画像座標に変換
+            const imageCoords = CoordinateUtils.canvasToImage(
+                x, y,
+                this.canvas.width, this.canvas.height,
+                this.currentImage.width, this.currentImage.height
+            );
+
+            // 座標でポイントを検索
+            const existingPoint = await window.firestoreManager.findPointByCoords(
+                projectId,
+                imageCoords.x,
+                imageCoords.y
+            );
+
+            if (existingPoint) {
+                // Firebaseから削除
+                await window.firestoreManager.deletePoint(projectId, existingPoint.firestoreId);
+
+                // デバッグログ出力
+                console.log(`[Firebase] Deleted point at coordinates - Canvas: (${x}, ${y}), Image: (${imageCoords.x}, ${imageCoords.y}), ID was: "${existingPoint.id || '(blank)'}"`);
+            } else {
+                console.log(`[Firebase] No point found at coordinates - Canvas: (${x}, ${y}), Image: (${imageCoords.x}, ${imageCoords.y})`);
+            }
+
+        } catch (error) {
+            console.error('[Firebase] Error deleting point by coords:', error);
             // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
         }
     }
