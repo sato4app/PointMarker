@@ -562,11 +562,20 @@ header p {
     font-weight: bold;
     text-align: center;
     outline: none;
-    transition: border-color 0.3s ease;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
 }
 
 .route-point-field:focus {
     border-color: var(--primary-color);
+}
+
+.route-point-field[readonly] {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+}
+
+.route-point-field:not([readonly]) {
+    background-color: white;
 }
 
 .route-point-field::placeholder {

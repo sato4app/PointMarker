@@ -932,6 +932,10 @@ export class PointMarkerApp {
         // 追加したルートを自動選択
         const newIndex = this.routeManager.getAllRoutes().length - 1;
         this.routeManager.selectRoute(newIndex);
+
+        // 開始・終了ポイント入力フィールドを編集可能にする
+        this.setRouteInputsEditable(true);
+
         UIHelper.showMessage('新しいルートを追加しました');
     }
 
@@ -949,6 +953,9 @@ export class PointMarkerApp {
             UIHelper.showError('開始ポイントと終了ポイントを設定してください');
             return;
         }
+
+        // 開始・終了ポイント入力フィールドを読み取り専用にする
+        this.setRouteInputsEditable(false);
 
         // TODO: Firebase保存処理を実装
         UIHelper.showMessage('ルートを保存しました（未実装）');
@@ -970,6 +977,23 @@ export class PointMarkerApp {
         if (confirm(`ルート「${routeName}」を削除しますか？`)) {
             this.routeManager.deleteRoute(selectedIndex);
             UIHelper.showMessage('ルートを削除しました');
+        }
+    }
+
+    /**
+     * ルート入力フィールドの編集可/不可を設定
+     * @param {boolean} editable - 編集可能かどうか
+     */
+    setRouteInputsEditable(editable) {
+        const startPointInput = document.getElementById('startPointInput');
+        const endPointInput = document.getElementById('endPointInput');
+
+        if (editable) {
+            startPointInput.removeAttribute('readonly');
+            endPointInput.removeAttribute('readonly');
+        } else {
+            startPointInput.setAttribute('readonly', 'readonly');
+            endPointInput.setAttribute('readonly', 'readonly');
         }
     }
 
