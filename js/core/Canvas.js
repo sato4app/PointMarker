@@ -225,9 +225,9 @@ export class CanvasRenderer {
         this.drawPoints(points, options, this.scale);
 
         // ルート中間点の描画（複数ルート対応）
-        if (options.showRouteMode && options.allRoutes && Array.isArray(options.allRoutes)) {
-            // 複数ルート対応: 選択中のルートは通常サイズ、未選択は小さく
-            this.drawAllRoutesWaypoints(options.allRoutes, options.selectedRouteIndex || -1, this.scale);
+        if (options.allRoutes && Array.isArray(options.allRoutes) && options.allRoutes.length > 0) {
+            // 複数ルート対応: 選択中のルートは通常サイズ（radius=5）、未選択は小さく（radius=2）
+            this.drawAllRoutesWaypoints(options.allRoutes, options.selectedRouteIndex !== undefined ? options.selectedRouteIndex : -1, this.scale);
         } else if (routePoints && routePoints.length > 0) {
             // 後方互換性: 従来の方式（選択中のルートのみ）
             this.drawRoutePoints(routePoints, this.scale);
