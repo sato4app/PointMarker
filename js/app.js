@@ -949,22 +949,68 @@ export class PointMarkerApp {
      * 選択中のルートを保存（Firebase）
      */
     async handleSaveRoute() {
+        // Firebaseマネージャーの存在確認
+        if (!window.firestoreManager) {
+            UIHelper.showError('Firebase接続が利用できません');
+            return;
+        }
+
         const selectedRoute = this.routeManager.getSelectedRoute();
         if (!selectedRoute) {
             UIHelper.showError('ルートが選択されていません');
             return;
         }
 
+        // 開始・終了ポイントが設定されているか確認
         if (!selectedRoute.startPointId || !selectedRoute.endPointId) {
             UIHelper.showError('開始ポイントと終了ポイントを設定してください');
             return;
         }
 
-        // 開始・終了ポイント入力フィールドを読み取り専用にする
-        this.setRouteInputsEditable(false);
+        // 中間点が1件以上設定されているか確認
+        if (!selectedRoute.routePoints || selectedRoute.routePoints.length === 0) {
+            UIHelper.showError('中間点を1件以上設定してください');
+            return;
+        }
 
-        // TODO: Firebase保存処理を実装
-        UIHelper.showMessage('ルートを保存しました（未実装）');
+        try {
+            // プロジェクトIDを画像ファイル名から取得
+            const projectId = this.fileHandler.getCurrentImageFileName();
+            if (!projectId) {
+                UIHelper.showError('画像ファイル名を取得できません');
+                return;
+            }
+
+            // キャンバス座標を画像座標に変換
+            const waypoints = selectedRoute.routePoints.map(point => {
+                const imageCoords = CoordinateUtils.canvasToImage(
+                    point.x, point.y,
+                    this.canvas.width, this.canvas.height,
+                    this.currentImage.width, this.currentImage.height
+                );
+                return { x: imageCoords.x, y: imageCoords.y };
+            });
+
+            // Firebaseに保存するルートデータ
+            const routeData = {
+                routeName: selectedRoute.routeName || `${selectedRoute.startPointId} → ${selectedRoute.endPointId}`,
+                startPoint: selectedRoute.startPointId,
+                endPoint: selectedRoute.endPointId,
+                waypoints: waypoints
+            };
+
+            // Firebaseに保存
+            await window.firestoreManager.addRoute(projectId, routeData);
+
+            // 開始・終了ポイント入力フィールドを読み取り専用にする
+            this.setRouteInputsEditable(false);
+
+            UIHelper.showMessage(`ルート「${routeData.routeName}」を保存しました`);
+
+        } catch (error) {
+            console.error('ルート保存エラー:', error);
+            UIHelper.showError('ルート保存中にエラーが発生しました: ' + error.message);
+        }
     }
 
     /**
