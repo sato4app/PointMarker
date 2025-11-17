@@ -1560,7 +1560,7 @@ export class PointMarkerApp {
             }
 
             this.pointManager.clearPoints();
-            this.routeManager.clearRoute();
+            this.routeManager.clearAllRoutes();
             this.spotManager.clearSpots();
 
             // ポイントを読み込み（画像座標→キャンバス座標に変換）
@@ -1586,11 +1586,9 @@ export class PointMarkerApp {
             // ルートを読み込み（画像座標→キャンバス座標に変換）
             const routes = await window.firestoreManager.getRoutes(projectId);
             let loadedRoutes = 0;
-            if (routes.length > 0) {
-                // 最初のルートのみ読み込み（現在の仕様では1ルートのみサポート）
-                const route = routes[0];
-                this.routeManager.setStartPoint(route.startPoint);
-                this.routeManager.setEndPoint(route.endPoint);
+            for (const route of routes) {
+                // 中間点の座標変換
+                const convertedWaypoints = [];
                 for (const waypoint of route.waypoints) {
                     // 画像座標からキャンバス座標に変換
                     const canvasCoords = CoordinateUtils.imageToCanvas(
@@ -1598,8 +1596,16 @@ export class PointMarkerApp {
                         this.canvas.width, this.canvas.height,
                         this.currentImage.width, this.currentImage.height
                     );
-                    this.routeManager.addRoutePoint(canvasCoords.x, canvasCoords.y);
+                    convertedWaypoints.push({ x: canvasCoords.x, y: canvasCoords.y });
                 }
+
+                // ルートオブジェクトを作成してRouteManagerに追加
+                this.routeManager.addRoute({
+                    routeName: route.routeName || `${route.startPoint} → ${route.endPoint}`,
+                    startPointId: route.startPoint,
+                    endPointId: route.endPoint,
+                    routePoints: convertedWaypoints
+                });
                 loadedRoutes++;
             }
 
@@ -1629,11 +1635,12 @@ export class PointMarkerApp {
             this.updatePopupPositions();
             this.redrawCanvas();
 
-            // ポイント数・スポット数・中間点数を更新
+            // ポイント数・スポット数を更新
             document.getElementById('pointCount').textContent = loadedPoints;
             document.getElementById('spotCount').textContent = loadedSpots;
-            document.getElementById('waypointCount').textContent =
-                this.routeManager.getRoutePoints().length;
+
+            // 中間点数は選択されたルートのものを表示（初期状態は0）
+            document.getElementById('waypointCount').textContent = 0;
 
             UIHelper.showMessage(
                 `読み込み完了: ポイント${loadedPoints}件、ルート${loadedRoutes}件、スポット${loadedSpots}件`

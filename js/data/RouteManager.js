@@ -177,7 +177,7 @@ export class RouteManager {
     }
 
     /**
-     * ルート情報を全てクリア（開始・終了ポイント含む）
+     * 選択中のルート情報を全てクリア（開始・終了ポイント含む）
      */
     clearRoute() {
         const selectedRoute = this.getSelectedRoute();
@@ -189,6 +189,19 @@ export class RouteManager {
             this.notify('onCountChange', 0);
             this.notify('onStartEndChange', { start: '', end: '' });
         }
+    }
+
+    /**
+     * 全ルートをクリア
+     */
+    clearAllRoutes() {
+        this.routes = [];
+        this.selectedRouteIndex = -1;
+        this.notify('onChange');
+        this.notify('onCountChange', 0);
+        this.notify('onStartEndChange', { start: '', end: '' });
+        this.notify('onRouteListChange', []);
+        this.notify('onSelectionChange', -1);
     }
 
     /**
