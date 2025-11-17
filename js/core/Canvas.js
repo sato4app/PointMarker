@@ -129,12 +129,32 @@ export class CanvasRenderer {
 
     /**
      * ルートポイント（中間点）を描画
-     * @param {Array} routePoints - ルートポイント配列
+     * @param {Array} routePoints - ルートポイント配列（選択中のルート）
+     * @param {number} canvasScale - キャンバスのスケール値 (デフォルト: 1.0)
+     * @param {number} radius - 菱形の半径（デフォルト: 5）
+     */
+    drawRoutePoints(routePoints, canvasScale = 1.0, radius = 5) {
+        routePoints.forEach(point => {
+            this.drawDiamond(point.x, point.y, radius, '#ff9500', '#ffffff', 1, canvasScale);
+        });
+    }
+
+    /**
+     * 複数ルートの中間点を一括描画（未選択ルートは小さく）
+     * @param {Array} allRoutes - 全ルート配列
+     * @param {number} selectedRouteIndex - 選択中のルートインデックス（-1 = 未選択）
      * @param {number} canvasScale - キャンバスのスケール値 (デフォルト: 1.0)
      */
-    drawRoutePoints(routePoints, canvasScale = 1.0) {
-        routePoints.forEach(point => {
-            this.drawDiamond(point.x, point.y, 5, '#ff9500', '#ffffff', 1, canvasScale);
+    drawAllRoutesWaypoints(allRoutes, selectedRouteIndex, canvasScale = 1.0) {
+        allRoutes.forEach((route, index) => {
+            const waypoints = route.routePoints || [];
+            if (index === selectedRouteIndex) {
+                // 選択中のルート: 通常サイズ（6px）
+                this.drawRoutePoints(waypoints, canvasScale, 5);
+            } else {
+                // 未選択ルート: 小さいサイズ（2px）
+                this.drawRoutePoints(waypoints, canvasScale, 2);
+            }
         });
     }
 
@@ -186,9 +206,12 @@ export class CanvasRenderer {
     /**
      * 画像とすべてのポイントを再描画
      * @param {Array} points - 通常ポイント配列
-     * @param {Array} routePoints - ルートポイント配列
+     * @param {Array} routePoints - ルートポイント配列（選択中のルートのみ、後方互換性のため残す）
      * @param {Array} spots - スポット配列
      * @param {Object} options - 描画オプション
+     *   - showRouteMode: ルート編集モードかどうか
+     *   - allRoutes: 全ルート配列（複数ルート対応）
+     *   - selectedRouteIndex: 選択中のルートインデックス
      */
     redraw(points = [], routePoints = [], spots = [], options = {}) {
         this.drawImage();
@@ -200,7 +223,16 @@ export class CanvasRenderer {
 
         // 現在のスケール値をマーカー描画メソッドに渡す
         this.drawPoints(points, options, this.scale);
-        this.drawRoutePoints(routePoints, this.scale);
+
+        // ルート中間点の描画（複数ルート対応）
+        if (options.showRouteMode && options.allRoutes && Array.isArray(options.allRoutes)) {
+            // 複数ルート対応: 選択中のルートは通常サイズ、未選択は小さく
+            this.drawAllRoutesWaypoints(options.allRoutes, options.selectedRouteIndex || -1, this.scale);
+        } else if (routePoints && routePoints.length > 0) {
+            // 後方互換性: 従来の方式（選択中のルートのみ）
+            this.drawRoutePoints(routePoints, this.scale);
+        }
+
         this.drawSpots(spots, options, this.scale);
 
         this.ctx.restore();

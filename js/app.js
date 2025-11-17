@@ -123,6 +123,20 @@ export class PointMarkerApp {
             this.redrawCanvas();
         });
 
+        // ルート一覧変更時のコールバック
+        this.routeManager.setCallback('onRouteListChange', (routes) => {
+            this.updateRouteDropdown(routes);
+        });
+
+        // ルート選択変更時のコールバック
+        this.routeManager.setCallback('onSelectionChange', (index) => {
+            // ドロップダウンの選択を更新
+            const dropdown = document.getElementById('routeSelectDropdown');
+            if (dropdown) {
+                dropdown.value = index >= 0 ? index.toString() : '';
+            }
+        });
+
         // スポット管理のコールバック
         this.spotManager.setCallback('onChange', (spots, skipRedrawInput = false) => {
             this.redrawCanvas();
@@ -400,6 +414,13 @@ export class PointMarkerApp {
             const inputValue = e.target.value.trim();
             const newValue = this.handleRoutePointBlur(inputValue, 'end', this.previousEndPoint);
             e.target.value = newValue;
+        });
+
+        // ルート選択ドロップダウン
+        const routeDropdown = document.getElementById('routeSelectDropdown');
+        routeDropdown.addEventListener('change', (e) => {
+            const selectedIndex = e.target.value === '' ? -1 : parseInt(e.target.value);
+            this.routeManager.selectRoute(selectedIndex);
         });
 
         // ポイントID表示切り替えチェックボックス
@@ -758,12 +779,32 @@ export class PointMarkerApp {
     }
 
     /**
+     * ルート選択ドロップダウンを更新
+     * @param {Array} routes - ルート配列
+     */
+    updateRouteDropdown(routes) {
+        const dropdown = document.getElementById('routeSelectDropdown');
+        if (!dropdown) return;
+
+        // 既存のオプションをクリア（最初の「-- ルートを選択 --」以外）
+        dropdown.innerHTML = '<option value="">-- ルートを選択 --</option>';
+
+        // ルートを追加
+        routes.forEach((route, index) => {
+            const option = document.createElement('option');
+            option.value = index.toString();
+            option.textContent = route.routeName || `${route.startPointId} → ${route.endPointId}`;
+            dropdown.appendChild(option);
+        });
+    }
+
+    /**
      * キャンバスを再描画
      */
     redrawCanvas() {
         const mode = this.layoutManager.getCurrentEditingMode();
         const routePoints = this.routeManager.getStartEndPoints();
-        
+
         this.canvasRenderer.redraw(
             this.pointManager.getPoints(),
             this.routeManager.getRoutePoints(),
@@ -771,7 +812,9 @@ export class PointMarkerApp {
             {
                 showRouteMode: mode === 'route',
                 startPointId: routePoints.start,
-                endPointId: routePoints.end
+                endPointId: routePoints.end,
+                allRoutes: this.routeManager.getAllRoutes(),
+                selectedRouteIndex: this.routeManager.selectedRouteIndex
             }
         );
     }
