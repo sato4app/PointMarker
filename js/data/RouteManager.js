@@ -93,6 +93,34 @@ export class RouteManager {
     }
 
     /**
+     * ルートを削除
+     * @param {number} index - 削除するルートのインデックス
+     */
+    deleteRoute(index) {
+        if (index < 0 || index >= this.routes.length) {
+            console.warn('Invalid route index:', index);
+            return;
+        }
+
+        this.routes.splice(index, 1);
+
+        // 削除したルートが選択中だった場合、選択を解除
+        if (this.selectedRouteIndex === index) {
+            this.selectedRouteIndex = -1;
+            this.notify('onStartEndChange', { start: '', end: '' });
+            this.notify('onCountChange', 0);
+            this.notify('onSelectionChange', -1);
+        } else if (this.selectedRouteIndex > index) {
+            // 削除したルートより後ろのルートが選択されていた場合、インデックスを調整
+            this.selectedRouteIndex--;
+            this.notify('onSelectionChange', this.selectedRouteIndex);
+        }
+
+        this.notify('onRouteListChange', this.routes);
+        this.notify('onChange');
+    }
+
+    /**
      * ルート中間点を追加（選択中のルートにのみ追加）
      * @param {number} x - X座標
      * @param {number} y - Y座標

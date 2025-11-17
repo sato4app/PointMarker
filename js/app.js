@@ -425,6 +425,22 @@ export class PointMarkerApp {
             });
         }
 
+        // ルート操作ボタン
+        document.getElementById('addRouteBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleAddRoute();
+        });
+
+        document.getElementById('saveRouteBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await this.handleSaveRoute();
+        });
+
+        document.getElementById('deleteRouteBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleDeleteRoute();
+        });
+
         // ポイントID表示切り替えチェックボックス
         document.getElementById('showPointIdsCheckbox').addEventListener('change', (e) => {
             this.handlePointIdVisibilityChange(e.target.checked);
@@ -901,6 +917,61 @@ export class PointMarkerApp {
         }
     }
 
+
+    /**
+     * 新しいルートを追加
+     */
+    handleAddRoute() {
+        const newRoute = {
+            routeName: `ルート${this.routeManager.getAllRoutes().length + 1}`,
+            startPointId: '',
+            endPointId: '',
+            routePoints: []
+        };
+        this.routeManager.addRoute(newRoute);
+        // 追加したルートを自動選択
+        const newIndex = this.routeManager.getAllRoutes().length - 1;
+        this.routeManager.selectRoute(newIndex);
+        UIHelper.showMessage('新しいルートを追加しました');
+    }
+
+    /**
+     * 選択中のルートを保存（Firebase）
+     */
+    async handleSaveRoute() {
+        const selectedRoute = this.routeManager.getSelectedRoute();
+        if (!selectedRoute) {
+            UIHelper.showError('ルートが選択されていません');
+            return;
+        }
+
+        if (!selectedRoute.startPointId || !selectedRoute.endPointId) {
+            UIHelper.showError('開始ポイントと終了ポイントを設定してください');
+            return;
+        }
+
+        // TODO: Firebase保存処理を実装
+        UIHelper.showMessage('ルートを保存しました（未実装）');
+    }
+
+    /**
+     * 選択中のルートを削除
+     */
+    handleDeleteRoute() {
+        const selectedIndex = this.routeManager.selectedRouteIndex;
+        if (selectedIndex < 0) {
+            UIHelper.showError('ルートが選択されていません');
+            return;
+        }
+
+        const selectedRoute = this.routeManager.getSelectedRoute();
+        const routeName = selectedRoute.routeName || `${selectedRoute.startPointId} → ${selectedRoute.endPointId}`;
+
+        if (confirm(`ルート「${routeName}」を削除しますか？`)) {
+            this.routeManager.deleteRoute(selectedIndex);
+            UIHelper.showMessage('ルートを削除しました');
+        }
+    }
 
     /**
      * ポイントID表示/非表示切り替え処理
