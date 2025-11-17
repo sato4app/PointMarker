@@ -662,6 +662,37 @@ export class FirestoreDataManager {
     }
 
     /**
+     * スポット名でスポットを検索（更新用）
+     * @param {string} projectId - プロジェクトID
+     * @param {string} name - スポット名
+     * @returns {Promise<Object|null>}
+     */
+    async findSpotByName(projectId, name) {
+        try {
+            const snapshot = await this.db
+                .collection('projects')
+                .doc(projectId)
+                .collection('spots')
+                .where('name', '==', name)
+                .limit(1)
+                .get();
+
+            if (snapshot.empty) {
+                return null;
+            }
+
+            const doc = snapshot.docs[0];
+            return {
+                firestoreId: doc.id,
+                ...doc.data()
+            };
+        } catch (error) {
+            console.error('スポット検索失敗:', error);
+            throw error;
+        }
+    }
+
+    /**
      * スポットを更新
      * @param {string} projectId - プロジェクトID
      * @param {string} firestoreId - FirestoreドキュメントID

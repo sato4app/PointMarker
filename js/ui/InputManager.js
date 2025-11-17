@@ -586,12 +586,17 @@ export class InputManager {
      */
     clearSpotInputBoxes() {
         this.spotInputElements.forEach(input => {
-            const container = input && input._container;
-            if (container && container.parentNode) {
-                container.parentNode.removeChild(container);
-            } else if (input && input.parentNode) {
-                // 後方互換（コンテナ未設定の場合）
-                input.parentNode.removeChild(input);
+            try {
+                const container = input && input._container;
+                if (container && container.parentNode) {
+                    container.parentNode.removeChild(container);
+                } else if (input && input.parentNode) {
+                    // 後方互換（コンテナ未設定の場合）
+                    input.parentNode.removeChild(input);
+                }
+            } catch (error) {
+                // ドラッグ中などで既に削除されている場合は無視
+                console.log('[InputManager] Input element already removed:', error.message);
             }
         });
         this.spotInputElements = [];

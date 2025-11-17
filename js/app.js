@@ -1188,16 +1188,14 @@ export class PointMarkerApp {
                 console.log(`[Firebase] Created project metadata: ${projectId}`);
             }
 
-            // 既存スポットを検索（名前と座標で検索）
-            const existingSpot = await window.firestoreManager.findSpotByNameAndCoords(
+            // 既存スポットを検索（名前のみで検索）
+            const existingSpot = await window.firestoreManager.findSpotByName(
                 projectId,
-                spot.name,
-                imageCoords.x,
-                imageCoords.y
+                spot.name
             );
 
             if (existingSpot) {
-                // 既存スポットを更新
+                // 既存スポットを更新（座標を含むすべてのフィールドを更新）
                 await window.firestoreManager.updateSpot(projectId, existingSpot.firestoreId, {
                     x: imageCoords.x,
                     y: imageCoords.y,
@@ -1205,7 +1203,7 @@ export class PointMarkerApp {
                     description: spot.description || '',
                     category: spot.category || ''
                 });
-                console.log(`[Firebase] Updated existing spot: ${spot.name} (firestoreId: ${existingSpot.firestoreId})`);
+                console.log(`[Firebase] Updated existing spot: ${spot.name} (firestoreId: ${existingSpot.firestoreId}) - Old coords: (${existingSpot.x}, ${existingSpot.y}), New coords: (${imageCoords.x}, ${imageCoords.y})`);
             } else {
                 // 新規スポットを追加
                 const result = await window.firestoreManager.addSpot(projectId, {
