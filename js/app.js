@@ -418,10 +418,12 @@ export class PointMarkerApp {
 
         // ルート選択ドロップダウン
         const routeDropdown = document.getElementById('routeSelectDropdown');
-        routeDropdown.addEventListener('change', (e) => {
-            const selectedIndex = e.target.value === '' ? -1 : parseInt(e.target.value);
-            this.routeManager.selectRoute(selectedIndex);
-        });
+        if (routeDropdown) {
+            routeDropdown.addEventListener('change', (e) => {
+                const selectedIndex = e.target.value === '' ? -1 : parseInt(e.target.value);
+                this.routeManager.selectRoute(selectedIndex);
+            });
+        }
 
         // ポイントID表示切り替えチェックボックス
         document.getElementById('showPointIdsCheckbox').addEventListener('change', (e) => {
