@@ -804,6 +804,9 @@ export class PointMarkerApp {
         const dropdown = document.getElementById('routeSelectDropdown');
         if (!dropdown) return;
 
+        // 現在の選択を保持
+        const currentSelectedIndex = this.routeManager.selectedRouteIndex;
+
         // 既存のオプションをクリア（最初の「-- ルートを選択 --」以外）
         dropdown.innerHTML = '<option value="">-- ルートを選択 --</option>';
 
@@ -814,6 +817,9 @@ export class PointMarkerApp {
             option.textContent = route.routeName || `${route.startPointId} → ${route.endPointId}`;
             dropdown.appendChild(option);
         });
+
+        // 選択を復元
+        dropdown.value = currentSelectedIndex >= 0 ? currentSelectedIndex.toString() : '';
     }
 
     /**

@@ -245,6 +245,10 @@ export class RouteManager {
         }
 
         selectedRoute.startPointId = skipFormatting ? id : Validators.formatPointId(id);
+
+        // 開始・終了ポイントが両方設定されている場合、ルート名を更新
+        this.updateRouteNameIfComplete();
+
         this.notify('onStartEndChange', {
             start: selectedRoute.startPointId,
             end: selectedRoute.endPointId
@@ -264,10 +268,27 @@ export class RouteManager {
         }
 
         selectedRoute.endPointId = skipFormatting ? id : Validators.formatPointId(id);
+
+        // 開始・終了ポイントが両方設定されている場合、ルート名を更新
+        this.updateRouteNameIfComplete();
+
         this.notify('onStartEndChange', {
             start: selectedRoute.startPointId,
             end: selectedRoute.endPointId
         });
+    }
+
+    /**
+     * 開始・終了ポイントが両方設定されている場合、ルート名を更新
+     */
+    updateRouteNameIfComplete() {
+        const selectedRoute = this.getSelectedRoute();
+        if (!selectedRoute) return;
+
+        if (selectedRoute.startPointId && selectedRoute.endPointId) {
+            selectedRoute.routeName = `${selectedRoute.startPointId} → ${selectedRoute.endPointId}`;
+            this.notify('onRouteListChange', this.routes);
+        }
     }
 
     /**
