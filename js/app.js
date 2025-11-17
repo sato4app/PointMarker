@@ -212,8 +212,29 @@ export class PointMarkerApp {
         
         // スポット名変更のコールバック
         this.inputManager.setCallback('onSpotNameChange', (data) => {
+            // blur時にスポット名が空白の場合はスポットを削除
+            if (!data.skipFormatting && data.name.trim() === '') {
+                // Firebaseからも削除するため、削除前に座標を取得
+                const spots = this.spotManager.getSpots();
+                if (data.index >= 0 && data.index < spots.length) {
+                    const spot = spots[data.index];
+                    // Firebase削除処理（非同期だが待たない）
+                    this.deleteSpotFromFirebase(spot.x, spot.y);
+                }
+                // 画面から削除
+                this.spotManager.removeSpot(data.index);
+                return;
+            }
+
             // フォーマット処理を実行（blur時のみ、input時はスキップ）
             this.spotManager.updateSpotName(data.index, data.name, !!data.skipFormatting, !!data.skipDisplay);
+
+            // blur時のみ、フォーマット後のスポット名でFirebase更新
+            if (!data.skipFormatting && data.name.trim() !== '') {
+                // 【リアルタイムFirebase更新】スポット名変更完了時にFirebase更新
+                this.updateSpotToFirebase(data.index);
+            }
+
             // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
             if (!data.skipDisplay) {
                 // フォーマット処理後の値を取得して表示
@@ -226,6 +247,14 @@ export class PointMarkerApp {
         
         this.inputManager.setCallback('onSpotRemove', (data) => {
             if (this.layoutManager.getCurrentEditingMode() === 'spot') {
+                // Firebaseからも削除するため、削除前に座標を取得
+                const spots = this.spotManager.getSpots();
+                if (data.index >= 0 && data.index < spots.length) {
+                    const spot = spots[data.index];
+                    // Firebase削除処理（非同期だが待たない）
+                    this.deleteSpotFromFirebase(spot.x, spot.y);
+                }
+                // 画面から削除
                 this.spotManager.removeSpot(data.index);
             }
         });
@@ -605,7 +634,13 @@ export class PointMarkerApp {
             this.updatePointToFirebase(pointIndex);
         };
 
-        this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd);
+        // スポットドラッグ終了時のコールバック
+        const onSpotDragEnd = (spotIndex) => {
+            // 【リアルタイムFirebase更新】スポット移動完了時にFirebase更新
+            this.updateSpotToFirebase(spotIndex);
+        };
+
+        this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd);
     }
 
     /**
@@ -1085,6 +1120,168 @@ export class PointMarkerApp {
 
         } catch (error) {
             console.error('[Firebase] Error deleting point by coords:', error);
+            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
+        }
+    }
+
+    /**
+     * 単一スポットをFirebaseにリアルタイム更新
+     * @param {number} spotIndex - スポットのインデックス
+     */
+    async updateSpotToFirebase(spotIndex) {
+        // Firebaseマネージャーの存在確認
+        if (!window.firestoreManager) {
+            console.log('[Firebase] Firestore manager not available');
+            return;
+        }
+
+        // 画像が読み込まれているか確認
+        if (!this.currentImage) {
+            console.log('[Firebase] No image loaded');
+            return;
+        }
+
+        // プロジェクトIDを画像ファイル名から取得
+        const projectId = this.fileHandler.getCurrentImageFileName();
+        if (!projectId) {
+            console.log('[Firebase] Cannot get project ID');
+            return;
+        }
+
+        const spots = this.spotManager.getSpots();
+        if (spotIndex < 0 || spotIndex >= spots.length) {
+            console.log('[Firebase] Invalid spot index:', spotIndex);
+            return;
+        }
+
+        const spot = spots[spotIndex];
+
+        // 空白名のスポットは更新対象外
+        if (!spot.name || spot.name.trim() === '') {
+            console.log('[Firebase] Spot name is blank, skipping update. Index:', spotIndex);
+            // 空白名の場合は既存データがあれば削除
+            await this.deleteSpotFromFirebase(spot.x, spot.y);
+            return;
+        }
+
+        try {
+            // キャンバス座標から画像座標に変換
+            const imageCoords = CoordinateUtils.canvasToImage(
+                spot.x, spot.y,
+                this.canvas.width, this.canvas.height,
+                this.currentImage.width, this.currentImage.height
+            );
+
+            // デバッグログ出力（追加・更新時）
+            console.log(`[Firebase] Updating spot - Name: "${spot.name}", Canvas: (${spot.x}, ${spot.y}), Image: (${imageCoords.x}, ${imageCoords.y})`);
+
+            // プロジェクトメタデータの存在確認・作成
+            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
+            if (!existingProject) {
+                const metadata = {
+                    projectName: projectId,
+                    imageName: projectId + '.png',
+                    imageWidth: this.currentImage.width,
+                    imageHeight: this.currentImage.height
+                };
+                await window.firestoreManager.createProjectMetadata(projectId, metadata);
+                console.log(`[Firebase] Created project metadata: ${projectId}`);
+            }
+
+            // 既存スポットを検索（名前と座標で検索）
+            const existingSpot = await window.firestoreManager.findSpotByNameAndCoords(
+                projectId,
+                spot.name,
+                imageCoords.x,
+                imageCoords.y
+            );
+
+            if (existingSpot) {
+                // 既存スポットを更新
+                await window.firestoreManager.updateSpot(projectId, existingSpot.firestoreId, {
+                    x: imageCoords.x,
+                    y: imageCoords.y,
+                    index: spot.index || 0,
+                    description: spot.description || '',
+                    category: spot.category || ''
+                });
+                console.log(`[Firebase] Updated existing spot: ${spot.name} (firestoreId: ${existingSpot.firestoreId})`);
+            } else {
+                // 新規スポットを追加
+                const result = await window.firestoreManager.addSpot(projectId, {
+                    name: spot.name,
+                    x: imageCoords.x,
+                    y: imageCoords.y,
+                    index: spot.index || 0,
+                    description: spot.description || '',
+                    category: spot.category || ''
+                });
+
+                if (result.status === 'success') {
+                    console.log(`[Firebase] Added new spot: ${spot.name} (firestoreId: ${result.firestoreId})`);
+                } else if (result.status === 'duplicate') {
+                    console.warn(`[Firebase] Duplicate spot detected: ${spot.name}`);
+                }
+            }
+
+        } catch (error) {
+            console.error('[Firebase] Error updating spot:', error);
+            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
+        }
+    }
+
+    /**
+     * 座標でスポットをFirebaseから削除
+     * @param {number} x - キャンバスX座標
+     * @param {number} y - キャンバスY座標
+     */
+    async deleteSpotFromFirebase(x, y) {
+        // Firebaseマネージャーの存在確認
+        if (!window.firestoreManager) {
+            console.log('[Firebase] Firestore manager not available');
+            return;
+        }
+
+        // 画像が読み込まれているか確認
+        if (!this.currentImage) {
+            console.log('[Firebase] No image loaded');
+            return;
+        }
+
+        // プロジェクトIDを画像ファイル名から取得
+        const projectId = this.fileHandler.getCurrentImageFileName();
+        if (!projectId) {
+            console.log('[Firebase] Cannot get project ID');
+            return;
+        }
+
+        try {
+            // キャンバス座標から画像座標に変換
+            const imageCoords = CoordinateUtils.canvasToImage(
+                x, y,
+                this.canvas.width, this.canvas.height,
+                this.currentImage.width, this.currentImage.height
+            );
+
+            // 座標でスポットを検索
+            const existingSpot = await window.firestoreManager.findSpotByCoords(
+                projectId,
+                imageCoords.x,
+                imageCoords.y
+            );
+
+            if (existingSpot) {
+                // Firebaseから削除
+                await window.firestoreManager.deleteSpot(projectId, existingSpot.firestoreId);
+
+                // デバッグログ出力（削除時）
+                console.log(`[Firebase] Deleted spot at coordinates - Canvas: (${x}, ${y}), Image: (${imageCoords.x}, ${imageCoords.y}), Name was: "${existingSpot.name || '(blank)'}"`);
+            } else {
+                console.log(`[Firebase] No spot found at coordinates - Canvas: (${x}, ${y}), Image: (${imageCoords.x}, ${imageCoords.y})`);
+            }
+
+        } catch (error) {
+            console.error('[Firebase] Error deleting spot by coords:', error);
             // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
         }
     }
