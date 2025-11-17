@@ -547,10 +547,9 @@ export class FirestoreDataManager {
      */
     async addSpot(projectId, spot) {
         try {
-            // 重複チェック（名称と座標が一致）
-            const existingSpot = await this.findSpotByNameAndCoords(
+            // 重複チェック（座標のみで一致確認）
+            const existingSpot = await this.findSpotByCoords(
                 projectId,
-                spot.name,
                 spot.x,
                 spot.y
             );

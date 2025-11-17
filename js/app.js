@@ -55,6 +55,9 @@ export class PointMarkerApp {
         this.previousStartPoint = '';
         this.previousEndPoint = '';
 
+        // スポットドラッグ開始時の座標保存（Firebase更新用）
+        this.spotDragStartCoords = null;
+
         this.initializeCallbacks();
         this.initializeEventListeners();
         this.enableBasicControls();
@@ -611,6 +614,14 @@ export class PointMarkerApp {
                 ? this.pointManager.getPoints()[objectInfo.index]
                 : this.spotManager.getSpots()[objectInfo.index];
 
+            // スポットドラッグ開始時に元の座標を保存（Firebase更新用）
+            if (objectInfo.type === 'spot') {
+                this.spotDragStartCoords = {
+                    x: object.x,
+                    y: object.y
+                };
+            }
+
             this.dragDropHandler.startDrag(
                 objectInfo.type,
                 objectInfo.index,
@@ -635,9 +646,23 @@ export class PointMarkerApp {
         };
 
         // スポットドラッグ終了時のコールバック
-        const onSpotDragEnd = (spotIndex) => {
+        const onSpotDragEnd = async (spotIndex) => {
             // 【リアルタイムFirebase更新】スポット移動完了時にFirebase更新
-            this.updateSpotToFirebase(spotIndex);
+            // 移動前の座標のデータを削除してから、新しい座標で追加
+            if (this.spotDragStartCoords) {
+                const spots = this.spotManager.getSpots();
+                if (spotIndex >= 0 && spotIndex < spots.length) {
+                    const currentSpot = spots[spotIndex];
+                    // 座標が変わった場合のみ、古いデータを削除
+                    if (this.spotDragStartCoords.x !== currentSpot.x ||
+                        this.spotDragStartCoords.y !== currentSpot.y) {
+                        await this.deleteSpotFromFirebase(this.spotDragStartCoords.x, this.spotDragStartCoords.y);
+                    }
+                }
+                this.spotDragStartCoords = null; // リセット
+            }
+            // 新しい座標で更新/追加
+            await this.updateSpotToFirebase(spotIndex);
         };
 
         this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd);
@@ -1188,22 +1213,24 @@ export class PointMarkerApp {
                 console.log(`[Firebase] Created project metadata: ${projectId}`);
             }
 
-            // 既存スポットを検索（名前のみで検索）
-            const existingSpot = await window.firestoreManager.findSpotByName(
+            // 既存スポットを検索（座標のみで検索）
+            const existingSpot = await window.firestoreManager.findSpotByCoords(
                 projectId,
-                spot.name
+                imageCoords.x,
+                imageCoords.y
             );
 
             if (existingSpot) {
-                // 既存スポットを更新（座標を含むすべてのフィールドを更新）
+                // 既存スポットを更新（スポット名と座標を更新）
                 await window.firestoreManager.updateSpot(projectId, existingSpot.firestoreId, {
+                    name: spot.name,
                     x: imageCoords.x,
                     y: imageCoords.y,
                     index: spot.index || 0,
                     description: spot.description || '',
                     category: spot.category || ''
                 });
-                console.log(`[Firebase] Updated existing spot: ${spot.name} (firestoreId: ${existingSpot.firestoreId}) - Old coords: (${existingSpot.x}, ${existingSpot.y}), New coords: (${imageCoords.x}, ${imageCoords.y})`);
+                console.log(`[Firebase] Updated existing spot at coords - New name: "${spot.name}", Coords: (${imageCoords.x}, ${imageCoords.y}), firestoreId: ${existingSpot.firestoreId}`);
             } else {
                 // 新規スポットを追加
                 const result = await window.firestoreManager.addSpot(projectId, {
