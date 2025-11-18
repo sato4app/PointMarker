@@ -745,6 +745,12 @@ export class PointMarkerApp {
 
         const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
 
+        // ルート編集モードの場合は、ポイント上でも中間点を追加可能
+        if (mode === 'route') {
+            this.handleNewObjectCreation(coords, mode);
+            return;
+        }
+
         // 既存オブジェクトクリック時の処理
         if (objectInfo) {
             this.handleExistingObjectClick(objectInfo, mode);
@@ -1019,6 +1025,7 @@ export class PointMarkerApp {
             let savedCount = 0;
             let updatedCount = 0;
             let addedCount = 0;
+            const savedRouteNames = [];
 
             for (const route of allRoutes) {
                 // 開始・終了ポイント、中間点が設定されていないルートはスキップ
@@ -1069,6 +1076,7 @@ export class PointMarkerApp {
                 // 更新フラグをクリア
                 route.isModified = false;
                 savedCount++;
+                savedRouteNames.push(routeData.routeName);
             }
 
             // 開始・終了ポイント入力フィールドを読み取り専用にする
@@ -1078,7 +1086,13 @@ export class PointMarkerApp {
             this.routeManager.notify('onModifiedStateChange', { isModified: false });
             this.routeManager.notify('onRouteListChange', allRoutes);
 
-            UIHelper.showMessage(`ルートを保存しました（保存: ${savedCount}件、更新: ${updatedCount}件、追加: ${addedCount}件）`);
+            // 保存したルートの一覧を表示
+            if (savedRouteNames.length > 0) {
+                const message = 'ルートを保存しました\n\n' + savedRouteNames.map((name, index) => `${index + 1}. ${name}`).join('\n');
+                UIHelper.showMessage(message);
+            } else {
+                UIHelper.showMessage('保存するルートがありませんでした');
+            }
 
         } catch (error) {
             console.error('ルート保存エラー:', error);
