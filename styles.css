@@ -471,7 +471,7 @@ header p {
 /* 要保存ラベル */
 .unsaved-label {
     display: none;
-    font-size: 11px;
+    font-size: 12px;
     color: #ff9500;
     font-weight: normal;
 }

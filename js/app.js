@@ -145,6 +145,11 @@ export class PointMarkerApp {
             this.updateRouteDropdown(this.routeManager.getAllRoutes());
         });
 
+        // ルート未選択時のコールバック
+        this.routeManager.setCallback('onNoRouteSelected', (message) => {
+            UIHelper.showMessage(message);
+        });
+
         // スポット管理のコールバック
         this.spotManager.setCallback('onChange', (spots, skipRedrawInput = false) => {
             this.redrawCanvas();
@@ -811,8 +816,11 @@ export class PointMarkerApp {
         const unsavedLabel = document.getElementById('routeUnsavedLabel');
         if (!unsavedLabel) return;
 
-        const selectedRoute = this.routeManager.getSelectedRoute();
-        if (selectedRoute && selectedRoute.isModified) {
+        // いずれかのルートが更新されている場合は「要保存」を表示
+        const allRoutes = this.routeManager.getAllRoutes();
+        const hasModifiedRoute = allRoutes.some(route => route.isModified);
+
+        if (hasModifiedRoute) {
             unsavedLabel.classList.add('visible');
         } else {
             unsavedLabel.classList.remove('visible');

@@ -17,7 +17,8 @@ export class RouteManager {
             onStartEndChange: null,
             onRouteListChange: null,  // ルート一覧変更時
             onSelectionChange: null,   // ルート選択変更時
-            onModifiedStateChange: null  // ルート更新状態変更時
+            onModifiedStateChange: null,  // ルート更新状態変更時
+            onNoRouteSelected: null  // ルート未選択時の通知
         };
     }
 
@@ -135,6 +136,7 @@ export class RouteManager {
         const selectedRoute = this.getSelectedRoute();
         if (!selectedRoute) {
             console.warn('No route selected. Cannot add route point.');
+            this.notify('onNoRouteSelected', 'ルートを選択してから中間点を追加してください');
             return null;
         }
 
