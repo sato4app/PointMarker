@@ -513,7 +513,6 @@ export class PointMarkerApp {
             await this.processLoadedImage(result.image, result.fileName);
         } catch (error) {
             if (error.message !== 'ファイル選択がキャンセルされました') {
-                console.error('画像選択エラー:', error);
                 alert('画像選択中にエラーが発生しました: ' + error.message);
             }
         } finally {
@@ -1122,7 +1121,6 @@ export class PointMarkerApp {
             }
 
         } catch (error) {
-            console.error('ルート保存エラー:', error);
             UIHelper.showError('ルート保存中にエラーが発生しました: ' + error.message);
         }
     }
@@ -1152,7 +1150,6 @@ export class PointMarkerApp {
                 this.routeManager.deleteRoute(selectedIndex);
                 UIHelper.showMessage(`ルート「${routeName}」を削除しました`);
             } catch (error) {
-                console.error('ルート削除エラー:', error);
                 UIHelper.showError('ルート削除中にエラーが発生しました: ' + error.message);
             }
         }
@@ -1321,26 +1318,22 @@ export class PointMarkerApp {
     async updatePointToFirebase(pointIndex) {
         // Firebaseマネージャーの存在確認
         if (!window.firestoreManager) {
-            console.log('[Firebase] Firestore manager not available');
             return;
         }
 
         // 画像が読み込まれているか確認
         if (!this.currentImage) {
-            console.log('[Firebase] No image loaded');
             return;
         }
 
         // プロジェクトIDを画像ファイル名から取得
         const projectId = this.fileHandler.getCurrentImageFileName();
         if (!projectId) {
-            console.log('[Firebase] Cannot get project ID');
             return;
         }
 
         const points = this.pointManager.getPoints();
         if (pointIndex < 0 || pointIndex >= points.length) {
-            console.log('[Firebase] Invalid point index:', pointIndex);
             return;
         }
 
@@ -1348,7 +1341,6 @@ export class PointMarkerApp {
 
         // 空白IDのポイントは更新対象外
         if (!point.id || point.id.trim() === '') {
-            console.log('[Firebase] Point ID is blank, skipping update. Index:', pointIndex);
             return;
         }
 
@@ -1360,9 +1352,6 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height
             );
 
-            // デバッグログ出力
-            console.log(`[Firebase] Updating point - ID: "${point.id}", Canvas: (${point.x}, ${point.y}), Image: (${imageCoords.x}, ${imageCoords.y})`);
-
             // プロジェクトメタデータの存在確認・作成
             const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
             if (!existingProject) {
@@ -1373,7 +1362,6 @@ export class PointMarkerApp {
                     imageHeight: this.currentImage.height
                 };
                 await window.firestoreManager.createProjectMetadata(projectId, metadata);
-                console.log(`[Firebase] Created project metadata: ${projectId}`);
             }
 
             // 既存ポイントを検索
@@ -1387,26 +1375,18 @@ export class PointMarkerApp {
                     index: point.index || 0,
                     isMarker: false
                 });
-                console.log(`[Firebase] Updated existing point: ${point.id} (firestoreId: ${existingPoint.firestoreId})`);
             } else {
                 // 新規ポイントを追加
-                const result = await window.firestoreManager.addPoint(projectId, {
+                await window.firestoreManager.addPoint(projectId, {
                     id: point.id,
                     x: imageCoords.x,
                     y: imageCoords.y,
                     index: point.index || 0,
                     isMarker: false
                 });
-
-                if (result.status === 'success') {
-                    console.log(`[Firebase] Added new point: ${point.id} (firestoreId: ${result.firestoreId})`);
-                } else if (result.status === 'duplicate') {
-                    console.warn(`[Firebase] Duplicate point detected: ${point.id}`);
-                }
             }
 
         } catch (error) {
-            console.error('[Firebase] Error updating point:', error);
             // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
         }
     }
@@ -1419,20 +1399,17 @@ export class PointMarkerApp {
     async deletePointFromFirebase(x, y) {
         // Firebaseマネージャーの存在確認
         if (!window.firestoreManager) {
-            console.log('[Firebase] Firestore manager not available');
             return;
         }
 
         // 画像が読み込まれているか確認
         if (!this.currentImage) {
-            console.log('[Firebase] No image loaded');
             return;
         }
 
         // プロジェクトIDを画像ファイル名から取得
         const projectId = this.fileHandler.getCurrentImageFileName();
         if (!projectId) {
-            console.log('[Firebase] Cannot get project ID');
             return;
         }
 
@@ -1454,15 +1431,9 @@ export class PointMarkerApp {
             if (existingPoint) {
                 // Firebaseから削除
                 await window.firestoreManager.deletePoint(projectId, existingPoint.firestoreId);
-
-                // デバッグログ出力
-                console.log(`[Firebase] Deleted point at coordinates - Canvas: (${x}, ${y}), Image: (${imageCoords.x}, ${imageCoords.y}), ID was: "${existingPoint.id || '(blank)'}"`);
-            } else {
-                console.log(`[Firebase] No point found at coordinates - Canvas: (${x}, ${y}), Image: (${imageCoords.x}, ${imageCoords.y})`);
             }
 
         } catch (error) {
-            console.error('[Firebase] Error deleting point by coords:', error);
             // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
         }
     }
@@ -1474,26 +1445,22 @@ export class PointMarkerApp {
     async updateSpotToFirebase(spotIndex) {
         // Firebaseマネージャーの存在確認
         if (!window.firestoreManager) {
-            console.log('[Firebase] Firestore manager not available');
             return;
         }
 
         // 画像が読み込まれているか確認
         if (!this.currentImage) {
-            console.log('[Firebase] No image loaded');
             return;
         }
 
         // プロジェクトIDを画像ファイル名から取得
         const projectId = this.fileHandler.getCurrentImageFileName();
         if (!projectId) {
-            console.log('[Firebase] Cannot get project ID');
             return;
         }
 
         const spots = this.spotManager.getSpots();
         if (spotIndex < 0 || spotIndex >= spots.length) {
-            console.log('[Firebase] Invalid spot index:', spotIndex);
             return;
         }
 
@@ -1501,7 +1468,6 @@ export class PointMarkerApp {
 
         // 空白名のスポットは更新対象外
         if (!spot.name || spot.name.trim() === '') {
-            console.log('[Firebase] Spot name is blank, skipping update. Index:', spotIndex);
             // 空白名の場合は既存データがあれば削除
             await this.deleteSpotFromFirebase(spot.x, spot.y);
             return;
@@ -1515,9 +1481,6 @@ export class PointMarkerApp {
                 this.currentImage.width, this.currentImage.height
             );
 
-            // デバッグログ出力（追加・更新時）
-            console.log(`[Firebase] Updating spot - Name: "${spot.name}", Canvas: (${spot.x}, ${spot.y}), Image: (${imageCoords.x}, ${imageCoords.y})`);
-
             // プロジェクトメタデータの存在確認・作成
             const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
             if (!existingProject) {
@@ -1528,7 +1491,6 @@ export class PointMarkerApp {
                     imageHeight: this.currentImage.height
                 };
                 await window.firestoreManager.createProjectMetadata(projectId, metadata);
-                console.log(`[Firebase] Created project metadata: ${projectId}`);
             }
 
             // 既存スポットを検索（座標のみで検索）
@@ -1548,10 +1510,9 @@ export class PointMarkerApp {
                     description: spot.description || '',
                     category: spot.category || ''
                 });
-                console.log(`[Firebase] Updated existing spot at coords - New name: "${spot.name}", Coords: (${imageCoords.x}, ${imageCoords.y}), firestoreId: ${existingSpot.firestoreId}`);
             } else {
                 // 新規スポットを追加
-                const result = await window.firestoreManager.addSpot(projectId, {
+                await window.firestoreManager.addSpot(projectId, {
                     name: spot.name,
                     x: imageCoords.x,
                     y: imageCoords.y,
@@ -1559,16 +1520,9 @@ export class PointMarkerApp {
                     description: spot.description || '',
                     category: spot.category || ''
                 });
-
-                if (result.status === 'success') {
-                    console.log(`[Firebase] Added new spot: ${spot.name} (firestoreId: ${result.firestoreId})`);
-                } else if (result.status === 'duplicate') {
-                    console.warn(`[Firebase] Duplicate spot detected: ${spot.name}`);
-                }
             }
 
         } catch (error) {
-            console.error('[Firebase] Error updating spot:', error);
             // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
         }
     }
@@ -1581,20 +1535,17 @@ export class PointMarkerApp {
     async deleteSpotFromFirebase(x, y) {
         // Firebaseマネージャーの存在確認
         if (!window.firestoreManager) {
-            console.log('[Firebase] Firestore manager not available');
             return;
         }
 
         // 画像が読み込まれているか確認
         if (!this.currentImage) {
-            console.log('[Firebase] No image loaded');
             return;
         }
 
         // プロジェクトIDを画像ファイル名から取得
         const projectId = this.fileHandler.getCurrentImageFileName();
         if (!projectId) {
-            console.log('[Firebase] Cannot get project ID');
             return;
         }
 
@@ -1616,15 +1567,9 @@ export class PointMarkerApp {
             if (existingSpot) {
                 // Firebaseから削除
                 await window.firestoreManager.deleteSpot(projectId, existingSpot.firestoreId);
-
-                // デバッグログ出力（削除時）
-                console.log(`[Firebase] Deleted spot at coordinates - Canvas: (${x}, ${y}), Image: (${imageCoords.x}, ${imageCoords.y}), Name was: "${existingSpot.name || '(blank)'}"`);
-            } else {
-                console.log(`[Firebase] No spot found at coordinates - Canvas: (${x}, ${y}), Image: (${imageCoords.x}, ${imageCoords.y})`);
             }
 
         } catch (error) {
-            console.error('[Firebase] Error deleting spot by coords:', error);
             // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
         }
     }
@@ -1786,7 +1731,6 @@ export class PointMarkerApp {
             );
 
         } catch (error) {
-            console.error('Firebase保存エラー:', error);
             UIHelper.showError('保存中にエラーが発生しました: ' + error.message);
         }
     }
@@ -1922,7 +1866,6 @@ export class PointMarkerApp {
             );
 
         } catch (error) {
-            console.error('Firebase読み込みエラー:', error);
             UIHelper.showError('読み込み中にエラーが発生しました: ' + error.message);
         }
     }
