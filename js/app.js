@@ -7,11 +7,12 @@ import { InputManager } from './ui/InputManager.js';
 import { LayoutManager } from './ui/LayoutManager.js';
 import { UIHelper } from './ui/UIHelper.js';
 import { ValidationManager } from './ui/ValidationManager.js';
-import { DuplicateDialog } from './ui/DuplicateDialog.js';
+import { ViewportManager } from './ui/ViewportManager.js';
 import { CoordinateUtils } from './utils/Coordinates.js';
 import { Validators } from './utils/Validators.js';
 import { DragDropHandler } from './utils/DragDropHandler.js';
 import { ResizeHandler } from './utils/ResizeHandler.js';
+import { FirebaseSyncManager } from './firebase/FirebaseSyncManager.js';
 
 /**
  * PointMarkerアプリケーションのメインクラス
@@ -32,7 +33,20 @@ export class PointMarkerApp {
         this.validationManager = new ValidationManager();
         this.dragDropHandler = new DragDropHandler();
         this.resizeHandler = new ResizeHandler();
-        this.duplicateDialog = new DuplicateDialog();
+
+        // ビューポート管理とFirebase同期の初期化
+        this.viewportManager = new ViewportManager(
+            this.canvasRenderer,
+            this.inputManager,
+            this.pointManager,
+            this.spotManager
+        );
+        this.firebaseSyncManager = new FirebaseSyncManager(
+            this.pointManager,
+            this.spotManager,
+            this.routeManager,
+            this.fileHandler
+        );
 
         // Firebase関連（グローバルスコープから取得）
         this.firebaseClient = window.firebaseClient || null;
@@ -178,7 +192,7 @@ export class PointMarkerApp {
                 if (data.index >= 0 && data.index < points.length) {
                     const point = points[data.index];
                     // Firebase削除処理（非同期だが待たない）
-                    this.deletePointFromFirebase(point.x, point.y);
+                    this.firebaseSyncManager.deletePointFromFirebase(point.x, point.y);
                 }
                 // 画面から削除
                 this.pointManager.removePoint(data.index);
@@ -222,7 +236,7 @@ export class PointMarkerApp {
                     }
 
                     // 【リアルタイムFirebase更新】blur時、重複がなく、空白でない場合にFirebase更新
-                    this.updatePointToFirebase(data.index);
+                    this.firebaseSyncManager.updatePointToFirebase(data.index);
                 }
             }
 
@@ -251,7 +265,7 @@ export class PointMarkerApp {
                 if (data.index >= 0 && data.index < spots.length) {
                     const spot = spots[data.index];
                     // Firebase削除処理（非同期だが待たない）
-                    this.deleteSpotFromFirebase(spot.x, spot.y);
+                    this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
                 }
                 // 画面から削除
                 this.spotManager.removeSpot(data.index);
@@ -264,7 +278,7 @@ export class PointMarkerApp {
             // blur時のみ、フォーマット後のスポット名でFirebase更新
             if (!data.skipFormatting && data.name.trim() !== '') {
                 // 【リアルタイムFirebase更新】スポット名変更完了時にFirebase更新
-                this.updateSpotToFirebase(data.index);
+                this.firebaseSyncManager.updateSpotToFirebase(data.index);
             }
 
             // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
@@ -284,7 +298,7 @@ export class PointMarkerApp {
                 if (data.index >= 0 && data.index < spots.length) {
                     const spot = spots[data.index];
                     // Firebase削除処理（非同期だが待たない）
-                    this.deleteSpotFromFirebase(spot.x, spot.y);
+                    this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
                 }
                 // 画面から削除
                 this.spotManager.removeSpot(data.index);
@@ -394,37 +408,46 @@ export class PointMarkerApp {
         // ズーム・パンコントロール
         document.getElementById('zoomInBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            this.handleZoomIn();
+            this.viewportManager.handleZoom('in', () => {
+                this.viewportManager.updateZoomButtonStates();
+                this.redrawCanvas();
+            });
         });
 
         document.getElementById('zoomOutBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            this.handleZoomOut();
+            this.viewportManager.handleZoom('out', () => {
+                this.viewportManager.updateZoomButtonStates();
+                this.redrawCanvas();
+            });
         });
 
         document.getElementById('panUpBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            this.handlePanUp();
+            this.viewportManager.handlePan('up', () => this.redrawCanvas());
         });
 
         document.getElementById('panDownBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            this.handlePanDown();
+            this.viewportManager.handlePan('down', () => this.redrawCanvas());
         });
 
         document.getElementById('panLeftBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            this.handlePanLeft();
+            this.viewportManager.handlePan('left', () => this.redrawCanvas());
         });
 
         document.getElementById('panRightBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            this.handlePanRight();
+            this.viewportManager.handlePan('right', () => this.redrawCanvas());
         });
 
         document.getElementById('resetViewBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            this.handleResetView();
+            this.viewportManager.handleResetView(() => {
+                this.viewportManager.updateZoomButtonStates();
+                this.redrawCanvas();
+            });
         });
 
         // 開始・終了ポイント入力
@@ -556,8 +579,24 @@ export class PointMarkerApp {
         this.layoutManager.setDefaultPointMode();
         UIHelper.showMessage(`画像「${fileName}」を読み込みました`);
 
+        // FirebaseSyncManagerに画像とキャンバスを設定
+        this.firebaseSyncManager.setImageAndCanvas(image, this.canvas);
+
         // Firebaseから自動的にデータを読み込み
-        await this.loadFromFirebase();
+        await this.firebaseSyncManager.loadFromFirebase((loadedPoints, loadedRoutes, loadedSpots) => {
+            // UIを更新
+            this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
+            this.inputManager.redrawSpotInputBoxes(this.spotManager.getSpots());
+            this.viewportManager.updatePopupPositions();
+            this.redrawCanvas();
+
+            // ポイント数・スポット数を更新
+            document.getElementById('pointCount').textContent = loadedPoints;
+            document.getElementById('spotCount').textContent = loadedSpots;
+
+            // 中間点数は選択されたルートのものを表示（初期状態は0）
+            document.getElementById('waypointCount').textContent = 0;
+        });
     }
 
     /**
@@ -705,7 +744,7 @@ export class PointMarkerApp {
         // ポイントドラッグ終了時のコールバック
         const onPointDragEnd = (pointIndex) => {
             // 【リアルタイムFirebase更新】ポイント移動完了時にFirebase更新
-            this.updatePointToFirebase(pointIndex);
+            this.firebaseSyncManager.updatePointToFirebase(pointIndex);
         };
 
         // スポットドラッグ終了時のコールバック
@@ -719,13 +758,13 @@ export class PointMarkerApp {
                     // 座標が変わった場合のみ、古いデータを削除
                     if (this.spotDragStartCoords.x !== currentSpot.x ||
                         this.spotDragStartCoords.y !== currentSpot.y) {
-                        await this.deleteSpotFromFirebase(this.spotDragStartCoords.x, this.spotDragStartCoords.y);
+                        await this.firebaseSyncManager.deleteSpotFromFirebase(this.spotDragStartCoords.x, this.spotDragStartCoords.y);
                     }
                 }
                 this.spotDragStartCoords = null; // リセット
             }
             // 新しい座標で更新/追加
-            await this.updateSpotToFirebase(spotIndex);
+            await this.firebaseSyncManager.updateSpotToFirebase(spotIndex);
         };
 
         this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd);
@@ -1226,670 +1265,6 @@ export class PointMarkerApp {
             this.spotManager,
             () => this.redrawCanvas()
         );
-    }
-
-    /**
-     * ズーム処理（汎用）
-     * @param {string} direction - 方向 ('in' or 'out')
-     */
-    handleZoom(direction) {
-        if (direction === 'in') {
-            this.canvasRenderer.zoomIn();
-        } else if (direction === 'out') {
-            this.canvasRenderer.zoomOut();
-        }
-        this.updateZoomButtonStates();
-        this.updatePopupPositions();
-        this.redrawCanvas();
-    }
-
-    /**
-     * ズームイン処理
-     */
-    handleZoomIn() {
-        this.handleZoom('in');
-    }
-
-    /**
-     * ズームアウト処理
-     */
-    handleZoomOut() {
-        this.handleZoom('out');
-    }
-
-    /**
-     * ポップアップ位置を更新
-     */
-    updatePopupPositions() {
-        const scale = this.canvasRenderer.getScale();
-        const offset = this.canvasRenderer.getOffset();
-        const points = this.pointManager.getPoints();
-        const spots = this.spotManager.getSpots();
-
-        this.inputManager.updateTransform(scale, offset.x, offset.y, points, spots);
-
-        // チェックボックスの状態を反映（ポイントID）
-        const checkbox = document.getElementById('showPointIdsCheckbox');
-        if (checkbox && !checkbox.checked) {
-            this.inputManager.setPointIdVisibility(false);
-        }
-
-        // スポット名の状態を再適用（強調表示とエラー状態を復元）
-        this.inputManager.updateSpotInputsState();
-    }
-
-    /**
-     * ズームボタンの状態を更新
-     */
-    updateZoomButtonStates() {
-        const scale = this.canvasRenderer.getScale();
-        const minScale = this.canvasRenderer.minScale;
-
-        // 表示倍率が1.0倍（最小値）の時、ズームアウトボタンを無効化
-        const zoomOutBtn = document.getElementById('zoomOutBtn');
-        if (scale <= minScale) {
-            zoomOutBtn.disabled = true;
-        } else {
-            zoomOutBtn.disabled = false;
-        }
-    }
-
-    /**
-     * パン処理（汎用）
-     * @param {string} direction - 方向 ('up', 'down', 'left', 'right')
-     */
-    handlePan(direction) {
-        const panMethods = {
-            'up': () => this.canvasRenderer.panUp(),
-            'down': () => this.canvasRenderer.panDown(),
-            'left': () => this.canvasRenderer.panLeft(),
-            'right': () => this.canvasRenderer.panRight()
-        };
-
-        if (panMethods[direction]) {
-            panMethods[direction]();
-            this.updatePopupPositions();
-            this.redrawCanvas();
-        }
-    }
-
-    // 後方互換性のための個別メソッド
-    handlePanUp() { this.handlePan('up'); }
-    handlePanDown() { this.handlePan('down'); }
-    handlePanLeft() { this.handlePan('left'); }
-    handlePanRight() { this.handlePan('right'); }
-
-    /**
-     * 表示リセット処理
-     */
-    handleResetView() {
-        this.canvasRenderer.resetTransform();
-        this.updateZoomButtonStates();
-        this.updatePopupPositions();
-        this.redrawCanvas();
-    }
-
-    // ========================================
-    // Firebase連携機能
-    // ========================================
-
-    /**
-     * 単一ポイントをFirebaseにリアルタイム更新
-     * @param {number} pointIndex - ポイントのインデックス
-     */
-    async updatePointToFirebase(pointIndex) {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            return;
-        }
-
-        // 画像が読み込まれているか確認
-        if (!this.currentImage) {
-            return;
-        }
-
-        // プロジェクトIDを画像ファイル名から取得
-        const projectId = this.fileHandler.getCurrentImageFileName();
-        if (!projectId) {
-            return;
-        }
-
-        const points = this.pointManager.getPoints();
-        if (pointIndex < 0 || pointIndex >= points.length) {
-            return;
-        }
-
-        const point = points[pointIndex];
-
-        // 空白IDのポイントは更新対象外
-        if (!point.id || point.id.trim() === '') {
-            return;
-        }
-
-        try {
-            // キャンバス座標から画像座標に変換
-            const imageCoords = CoordinateUtils.canvasToImage(
-                point.x, point.y,
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-
-            // プロジェクトメタデータの存在確認・作成
-            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
-            if (!existingProject) {
-                const metadata = {
-                    projectName: projectId,
-                    imageName: projectId + '.png',
-                    imageWidth: this.currentImage.width,
-                    imageHeight: this.currentImage.height
-                };
-                await window.firestoreManager.createProjectMetadata(projectId, metadata);
-            }
-
-            // 既存ポイントを検索
-            const existingPoint = await window.firestoreManager.findPointById(projectId, point.id);
-
-            if (existingPoint) {
-                // 既存ポイントを更新
-                await window.firestoreManager.updatePoint(projectId, existingPoint.firestoreId, {
-                    x: imageCoords.x,
-                    y: imageCoords.y,
-                    index: point.index || 0,
-                    isMarker: false
-                });
-            } else {
-                // 新規ポイントを追加
-                await window.firestoreManager.addPoint(projectId, {
-                    id: point.id,
-                    x: imageCoords.x,
-                    y: imageCoords.y,
-                    index: point.index || 0,
-                    isMarker: false
-                });
-            }
-
-        } catch (error) {
-            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
-        }
-    }
-
-    /**
-     * 座標でポイントをFirebaseから削除
-     * @param {number} x - キャンバスX座標
-     * @param {number} y - キャンバスY座標
-     */
-    async deletePointFromFirebase(x, y) {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            return;
-        }
-
-        // 画像が読み込まれているか確認
-        if (!this.currentImage) {
-            return;
-        }
-
-        // プロジェクトIDを画像ファイル名から取得
-        const projectId = this.fileHandler.getCurrentImageFileName();
-        if (!projectId) {
-            return;
-        }
-
-        try {
-            // キャンバス座標から画像座標に変換
-            const imageCoords = CoordinateUtils.canvasToImage(
-                x, y,
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-
-            // 座標でポイントを検索
-            const existingPoint = await window.firestoreManager.findPointByCoords(
-                projectId,
-                imageCoords.x,
-                imageCoords.y
-            );
-
-            if (existingPoint) {
-                // Firebaseから削除
-                await window.firestoreManager.deletePoint(projectId, existingPoint.firestoreId);
-            }
-
-        } catch (error) {
-            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
-        }
-    }
-
-    /**
-     * 単一スポットをFirebaseにリアルタイム更新
-     * @param {number} spotIndex - スポットのインデックス
-     */
-    async updateSpotToFirebase(spotIndex) {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            return;
-        }
-
-        // 画像が読み込まれているか確認
-        if (!this.currentImage) {
-            return;
-        }
-
-        // プロジェクトIDを画像ファイル名から取得
-        const projectId = this.fileHandler.getCurrentImageFileName();
-        if (!projectId) {
-            return;
-        }
-
-        const spots = this.spotManager.getSpots();
-        if (spotIndex < 0 || spotIndex >= spots.length) {
-            return;
-        }
-
-        const spot = spots[spotIndex];
-
-        // 空白名のスポットは更新対象外
-        if (!spot.name || spot.name.trim() === '') {
-            // 空白名の場合は既存データがあれば削除
-            await this.deleteSpotFromFirebase(spot.x, spot.y);
-            return;
-        }
-
-        try {
-            // キャンバス座標から画像座標に変換
-            const imageCoords = CoordinateUtils.canvasToImage(
-                spot.x, spot.y,
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-
-            // プロジェクトメタデータの存在確認・作成
-            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
-            if (!existingProject) {
-                const metadata = {
-                    projectName: projectId,
-                    imageName: projectId + '.png',
-                    imageWidth: this.currentImage.width,
-                    imageHeight: this.currentImage.height
-                };
-                await window.firestoreManager.createProjectMetadata(projectId, metadata);
-            }
-
-            // 既存スポットを検索（座標のみで検索）
-            const existingSpot = await window.firestoreManager.findSpotByCoords(
-                projectId,
-                imageCoords.x,
-                imageCoords.y
-            );
-
-            if (existingSpot) {
-                // 既存スポットを更新（スポット名と座標を更新）
-                await window.firestoreManager.updateSpot(projectId, existingSpot.firestoreId, {
-                    name: spot.name,
-                    x: imageCoords.x,
-                    y: imageCoords.y,
-                    index: spot.index || 0,
-                    description: spot.description || '',
-                    category: spot.category || ''
-                });
-            } else {
-                // 新規スポットを追加
-                await window.firestoreManager.addSpot(projectId, {
-                    name: spot.name,
-                    x: imageCoords.x,
-                    y: imageCoords.y,
-                    index: spot.index || 0,
-                    description: spot.description || '',
-                    category: spot.category || ''
-                });
-            }
-
-        } catch (error) {
-            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
-        }
-    }
-
-    /**
-     * 座標でスポットをFirebaseから削除
-     * @param {number} x - キャンバスX座標
-     * @param {number} y - キャンバスY座標
-     */
-    async deleteSpotFromFirebase(x, y) {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            return;
-        }
-
-        // 画像が読み込まれているか確認
-        if (!this.currentImage) {
-            return;
-        }
-
-        // プロジェクトIDを画像ファイル名から取得
-        const projectId = this.fileHandler.getCurrentImageFileName();
-        if (!projectId) {
-            return;
-        }
-
-        try {
-            // キャンバス座標から画像座標に変換
-            const imageCoords = CoordinateUtils.canvasToImage(
-                x, y,
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-
-            // 座標でスポットを検索
-            const existingSpot = await window.firestoreManager.findSpotByCoords(
-                projectId,
-                imageCoords.x,
-                imageCoords.y
-            );
-
-            if (existingSpot) {
-                // Firebaseから削除
-                await window.firestoreManager.deleteSpot(projectId, existingSpot.firestoreId);
-            }
-
-        } catch (error) {
-            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
-        }
-    }
-
-    /**
-     * 現在のデータをFirebaseに保存
-     */
-    async saveToFirebase() {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            UIHelper.showError('Firebase接続が利用できません');
-            return;
-        }
-
-        // 画像が読み込まれているか確認
-        if (!this.currentImage) {
-            UIHelper.showError('先に画像を読み込んでください');
-            return;
-        }
-
-        try {
-            // ポイントの重複チェック（JSONエクスポートと同じ）
-            const points = this.pointManager.getPoints();
-            const duplicateCheck = ValidationManager.checkDuplicatePointIds(points);
-            if (!duplicateCheck.isValid) {
-                UIHelper.showError(duplicateCheck.message);
-                return;
-            }
-
-            // プロジェクトIDを画像ファイル名から取得
-            const projectId = this.fileHandler.getCurrentImageFileName();
-            if (!projectId) {
-                UIHelper.showError('画像ファイル名を取得できません');
-                return;
-            }
-
-            // プロジェクトメタデータを作成/更新
-            const metadata = {
-                projectName: projectId,
-                imageName: projectId + '.png',
-                imageWidth: this.currentImage.width,
-                imageHeight: this.currentImage.height
-            };
-
-            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
-            if (!existingProject) {
-                await window.firestoreManager.createProjectMetadata(projectId, metadata);
-            } else {
-                await window.firestoreManager.updateProjectMetadata(projectId, metadata);
-            }
-
-            // 既存データを全て削除（上書き保存）
-            const existingPoints = await window.firestoreManager.getPoints(projectId);
-            for (const point of existingPoints) {
-                await window.firestoreManager.deletePoint(projectId, point.firestoreId);
-            }
-
-            const existingRoutes = await window.firestoreManager.getRoutes(projectId);
-            for (const route of existingRoutes) {
-                await window.firestoreManager.deleteRoute(projectId, route.firestoreId);
-            }
-
-            const existingSpots = await window.firestoreManager.getSpots(projectId);
-            for (const spot of existingSpots) {
-                await window.firestoreManager.deleteSpot(projectId, spot.firestoreId);
-            }
-
-            // 保存カウンター
-            let savedPoints = 0;
-            let savedRoutes = 0;
-            let savedSpots = 0;
-
-            // ポイントを保存（キャンバス座標→画像座標に変換）
-            for (const point of points) {
-                // 空白IDのポイントはスキップ（JSONエクスポートと同じ）
-                if (!point.id || point.id.trim() === '') {
-                    continue;
-                }
-
-                // キャンバス座標から画像座標に変換
-                const imageCoords = CoordinateUtils.canvasToImage(
-                    point.x, point.y,
-                    this.canvas.width, this.canvas.height,
-                    this.currentImage.width, this.currentImage.height
-                );
-
-                const result = await window.firestoreManager.addPoint(projectId, {
-                    id: point.id,
-                    x: imageCoords.x,
-                    y: imageCoords.y,
-                    index: point.index || 0,
-                    isMarker: false
-                });
-
-                if (result.status === 'success') {
-                    savedPoints++;
-                }
-            }
-
-            // ルートを保存（キャンバス座標→画像座標に変換）
-            const startEndPoints = this.routeManager.getStartEndPoints();
-            const routePoints = this.routeManager.getRoutePoints();
-            if (startEndPoints.start && startEndPoints.end && routePoints.length > 0) {
-                // 中間点の座標を画像座標に変換
-                const waypointsInImageCoords = routePoints.map(waypoint => {
-                    const imageCoords = CoordinateUtils.canvasToImage(
-                        waypoint.x, waypoint.y,
-                        this.canvas.width, this.canvas.height,
-                        this.currentImage.width, this.currentImage.height
-                    );
-                    return { x: imageCoords.x, y: imageCoords.y };
-                });
-
-                const result = await window.firestoreManager.addRoute(projectId, {
-                    routeName: `${startEndPoints.start} ～ ${startEndPoints.end}`,
-                    startPoint: startEndPoints.start,
-                    endPoint: startEndPoints.end,
-                    waypoints: waypointsInImageCoords,
-                    description: ''
-                });
-
-                if (result.status === 'success') {
-                    savedRoutes++;
-                }
-            }
-
-            // スポットを保存（キャンバス座標→画像座標に変換）
-            const spots = this.spotManager.getSpots();
-            for (const spot of spots) {
-                // 空白名のスポットはスキップ
-                if (!spot.name || spot.name.trim() === '') {
-                    continue;
-                }
-
-                // キャンバス座標から画像座標に変換
-                const imageCoords = CoordinateUtils.canvasToImage(
-                    spot.x, spot.y,
-                    this.canvas.width, this.canvas.height,
-                    this.currentImage.width, this.currentImage.height
-                );
-
-                const result = await window.firestoreManager.addSpot(projectId, {
-                    name: spot.name,
-                    x: imageCoords.x,
-                    y: imageCoords.y,
-                    index: spot.index || 0,
-                    description: '',
-                    category: ''
-                });
-
-                if (result.status === 'success') {
-                    savedSpots++;
-                }
-            }
-
-            // 結果メッセージ
-            UIHelper.showMessage(
-                `保存完了: ポイント${savedPoints}件、ルート${savedRoutes}件、スポット${savedSpots}件`
-            );
-
-        } catch (error) {
-            UIHelper.showError('保存中にエラーが発生しました: ' + error.message);
-        }
-    }
-
-    /**
-     * Firebaseからデータを読み込み
-     */
-    async loadFromFirebase() {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            UIHelper.showError('Firebase接続が利用できません');
-            return;
-        }
-
-        // 画像が読み込まれているか確認
-        if (!this.currentImage) {
-            UIHelper.showError('先に画像を読み込んでください');
-            return;
-        }
-
-        try {
-            // プロジェクトIDを画像ファイル名から取得
-            const projectId = this.fileHandler.getCurrentImageFileName();
-            if (!projectId) {
-                UIHelper.showError('画像ファイル名を取得できません');
-                return;
-            }
-
-            // プロジェクトの存在確認
-            const projectMetadata = await window.firestoreManager.getProjectMetadata(projectId);
-            if (!projectMetadata) {
-                UIHelper.showError(`プロジェクト「${projectId}」のデータが見つかりません`);
-                return;
-            }
-
-            // 既存データをクリア
-            if (this.pointManager.getPoints().length > 0 ||
-                this.routeManager.getRoutePoints().length > 0 ||
-                this.spotManager.getSpots().length > 0) {
-                const confirmed = confirm('現在のデータを削除して読み込みますか？');
-                if (!confirmed) {
-                    return;
-                }
-            }
-
-            this.pointManager.clearPoints();
-            this.routeManager.clearAllRoutes();
-            this.spotManager.clearSpots();
-
-            // ポイントを読み込み（画像座標→キャンバス座標に変換）
-            const points = await window.firestoreManager.getPoints(projectId);
-            let loadedPoints = 0;
-            for (const point of points) {
-                // 空白IDはスキップ
-                if (!point.id || point.id.trim() === '') {
-                    continue;
-                }
-
-                // 画像座標からキャンバス座標に変換
-                const canvasCoords = CoordinateUtils.imageToCanvas(
-                    point.x, point.y,
-                    this.canvas.width, this.canvas.height,
-                    this.currentImage.width, this.currentImage.height
-                );
-
-                this.pointManager.addPoint(canvasCoords.x, canvasCoords.y, point.id);
-                loadedPoints++;
-            }
-
-            // ルートを読み込み（画像座標→キャンバス座標に変換）
-            const routes = await window.firestoreManager.getRoutes(projectId);
-            let loadedRoutes = 0;
-            for (const route of routes) {
-                // 中間点の座標変換
-                const convertedWaypoints = [];
-                for (const waypoint of route.waypoints) {
-                    // 画像座標からキャンバス座標に変換
-                    const canvasCoords = CoordinateUtils.imageToCanvas(
-                        waypoint.x, waypoint.y,
-                        this.canvas.width, this.canvas.height,
-                        this.currentImage.width, this.currentImage.height
-                    );
-                    convertedWaypoints.push({ x: canvasCoords.x, y: canvasCoords.y });
-                }
-
-                // ルートオブジェクトを作成してRouteManagerに追加
-                // FirestoreIDを保持して、更新時に使用できるようにする
-                this.routeManager.addRoute({
-                    firestoreId: route.firestoreId,  // FirestoreドキュメントIDを保持
-                    routeName: route.routeName || `${route.startPoint} ～ ${route.endPoint}`,
-                    startPointId: route.startPoint,
-                    endPointId: route.endPoint,
-                    routePoints: convertedWaypoints
-                });
-                loadedRoutes++;
-            }
-
-            // スポットを読み込み（画像座標→キャンバス座標に変換）
-            const spots = await window.firestoreManager.getSpots(projectId);
-            let loadedSpots = 0;
-            for (const spot of spots) {
-                // 空白名はスキップ
-                if (!spot.name || spot.name.trim() === '') {
-                    continue;
-                }
-
-                // 画像座標からキャンバス座標に変換
-                const canvasCoords = CoordinateUtils.imageToCanvas(
-                    spot.x, spot.y,
-                    this.canvas.width, this.canvas.height,
-                    this.currentImage.width, this.currentImage.height
-                );
-
-                this.spotManager.addSpot(canvasCoords.x, canvasCoords.y, spot.name);
-                loadedSpots++;
-            }
-
-            // UIを更新
-            this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
-            this.inputManager.redrawSpotInputBoxes(this.spotManager.getSpots());
-            this.updatePopupPositions();
-            this.redrawCanvas();
-
-            // ポイント数・スポット数を更新
-            document.getElementById('pointCount').textContent = loadedPoints;
-            document.getElementById('spotCount').textContent = loadedSpots;
-
-            // 中間点数は選択されたルートのものを表示（初期状態は0）
-            document.getElementById('waypointCount').textContent = 0;
-
-            UIHelper.showMessage(
-                `読み込み完了: ポイント${loadedPoints}件、ルート${loadedRoutes}件、スポット${loadedSpots}件`
-            );
-
-        } catch (error) {
-            UIHelper.showError('読み込み中にエラーが発生しました: ' + error.message);
-        }
     }
 
 }
