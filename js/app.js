@@ -1052,6 +1052,9 @@ export class PointMarkerApp {
                     waypoints: waypoints
                 };
 
+                // 更新されたルートかどうかを記録
+                const wasModified = route.isModified;
+
                 // FirestoreIDがあれば更新、なければ新規追加
                 if (route.firestoreId) {
                     // 既存ルートを更新
@@ -1076,7 +1079,11 @@ export class PointMarkerApp {
                 // 更新フラグをクリア
                 route.isModified = false;
                 savedCount++;
-                savedRouteNames.push(routeData.routeName);
+
+                // 更新されたルートのみ一覧に追加
+                if (wasModified) {
+                    savedRouteNames.push(routeData.routeName);
+                }
             }
 
             // 開始・終了ポイント入力フィールドを読み取り専用にする
@@ -1088,7 +1095,7 @@ export class PointMarkerApp {
 
             // 保存したルートの一覧を表示
             if (savedRouteNames.length > 0) {
-                const message = 'ルートを保存しました\n\n' + savedRouteNames.map((name, index) => `${index + 1}. ${name}`).join('\n');
+                const message = 'ルートを保存しました\n\n' + savedRouteNames.join('\n');
                 UIHelper.showMessage(message);
             } else {
                 UIHelper.showMessage('保存するルートがありませんでした');
