@@ -215,6 +215,20 @@ export class SpotManager {
     }
 
     /**
+     * スポット名で完全一致検索を行う
+     * @param {string} spotName - スポット名
+     * @returns {Object|null} 一致したスポット、見つからない場合はnull
+     */
+    findSpotByName(spotName) {
+        if (!spotName || spotName.trim() === '') {
+            return null;
+        }
+
+        const spot = this.spots.find(s => s.name === spotName);
+        return spot || null;
+    }
+
+    /**
      * スポット名で部分一致検索を行う
      * @param {string} searchText - 検索テキスト
      * @returns {Array} 部分一致したスポットの配列

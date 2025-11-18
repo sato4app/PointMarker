@@ -137,6 +137,8 @@ export class PointMarkerApp {
             }
             // 選択が変わったら「要保存」ラベルの表示を更新
             this.updateUnsavedLabel();
+            // 開始・終了ポイントがスポット名の場合、常に表示するように設定
+            this.updateAlwaysVisibleSpotNames();
         });
 
         // ルート更新状態変更時のコールバック
@@ -834,6 +836,33 @@ export class PointMarkerApp {
     }
 
     /**
+     * 開始・終了ポイントがスポット名の場合、常に表示するように設定
+     */
+    updateAlwaysVisibleSpotNames() {
+        const startEndPoints = this.routeManager.getStartEndPoints();
+        const alwaysVisibleSpotNames = [];
+
+        // 開始ポイントがスポット名かチェック
+        if (startEndPoints.start && startEndPoints.start.trim() !== '') {
+            const spot = this.spotManager.findSpotByName(startEndPoints.start);
+            if (spot) {
+                alwaysVisibleSpotNames.push(startEndPoints.start);
+            }
+        }
+
+        // 終了ポイントがスポット名かチェック
+        if (startEndPoints.end && startEndPoints.end.trim() !== '') {
+            const spot = this.spotManager.findSpotByName(startEndPoints.end);
+            if (spot) {
+                alwaysVisibleSpotNames.push(startEndPoints.end);
+            }
+        }
+
+        // InputManagerに設定
+        this.inputManager.setAlwaysVisibleSpotNames(alwaysVisibleSpotNames);
+    }
+
+    /**
      * ルート選択ドロップダウンを更新
      * @param {Array} routes - ルート配列
      */
@@ -937,6 +966,9 @@ export class PointMarkerApp {
                 this.handlePointIdVisibilityChange(true);
             }
         }
+
+        // 開始・終了ポイントがスポット名の場合、常に表示するように設定
+        this.updateAlwaysVisibleSpotNames();
 
         return newValue;
     }
