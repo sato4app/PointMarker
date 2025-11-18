@@ -1095,7 +1095,7 @@ export class PointMarkerApp {
 
             // 保存したルートの一覧を表示
             if (savedRouteNames.length > 0) {
-                const message = 'ルートを保存しました\n\n' + savedRouteNames.join('\n');
+                const message = 'ルートを保存しました\n' + savedRouteNames.join('\n');
                 UIHelper.showMessage(message);
             } else {
                 UIHelper.showMessage('保存するルートがありませんでした');
