@@ -152,8 +152,8 @@ export class CanvasRenderer {
                 // 選択中のルート: 通常サイズ（6px）
                 this.drawRoutePoints(waypoints, canvasScale, 5);
             } else {
-                // 未選択ルート: 小さいサイズ（2px）
-                this.drawRoutePoints(waypoints, canvasScale, 2);
+                // 未選択ルート: 小さいサイズ（3px）
+                this.drawRoutePoints(waypoints, canvasScale, 3);
             }
         });
     }
@@ -226,7 +226,7 @@ export class CanvasRenderer {
 
         // ルート中間点の描画（複数ルート対応）
         if (options.allRoutes && Array.isArray(options.allRoutes) && options.allRoutes.length > 0) {
-            // 複数ルート対応: 選択中のルートは通常サイズ（radius=5）、未選択は小さく（radius=2）
+            // 複数ルート対応: 選択中のルートは通常サイズ（radius=5）、未選択は小さく（radius=3）
             this.drawAllRoutesWaypoints(options.allRoutes, options.selectedRouteIndex !== undefined ? options.selectedRouteIndex : -1, this.scale);
         } else if (routePoints && routePoints.length > 0) {
             // 後方互換性: 従来の方式（選択中のルートのみ）
