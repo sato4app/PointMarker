@@ -471,7 +471,7 @@ header p {
 /* 要保存ラベル */
 .unsaved-label {
     display: none;
-    font-size: 10px;
+    font-size: 11px;
     color: #ff9500;
     font-weight: normal;
 }
@@ -604,17 +604,6 @@ header p {
     gap: 10px;
 }
 
-/* 中間点数とチェックボックスのコンテナ */
-.route-display-controls {
-    padding: 10px;
-    background: white;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
 /* =====================================
    Counters & Status
    ===================================== */
@@ -635,11 +624,12 @@ header p {
     font-weight: bold;
 }
 
-.waypoint-count {
+.route-points-inputs .waypoint-count {
     font-size: 0.9em;
     background: transparent;
     border: none;
     padding: 0;
+    margin-top: 5px;
 }
 
 .waypoint-count span {
@@ -647,7 +637,7 @@ header p {
     font-weight: bold;
 }
 
-.popup-visibility-control {
+.route-points-inputs .popup-visibility-control {
     padding: 0;
     background: transparent;
     border: none;
@@ -655,6 +645,7 @@ header p {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-top: 5px;
 }
 
 .popup-visibility-control label {
