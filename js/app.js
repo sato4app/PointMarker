@@ -1110,7 +1110,7 @@ export class PointMarkerApp {
     /**
      * 選択中のルートを削除
      */
-    handleDeleteRoute() {
+    async handleDeleteRoute() {
         const selectedIndex = this.routeManager.selectedRouteIndex;
         if (selectedIndex < 0) {
             UIHelper.showError('ルートが選択されていません');
@@ -1121,8 +1121,20 @@ export class PointMarkerApp {
         const routeName = selectedRoute.routeName || `${selectedRoute.startPointId} → ${selectedRoute.endPointId}`;
 
         if (confirm(`ルート「${routeName}」を削除しますか？`)) {
-            this.routeManager.deleteRoute(selectedIndex);
-            UIHelper.showMessage('ルートを削除しました');
+            try {
+                // Firebaseから削除
+                if (selectedRoute.firestoreId) {
+                    const projectId = this.fileHandler.getCurrentImageFileName();
+                    await window.firestoreManager.deleteRoute(projectId, selectedRoute.firestoreId);
+                }
+
+                // RouteManagerから削除
+                this.routeManager.deleteRoute(selectedIndex);
+                UIHelper.showMessage(`ルート「${routeName}」を削除しました`);
+            } catch (error) {
+                console.error('ルート削除エラー:', error);
+                UIHelper.showError('ルート削除中にエラーが発生しました: ' + error.message);
+            }
         }
     }
 
