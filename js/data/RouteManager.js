@@ -300,7 +300,7 @@ export class RouteManager {
         if (!selectedRoute) return;
 
         if (selectedRoute.startPointId && selectedRoute.endPointId) {
-            selectedRoute.routeName = `${selectedRoute.startPointId} → ${selectedRoute.endPointId}`;
+            selectedRoute.routeName = `${selectedRoute.startPointId} ～ ${selectedRoute.endPointId}`;
             this.notify('onRouteListChange', this.routes);
             // 更新状態をチェック
             this.checkAndUpdateModifiedState();

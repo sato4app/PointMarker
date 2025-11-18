@@ -852,7 +852,7 @@ export class PointMarkerApp {
             const option = document.createElement('option');
             option.value = index.toString();
             // isModifiedフラグが立っている場合は先頭に*をつける
-            const routeName = route.routeName || `${route.startPointId} → ${route.endPointId}`;
+            const routeName = route.routeName || `${route.startPointId} ～ ${route.endPointId}`;
             option.textContent = route.isModified ? `*${routeName}` : routeName;
             dropdown.appendChild(option);
         });
@@ -1046,7 +1046,7 @@ export class PointMarkerApp {
 
                 // Firebaseに保存するルートデータ
                 const routeData = {
-                    routeName: route.routeName || `${route.startPointId} → ${route.endPointId}`,
+                    routeName: route.routeName || `${route.startPointId} ～ ${route.endPointId}`,
                     startPoint: route.startPointId,
                     endPoint: route.endPointId,
                     waypoints: waypoints
@@ -1118,7 +1118,7 @@ export class PointMarkerApp {
         }
 
         const selectedRoute = this.routeManager.getSelectedRoute();
-        const routeName = selectedRoute.routeName || `${selectedRoute.startPointId} → ${selectedRoute.endPointId}`;
+        const routeName = selectedRoute.routeName || `${selectedRoute.startPointId} ～ ${selectedRoute.endPointId}`;
 
         if (confirm(`ルート「${routeName}」を削除しますか？`)) {
             try {
@@ -1719,7 +1719,7 @@ export class PointMarkerApp {
                 });
 
                 const result = await window.firestoreManager.addRoute(projectId, {
-                    routeName: `${startEndPoints.start} → ${startEndPoints.end}`,
+                    routeName: `${startEndPoints.start} ～ ${startEndPoints.end}`,
                     startPoint: startEndPoints.start,
                     endPoint: startEndPoints.end,
                     waypoints: waypointsInImageCoords,
@@ -1856,7 +1856,7 @@ export class PointMarkerApp {
                 // FirestoreIDを保持して、更新時に使用できるようにする
                 this.routeManager.addRoute({
                     firestoreId: route.firestoreId,  // FirestoreドキュメントIDを保持
-                    routeName: route.routeName || `${route.startPoint} → ${route.endPoint}`,
+                    routeName: route.routeName || `${route.startPoint} ～ ${route.endPoint}`,
                     startPointId: route.startPoint,
                     endPointId: route.endPoint,
                     routePoints: convertedWaypoints
