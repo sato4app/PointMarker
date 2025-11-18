@@ -466,17 +466,6 @@ export class PointMarkerApp {
             this.handleSpotNameVisibilityChange(e.target.checked);
         });
 
-        // データ操作ボタン（読み込み・保存）
-        document.getElementById('loadFromFirebaseBtn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await this.loadFromFirebase();
-        });
-
-        document.getElementById('saveToFirebaseBtn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await this.saveToFirebase();
-        });
-
         // ウィンドウリサイズ
         window.addEventListener('resize', () => {
             if (this.currentImage) {
@@ -498,10 +487,6 @@ export class PointMarkerApp {
      * 画像読み込み後のコントロールを有効化
      */
     enableImageControls() {
-        // データ操作ボタンを有効化
-        document.getElementById('loadFromFirebaseBtn').disabled = false;
-        document.getElementById('saveToFirebaseBtn').disabled = false;
-
         // ズーム・パンボタンを有効化
         document.getElementById('zoomInBtn').disabled = false;
         // ズームアウトは初期状態（1.0倍）では無効
@@ -549,6 +534,9 @@ export class PointMarkerApp {
         this.enableImageControls();
         this.layoutManager.setDefaultPointMode();
         UIHelper.showMessage(`画像「${fileName}」を読み込みました`);
+
+        // Firebaseから自動的にデータを読み込み
+        await this.loadFromFirebase();
     }
 
     /**
