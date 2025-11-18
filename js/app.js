@@ -324,6 +324,9 @@ export class PointMarkerApp {
                     spotNameCheckbox.checked = false;
                     this.handleSpotNameVisibilityChange(false);
                 }
+
+                // 開始・終了ポイントがスポット名の場合、常に表示するように設定
+                this.updateAlwaysVisibleSpotNames();
             } else if (mode === 'spot') {
                 // スポット編集モードに切り替えた時、スポット入力ボックスを表示
                 this.inputManager.redrawSpotInputBoxes(this.spotManager.getSpots());
