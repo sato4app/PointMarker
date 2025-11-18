@@ -309,9 +309,28 @@ export class PointMarkerApp {
                 // ルート編集モードに切り替えた時、既存の開始・終了ポイントを強調表示
                 const startEndPoints = this.routeManager.getStartEndPoints();
                 const highlightIds = [];
-                if (startEndPoints.start && startEndPoints.start.trim()) highlightIds.push(startEndPoints.start);
-                if (startEndPoints.end && startEndPoints.end.trim()) highlightIds.push(startEndPoints.end);
+                const highlightSpotNames = [];
+
+                if (startEndPoints.start && startEndPoints.start.trim()) {
+                    highlightIds.push(startEndPoints.start);
+                    // 開始ポイントがスポット名かチェック
+                    const spot = this.spotManager.findSpotByName(startEndPoints.start);
+                    if (spot) {
+                        highlightSpotNames.push(startEndPoints.start);
+                    }
+                }
+
+                if (startEndPoints.end && startEndPoints.end.trim()) {
+                    highlightIds.push(startEndPoints.end);
+                    // 終了ポイントがスポット名かチェック
+                    const spot = this.spotManager.findSpotByName(startEndPoints.end);
+                    if (spot) {
+                        highlightSpotNames.push(startEndPoints.end);
+                    }
+                }
+
                 this.inputManager.setHighlightedPoints(highlightIds);
+                this.inputManager.setHighlightedSpotNames(highlightSpotNames);
 
                 // チェックボックスをオンにしてポイントIDを表示
                 if (pointIdCheckbox) {
