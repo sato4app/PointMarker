@@ -16,7 +16,8 @@ export class RouteManager {
             onCountChange: null,
             onStartEndChange: null,
             onRouteListChange: null,  // ルート一覧変更時
-            onSelectionChange: null   // ルート選択変更時
+            onSelectionChange: null,   // ルート選択変更時
+            onModifiedStateChange: null  // ルート更新状態変更時
         };
     }
 
@@ -88,6 +89,10 @@ export class RouteManager {
      * @param {Object} route - ルートデータ {startPointId, endPointId, routePoints, routeName}
      */
     addRoute(route) {
+        // isModifiedフラグを初期化（デフォルト: false）
+        if (route.isModified === undefined) {
+            route.isModified = false;
+        }
         this.routes.push(route);
         this.notify('onRouteListChange', this.routes);
     }
@@ -144,6 +149,10 @@ export class RouteManager {
         selectedRoute.routePoints.push(point);
         this.notify('onChange');
         this.notify('onCountChange', selectedRoute.routePoints.length);
+
+        // 更新状態をチェック
+        this.checkAndUpdateModifiedState();
+
         return point;
     }
 
@@ -189,6 +198,9 @@ export class RouteManager {
             selectedRoute.routePoints[index].x = Math.round(x);
             selectedRoute.routePoints[index].y = Math.round(y);
             this.notify('onChange');
+
+            // 更新状態をチェック
+            this.checkAndUpdateModifiedState();
         }
     }
 
@@ -287,6 +299,43 @@ export class RouteManager {
 
         if (selectedRoute.startPointId && selectedRoute.endPointId) {
             selectedRoute.routeName = `${selectedRoute.startPointId} → ${selectedRoute.endPointId}`;
+            this.notify('onRouteListChange', this.routes);
+            // 更新状態をチェック
+            this.checkAndUpdateModifiedState();
+        }
+    }
+
+    /**
+     * ルートの更新状態をチェックして必要に応じてフラグを設定
+     * 更新基準:
+     * - 開始ポイント、終了ポイントの指定があり、ルート中間点が追加・移動された
+     * - ルート中間点があり、開始ポイントと終了ポイントが指定された
+     */
+    checkAndUpdateModifiedState() {
+        const selectedRoute = this.getSelectedRoute();
+        if (!selectedRoute) return;
+
+        const hasStartEnd = selectedRoute.startPointId && selectedRoute.endPointId;
+        const hasWaypoints = selectedRoute.routePoints && selectedRoute.routePoints.length > 0;
+
+        // 更新基準を満たす場合、isModifiedフラグを立てる
+        if (hasStartEnd && hasWaypoints) {
+            if (!selectedRoute.isModified) {
+                selectedRoute.isModified = true;
+                this.notify('onModifiedStateChange', { isModified: true, routeIndex: this.selectedRouteIndex });
+                this.notify('onRouteListChange', this.routes);
+            }
+        }
+    }
+
+    /**
+     * ルートの更新フラグをクリア（保存完了時などに使用）
+     */
+    clearModifiedFlag() {
+        const selectedRoute = this.getSelectedRoute();
+        if (selectedRoute && selectedRoute.isModified) {
+            selectedRoute.isModified = false;
+            this.notify('onModifiedStateChange', { isModified: false, routeIndex: this.selectedRouteIndex });
             this.notify('onRouteListChange', this.routes);
         }
     }

@@ -465,6 +465,19 @@ header p {
     margin-bottom: 12px;
 }
 
+/* 要保存ラベル */
+.unsaved-label {
+    display: none;
+    font-size: 11pt;
+    color: #ff9500;
+    font-weight: normal;
+    margin-left: 8px;
+}
+
+.unsaved-label.visible {
+    display: inline;
+}
+
 .editor-controls {
     display: flex;
     flex-direction: column;

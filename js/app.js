@@ -135,6 +135,14 @@ export class PointMarkerApp {
             if (dropdown) {
                 dropdown.value = index >= 0 ? index.toString() : '';
             }
+            // 選択が変わったら「要保存」ラベルの表示を更新
+            this.updateUnsavedLabel();
+        });
+
+        // ルート更新状態変更時のコールバック
+        this.routeManager.setCallback('onModifiedStateChange', (data) => {
+            this.updateUnsavedLabel();
+            this.updateRouteDropdown(this.routeManager.getAllRoutes());
         });
 
         // スポット管理のコールバック
@@ -797,6 +805,21 @@ export class PointMarkerApp {
     }
 
     /**
+     * 「要保存」ラベルの表示を更新
+     */
+    updateUnsavedLabel() {
+        const unsavedLabel = document.getElementById('routeUnsavedLabel');
+        if (!unsavedLabel) return;
+
+        const selectedRoute = this.routeManager.getSelectedRoute();
+        if (selectedRoute && selectedRoute.isModified) {
+            unsavedLabel.classList.add('visible');
+        } else {
+            unsavedLabel.classList.remove('visible');
+        }
+    }
+
+    /**
      * ルート選択ドロップダウンを更新
      * @param {Array} routes - ルート配列
      */
@@ -814,7 +837,9 @@ export class PointMarkerApp {
         routes.forEach((route, index) => {
             const option = document.createElement('option');
             option.value = index.toString();
-            option.textContent = route.routeName || `${route.startPointId} → ${route.endPointId}`;
+            // isModifiedフラグが立っている場合は先頭に*をつける
+            const routeName = route.routeName || `${route.startPointId} → ${route.endPointId}`;
+            option.textContent = route.isModified ? `*${routeName}` : routeName;
             dropdown.appendChild(option);
         });
 
@@ -1004,6 +1029,9 @@ export class PointMarkerApp {
 
             // 開始・終了ポイント入力フィールドを読み取り専用にする
             this.setRouteInputsEditable(false);
+
+            // 更新フラグをクリア
+            this.routeManager.clearModifiedFlag();
 
             UIHelper.showMessage(`ルート「${routeData.routeName}」を保存しました`);
 
