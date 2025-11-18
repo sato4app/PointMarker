@@ -463,15 +463,17 @@ header p {
 
 .route-editor h3 {
     margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 /* 要保存ラベル */
 .unsaved-label {
     display: none;
-    font-size: 11pt;
+    font-size: 10px;
     color: #ff9500;
     font-weight: normal;
-    margin-left: 8px;
 }
 
 .unsaved-label.visible {
@@ -602,6 +604,17 @@ header p {
     gap: 10px;
 }
 
+/* 中間点数とチェックボックスのコンテナ */
+.route-display-controls {
+    padding: 10px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 /* =====================================
    Counters & Status
    ===================================== */
@@ -624,7 +637,9 @@ header p {
 
 .waypoint-count {
     font-size: 0.9em;
-    background: white;
+    background: transparent;
+    border: none;
+    padding: 0;
 }
 
 .waypoint-count span {
@@ -633,10 +648,9 @@ header p {
 }
 
 .popup-visibility-control {
-    padding: 8px;
-    background: white;
-    border-radius: var(--border-radius-sm);
-    border: 1px solid var(--border-color);
+    padding: 0;
+    background: transparent;
+    border: none;
     font-size: 0.9em;
     display: flex;
     flex-direction: column;

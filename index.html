@@ -106,22 +106,23 @@
                                 <input type="text" id="endPointInput" class="route-point-field" maxlength="4" aria-describedby="end-point-desc" readonly>
                                 <span id="end-point-desc" class="sr-only">既存ポイントのIDを入力</span>
                             </div>
-                            <!-- 中間点数表示 -->
-                            <div class="route-point-input" aria-live="polite">
-                                中間点数: <span id="waypointCount">0</span>
-                            </div>
                         </div>
 
-                        <!-- ポップアップ表示切り替え -->
-                        <div class="popup-visibility-control">
-                            <label>
-                                <input type="checkbox" id="showPointIdsCheckbox" checked>
-                                <span>ポイントID表示</span>
-                            </label>
-                            <label>
-                                <input type="checkbox" id="showSpotNamesCheckbox">
-                                <span>スポット名表示</span>
-                            </label>
+                        <!-- 中間点数表示とポップアップ表示切り替え -->
+                        <div class="route-display-controls">
+                            <div class="waypoint-count" aria-live="polite">
+                                中間点数: <span id="waypointCount">0</span>
+                            </div>
+                            <div class="popup-visibility-control">
+                                <label>
+                                    <input type="checkbox" id="showPointIdsCheckbox" checked>
+                                    <span>ポイントID表示</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="showSpotNamesCheckbox">
+                                    <span>スポット名表示</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </section>
