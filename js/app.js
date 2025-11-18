@@ -971,7 +971,7 @@ export class PointMarkerApp {
     }
 
     /**
-     * 選択中のルートを保存（Firebase）
+     * すべてのルートを保存（Firebase）
      */
     async handleSaveRoute() {
         // Firebaseマネージャーの存在確認
@@ -1006,34 +1006,71 @@ export class PointMarkerApp {
                 return;
             }
 
-            // キャンバス座標を画像座標に変換
-            const waypoints = selectedRoute.routePoints.map(point => {
-                const imageCoords = CoordinateUtils.canvasToImage(
-                    point.x, point.y,
-                    this.canvas.width, this.canvas.height,
-                    this.currentImage.width, this.currentImage.height
-                );
-                return { x: imageCoords.x, y: imageCoords.y };
-            });
+            // すべてのルートを保存
+            const allRoutes = this.routeManager.getAllRoutes();
+            let savedCount = 0;
+            let updatedCount = 0;
+            let addedCount = 0;
 
-            // Firebaseに保存するルートデータ
-            const routeData = {
-                routeName: selectedRoute.routeName || `${selectedRoute.startPointId} → ${selectedRoute.endPointId}`,
-                startPoint: selectedRoute.startPointId,
-                endPoint: selectedRoute.endPointId,
-                waypoints: waypoints
-            };
+            for (const route of allRoutes) {
+                // 開始・終了ポイント、中間点が設定されていないルートはスキップ
+                if (!route.startPointId || !route.endPointId ||
+                    !route.routePoints || route.routePoints.length === 0) {
+                    continue;
+                }
 
-            // Firebaseに保存
-            await window.firestoreManager.addRoute(projectId, routeData);
+                // キャンバス座標を画像座標に変換
+                const waypoints = route.routePoints.map(point => {
+                    const imageCoords = CoordinateUtils.canvasToImage(
+                        point.x, point.y,
+                        this.canvas.width, this.canvas.height,
+                        this.currentImage.width, this.currentImage.height
+                    );
+                    return { x: imageCoords.x, y: imageCoords.y };
+                });
+
+                // Firebaseに保存するルートデータ
+                const routeData = {
+                    routeName: route.routeName || `${route.startPointId} → ${route.endPointId}`,
+                    startPoint: route.startPointId,
+                    endPoint: route.endPointId,
+                    waypoints: waypoints
+                };
+
+                // FirestoreIDがあれば更新、なければ新規追加
+                if (route.firestoreId) {
+                    // 既存ルートを更新
+                    await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
+                    updatedCount++;
+                } else {
+                    // 新規ルートを追加
+                    const result = await window.firestoreManager.addRoute(projectId, routeData);
+                    if (result.status === 'success') {
+                        // FirestoreIDを保存
+                        route.firestoreId = result.firestoreId;
+                        addedCount++;
+                    } else if (result.status === 'duplicate') {
+                        // 重複している場合は既存のFirestoreIDを保存
+                        route.firestoreId = result.existing.firestoreId;
+                        // 既存ルートを更新
+                        await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
+                        updatedCount++;
+                    }
+                }
+
+                // 更新フラグをクリア
+                route.isModified = false;
+                savedCount++;
+            }
 
             // 開始・終了ポイント入力フィールドを読み取り専用にする
             this.setRouteInputsEditable(false);
 
-            // 更新フラグをクリア
-            this.routeManager.clearModifiedFlag();
+            // UI更新
+            this.routeManager.notify('onModifiedStateChange', { isModified: false });
+            this.routeManager.notify('onRouteListChange', allRoutes);
 
-            UIHelper.showMessage(`ルート「${routeData.routeName}」を保存しました`);
+            UIHelper.showMessage(`ルートを保存しました（保存: ${savedCount}件、更新: ${updatedCount}件、追加: ${addedCount}件）`);
 
         } catch (error) {
             console.error('ルート保存エラー:', error);
@@ -1775,7 +1812,9 @@ export class PointMarkerApp {
                 }
 
                 // ルートオブジェクトを作成してRouteManagerに追加
+                // FirestoreIDを保持して、更新時に使用できるようにする
                 this.routeManager.addRoute({
+                    firestoreId: route.firestoreId,  // FirestoreドキュメントIDを保持
                     routeName: route.routeName || `${route.startPoint} → ${route.endPoint}`,
                     startPointId: route.startPoint,
                     endPointId: route.endPoint,
