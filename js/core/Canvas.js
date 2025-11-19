@@ -41,15 +41,34 @@ export class CanvasRenderer {
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // 変換を適用
-        this.ctx.save();
-        this.ctx.translate(this.offsetX, this.offsetY);
-        this.ctx.scale(this.scale, this.scale);
+        // ズーム・パンを適用した描画
+        // scale=1.0: 画像全体を表示
+        // scale>1.0: 画像の一部を拡大表示（表示領域を拡大）
 
-        // キャンバスサイズに合わせて画像を描画
-        this.ctx.drawImage(this.currentImage, 0, 0, this.canvas.width, this.canvas.height);
+        // 画像上での表示範囲を計算（画像座標系）
+        const viewWidth = this.canvas.width / this.scale;
+        const viewHeight = this.canvas.height / this.scale;
 
-        this.ctx.restore();
+        // パンオフセットを画像座標系に変換
+        const centerX = -this.offsetX / this.scale + viewWidth / 2;
+        const centerY = -this.offsetY / this.scale + viewHeight / 2;
+
+        // 画像上での切り取り領域を計算
+        let sx = centerX - viewWidth / 2;
+        let sy = centerY - viewHeight / 2;
+        let sw = viewWidth;
+        let sh = viewHeight;
+
+        // 画像の境界内に制限
+        sx = Math.max(0, Math.min(sx, this.canvas.width - sw));
+        sy = Math.max(0, Math.min(sy, this.canvas.height - sh));
+
+        // 画像の一部をキャンバス全体に描画
+        this.ctx.drawImage(
+            this.currentImage,
+            sx, sy, sw, sh,  // 画像上の切り取り領域
+            0, 0, this.canvas.width, this.canvas.height  // キャンバス上の描画領域
+        );
     }
 
     /**
@@ -216,17 +235,29 @@ export class CanvasRenderer {
     redraw(points = [], routePoints = [], spots = [], options = {}) {
         this.drawImage();
 
-        // マーカー描画時にズーム・パン変換を適用
+        // マーカー座標をビューポート座標系に変換
+        // 画像座標(x,y) → ビューポート座標: (x * scale + offsetX, y * scale + offsetY)
+        // ただし、新しい描画方式では画像の切り取り範囲に基づいて変換
+
+        const viewWidth = this.canvas.width / this.scale;
+        const viewHeight = this.canvas.height / this.scale;
+        const centerX = -this.offsetX / this.scale + viewWidth / 2;
+        const centerY = -this.offsetY / this.scale + viewHeight / 2;
+        const sx = Math.max(0, Math.min(centerX - viewWidth / 2, this.canvas.width - viewWidth));
+        const sy = Math.max(0, Math.min(centerY - viewHeight / 2, this.canvas.height - viewHeight));
+
+        // マーカー描画時の座標変換を適用
         this.ctx.save();
-        this.ctx.translate(this.offsetX, this.offsetY);
+        // 画像座標からビューポート座標への変換
+        this.ctx.translate(-sx * this.scale, -sy * this.scale);
         this.ctx.scale(this.scale, this.scale);
 
-        // 現在のスケール値をマーカー描画メソッドに渡す
+        // 現在のスケール値をマーカー描画メソッドに渡す（サイズ固定用）
         this.drawPoints(points, options, this.scale);
 
         // ルート中間点の描画（複数ルート対応）
         if (options.allRoutes && Array.isArray(options.allRoutes) && options.allRoutes.length > 0) {
-            // 複数ルート対応: 選択中のルートは通常サイズ（radius=5）、未選択は小さく（radius=3）
+            // 複数ルート対応: 選択中のルートは通常サイズ（radius=6）、未選択は小さく（radius=4）
             this.drawAllRoutesWaypoints(options.allRoutes, options.selectedRouteIndex !== undefined ? options.selectedRouteIndex : -1, this.scale);
         } else if (routePoints && routePoints.length > 0) {
             // 後方互換性: 従来の方式（選択中のルートのみ）
