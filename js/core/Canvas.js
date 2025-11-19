@@ -152,8 +152,8 @@ export class CanvasRenderer {
                 // 選択中のルート: 通常サイズ（radius=6）
                 this.drawRoutePoints(waypoints, canvasScale, 6);
             } else {
-                // 未選択ルート: 小さいサイズ（radius=4）
-                this.drawRoutePoints(waypoints, canvasScale, 4);
+                // 未選択ルート: 小さいサイズ（radius=5）
+                this.drawRoutePoints(waypoints, canvasScale, 5);
             }
         });
     }
