@@ -23,10 +23,6 @@ export class CanvasRenderer {
         this.maxScale = 5.0;
         this.zoomStep = 0.2;
         this.panStep = 50;  // ピクセル単位での移動量
-
-        // 基準キャンバスサイズ（scale=1.0時のサイズ）
-        this.baseCanvasWidth = 0;
-        this.baseCanvasHeight = 0;
     }
 
     /**
@@ -45,11 +41,12 @@ export class CanvasRenderer {
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // パン変換を適用（ズームはキャンバスサイズで既に反映）
+        // 変換を適用（ズーム・パン）
         this.ctx.save();
         this.ctx.translate(this.offsetX, this.offsetY);
+        this.ctx.scale(this.scale, this.scale);
 
-        // キャンバスサイズに合わせて画像を描画（キャンバスサイズは既にscale倍されている）
+        // キャンバスサイズに合わせて画像を描画
         this.ctx.drawImage(this.currentImage, 0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.restore();
@@ -219,23 +216,24 @@ export class CanvasRenderer {
     redraw(points = [], routePoints = [], spots = [], options = {}) {
         this.drawImage();
 
-        // マーカー描画時にパン変換を適用（ズームはキャンバスサイズで既に反映）
+        // マーカー描画時にズーム・パン変換を適用
         this.ctx.save();
         this.ctx.translate(this.offsetX, this.offsetY);
+        this.ctx.scale(this.scale, this.scale);
 
-        // マーカーサイズはズームに応じて拡大（キャンバスサイズが拡大されているため、scaleは1.0として描画）
-        this.drawPoints(points, options, 1.0);
+        // 現在のスケール値をマーカー描画メソッドに渡す
+        this.drawPoints(points, options, this.scale);
 
         // ルート中間点の描画（複数ルート対応）
         if (options.allRoutes && Array.isArray(options.allRoutes) && options.allRoutes.length > 0) {
             // 複数ルート対応: 選択中のルートは通常サイズ（radius=6）、未選択は小さく（radius=4）
-            this.drawAllRoutesWaypoints(options.allRoutes, options.selectedRouteIndex !== undefined ? options.selectedRouteIndex : -1, 1.0);
+            this.drawAllRoutesWaypoints(options.allRoutes, options.selectedRouteIndex !== undefined ? options.selectedRouteIndex : -1, this.scale);
         } else if (routePoints && routePoints.length > 0) {
             // 後方互換性: 従来の方式（選択中のルートのみ）
-            this.drawRoutePoints(routePoints, 1.0);
+            this.drawRoutePoints(routePoints, this.scale);
         }
 
-        this.drawSpots(spots, options, 1.0);
+        this.drawSpots(spots, options, this.scale);
 
         this.ctx.restore();
     }
@@ -270,13 +268,10 @@ export class CanvasRenderer {
             canvasWidth = canvasHeight / imageAspectRatio;
         }
 
-        // 基準サイズを保存（scale=1.0時のサイズ）
-        this.baseCanvasWidth = canvasWidth;
-        this.baseCanvasHeight = canvasHeight;
-
-        // 現在のスケールに応じたサイズを設定
-        this.updateCanvasSize();
-
+        this.canvas.width = canvasWidth;
+        this.canvas.height = canvasHeight;
+        this.canvas.style.width = canvasWidth + 'px';
+        this.canvas.style.height = canvasHeight + 'px';
         this.canvas.style.display = 'block';
         this.canvas.style.visibility = 'visible';
 
@@ -285,24 +280,10 @@ export class CanvasRenderer {
     }
 
     /**
-     * スケールに応じてキャンバスサイズを更新
-     */
-    updateCanvasSize() {
-        if (this.baseCanvasWidth === 0 || this.baseCanvasHeight === 0) return;
-
-        // スケールに応じてキャンバスサイズを変更
-        this.canvas.width = this.baseCanvasWidth * this.scale;
-        this.canvas.height = this.baseCanvasHeight * this.scale;
-        this.canvas.style.width = (this.baseCanvasWidth * this.scale) + 'px';
-        this.canvas.style.height = (this.baseCanvasHeight * this.scale) + 'px';
-    }
-
-    /**
      * ズームイン
      */
     zoomIn() {
         this.scale = Math.min(this.scale + this.zoomStep, this.maxScale);
-        this.updateCanvasSize();
     }
 
     /**
@@ -310,7 +291,6 @@ export class CanvasRenderer {
      */
     zoomOut() {
         this.scale = Math.max(this.scale - this.zoomStep, this.minScale);
-        this.updateCanvasSize();
     }
 
     /**
