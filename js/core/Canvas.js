@@ -149,11 +149,11 @@ export class CanvasRenderer {
         allRoutes.forEach((route, index) => {
             const waypoints = route.routePoints || [];
             if (index === selectedRouteIndex) {
-                // 選択中のルート: 通常サイズ（6px）
-                this.drawRoutePoints(waypoints, canvasScale, 5);
+                // 選択中のルート: 通常サイズ（radius=6）
+                this.drawRoutePoints(waypoints, canvasScale, 6);
             } else {
-                // 未選択ルート: 小さいサイズ（3px）
-                this.drawRoutePoints(waypoints, canvasScale, 3);
+                // 未選択ルート: 小さいサイズ（radius=4）
+                this.drawRoutePoints(waypoints, canvasScale, 4);
             }
         });
     }
