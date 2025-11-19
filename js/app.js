@@ -1263,6 +1263,7 @@ export class PointMarkerApp {
             this.pointManager,
             this.routeManager,
             this.spotManager,
+            this.viewportManager,
             () => this.redrawCanvas()
         );
     }
