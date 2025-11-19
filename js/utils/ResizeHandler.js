@@ -58,10 +58,15 @@ export class ResizeHandler {
             point.y = Math.round(point.y * scaleY);
         });
 
-        // ルートポイント座標のスケーリング
-        routeManager.getRoutePoints().forEach(point => {
-            point.x = Math.round(point.x * scaleX);
-            point.y = Math.round(point.y * scaleY);
+        // 全ルートの中間点座標をスケーリング
+        const allRoutes = routeManager.getAllRoutes();
+        allRoutes.forEach(route => {
+            if (route.routePoints) {
+                route.routePoints.forEach(point => {
+                    point.x = Math.round(point.x * scaleX);
+                    point.y = Math.round(point.y * scaleY);
+                });
+            }
         });
 
         // スポット座標のスケーリング
