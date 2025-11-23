@@ -482,6 +482,23 @@ export class PointMarkerApp {
             routeDropdown.addEventListener('change', (e) => {
                 const selectedIndex = e.target.value === '' ? -1 : parseInt(e.target.value);
                 this.routeManager.selectRoute(selectedIndex);
+
+                // ルート選択時のメッセージ表示
+                if (selectedIndex >= 0) {
+                    const routes = this.routeManager.getRoutes();
+                    const selectedRoute = routes[selectedIndex];
+                    if (selectedRoute) {
+                        const startPoint = selectedRoute.startPoint || '未設定';
+                        const endPoint = selectedRoute.endPoint || '未設定';
+                        const waypointCount = (selectedRoute.routePoints || []).length;
+                        this.uiHelper.showMessage(
+                            `ルート ${startPoint} ～ ${endPoint} (中間点: ${waypointCount}個) が選択されました`,
+                            'info'
+                        );
+                    }
+                } else {
+                    this.uiHelper.showMessage('ルート選択を解除しました', 'info');
+                }
             });
         }
 
@@ -691,14 +708,21 @@ export class PointMarkerApp {
         if (mode === 'route') {
             const routePointInfo = this.routeManager.findRoutePointAt(coords.x, coords.y);
             if (routePointInfo) {
-                this.dragDropHandler.startDrag(
-                    'routePoint',
-                    routePointInfo.index,
-                    coords.x,
-                    coords.y,
-                    routePointInfo.point
-                );
-                event.preventDefault();
+                // 開始・終了ポイントが設定済みの場合のみドラッグ可能
+                const selectedRoute = this.routeManager.getSelectedRoute();
+                if (selectedRoute && selectedRoute.startPointId && selectedRoute.endPointId) {
+                    this.dragDropHandler.startDrag(
+                        'routePoint',
+                        routePointInfo.index,
+                        coords.x,
+                        coords.y,
+                        routePointInfo.point
+                    );
+                    event.preventDefault();
+                } else {
+                    UIHelper.showWarning('開始ポイントと終了ポイントを先に選択してください');
+                    event.preventDefault();
+                }
                 return;
             }
         }
@@ -795,9 +819,20 @@ export class PointMarkerApp {
 
         const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
 
-        // ルート編集モードの場合は、ポイント上でも中間点を追加可能
+        // ルート編集モードの場合の処理
         if (mode === 'route') {
-            this.handleNewObjectCreation(coords, mode);
+            // ポイントまたはスポットをクリックした場合
+            if (objectInfo && (objectInfo.type === 'point' || objectInfo.type === 'spot')) {
+                this.handleRoutePointSelection(objectInfo);
+                return;
+            }
+            // 開始・終了ポイントが設定済みの場合のみ中間点を追加
+            const selectedRoute = this.routeManager.getSelectedRoute();
+            if (selectedRoute && selectedRoute.startPointId && selectedRoute.endPointId) {
+                this.handleNewObjectCreation(coords, mode);
+            } else {
+                UIHelper.showWarning('開始ポイントと終了ポイントを先に選択してください');
+            }
             return;
         }
 
@@ -821,6 +856,55 @@ export class PointMarkerApp {
             UIHelper.focusInputForPoint(objectInfo.index);
         } else if (objectInfo.type === 'spot' && mode === 'spot') {
             UIHelper.focusInputForSpot(objectInfo.index);
+        }
+    }
+
+    /**
+     * ルート編集モードでポイント/スポット選択時の処理
+     * @param {Object} objectInfo - オブジェクト情報
+     */
+    handleRoutePointSelection(objectInfo) {
+        const selectedRoute = this.routeManager.getSelectedRoute();
+        if (!selectedRoute) {
+            UIHelper.showWarning('先にルートを選択または追加してください');
+            return;
+        }
+
+        let selectedName = '';
+
+        // ポイントIDまたはスポット名を取得
+        if (objectInfo.type === 'point') {
+            const points = this.pointManager.getPoints();
+            const point = points[objectInfo.index];
+            selectedName = point.id || '';
+            if (!selectedName) {
+                UIHelper.showWarning('このポイントにはIDが設定されていません');
+                return;
+            }
+        } else if (objectInfo.type === 'spot') {
+            const spots = this.spotManager.getSpots();
+            const spot = spots[objectInfo.index];
+            selectedName = spot.name || '';
+            if (!selectedName) {
+                UIHelper.showWarning('このスポットには名前が設定されていません');
+                return;
+            }
+        }
+
+        // 開始ポイントが未設定の場合は開始ポイントに設定
+        if (!selectedRoute.startPointId) {
+            this.routeManager.setStartPoint(selectedName, true);
+            UIHelper.showMessage(`開始ポイントを "${selectedName}" に設定しました。終了ポイントを画像上で選択してください`);
+        }
+        // 開始ポイントは設定済みで終了ポイントが未設定の場合は終了ポイントに設定
+        else if (!selectedRoute.endPointId) {
+            this.routeManager.setEndPoint(selectedName, true);
+            UIHelper.showMessage(`終了ポイントを "${selectedName}" に設定しました`);
+        }
+        // 両方設定済みの場合は開始ポイントを上書き
+        else {
+            this.routeManager.setStartPoint(selectedName, true);
+            UIHelper.showMessage(`開始ポイントを "${selectedName}" に変更しました。終了ポイントを画像上で選択してください`);
         }
     }
 
@@ -1061,7 +1145,7 @@ export class PointMarkerApp {
         // 開始・終了ポイント入力フィールドを編集可能にする
         this.setRouteInputsEditable(true);
 
-        UIHelper.showMessage('新しいルートを追加しました');
+        UIHelper.showMessage('新しいルートを追加しました。開始ポイントを画像上で選択してください');
     }
 
     /**
