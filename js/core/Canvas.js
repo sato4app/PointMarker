@@ -149,8 +149,8 @@ export class CanvasRenderer {
         allRoutes.forEach((route, index) => {
             const waypoints = route.routePoints || [];
             if (index === selectedRouteIndex) {
-                // 選択中のルート: 菱形、通常サイズ（radius=6）
-                this.drawRoutePoints(waypoints, canvasScale, 6);
+                // 選択中のルート: 菱形、通常サイズ（radius=5）
+                this.drawRoutePoints(waypoints, canvasScale, 5);
             } else {
                 // 未選択ルート: 円形、小さいサイズ（radius=3）
                 waypoints.forEach(point => {
