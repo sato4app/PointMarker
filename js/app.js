@@ -454,6 +454,25 @@ export class PointMarkerApp {
         const startPointInput = document.getElementById('startPointInput');
         const endPointInput = document.getElementById('endPointInput');
 
+        // readonly状態の入力フィールドクリック時に変更確認
+        startPointInput.addEventListener('click', (e) => {
+            if (e.target.hasAttribute('readonly')) {
+                const confirmed = confirm('開始ポイントを変更しますか？\n変更すると中間点がクリアされます。');
+                if (confirmed) {
+                    this.handleRoutePointEditRequest('start');
+                }
+            }
+        });
+
+        endPointInput.addEventListener('click', (e) => {
+            if (e.target.hasAttribute('readonly')) {
+                const confirmed = confirm('終了ポイントを変更しますか？\n変更すると中間点がクリアされます。');
+                if (confirmed) {
+                    this.handleRoutePointEditRequest('end');
+                }
+            }
+        });
+
         // focus時に編集前の値を保存
         startPointInput.addEventListener('focus', (e) => {
             this.previousStartPoint = e.target.value.trim();
@@ -900,11 +919,13 @@ export class PointMarkerApp {
         else if (!selectedRoute.endPointId) {
             this.routeManager.setEndPoint(selectedName, true);
             UIHelper.showMessage(`終了ポイントを "${selectedName}" に設定しました`);
+            // 両方設定完了したので入力フィールドをreadonly（変更不可）にする
+            this.setRouteInputsEditable(false);
         }
-        // 両方設定済みの場合は開始ポイントを上書き
+        // 両方設定済みの場合は何もしない（中間点追加モード）
         else {
-            this.routeManager.setStartPoint(selectedName, true);
-            UIHelper.showMessage(`開始ポイントを "${selectedName}" に変更しました。終了ポイントを画像上で選択してください`);
+            // 中間点追加モードでは、ポイント/スポットクリックでは開始・終了ポイントを変更しない
+            return;
         }
     }
 
@@ -1315,6 +1336,41 @@ export class PointMarkerApp {
             startPointInput.setAttribute('readonly', 'readonly');
             endPointInput.setAttribute('readonly', 'readonly');
         }
+    }
+
+    /**
+     * ルートポイント編集リクエスト処理
+     * @param {string} pointType - 'start' または 'end'
+     */
+    handleRoutePointEditRequest(pointType) {
+        const selectedRoute = this.routeManager.getSelectedRoute();
+        if (!selectedRoute) return;
+
+        // 中間点をクリア
+        if (selectedRoute.routePoints && selectedRoute.routePoints.length > 0) {
+            selectedRoute.routePoints = [];
+            this.routeManager.notify('onCountChange', 0);
+            this.routeManager.notify('onChange');
+        }
+
+        // 開始・終了ポイントをクリア
+        if (pointType === 'start') {
+            this.routeManager.setStartPoint('', true);
+            this.routeManager.setEndPoint('', true);
+        } else {
+            this.routeManager.setEndPoint('', true);
+        }
+
+        // 入力フィールドを編集可能にする
+        this.setRouteInputsEditable(true);
+
+        // 適切な入力フィールドにフォーカス
+        const inputId = pointType === 'start' ? 'startPointInput' : 'endPointInput';
+        setTimeout(() => {
+            document.getElementById(inputId).focus();
+        }, 100);
+
+        UIHelper.showMessage('ルートポイントを編集できるようになりました。画像上でポイント/スポットを選択してください');
     }
 
     /**
