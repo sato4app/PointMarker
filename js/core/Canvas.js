@@ -140,7 +140,7 @@ export class CanvasRenderer {
     }
 
     /**
-     * 複数ルートの中間点を一括描画（未選択ルートは小さく）
+     * 複数ルートの中間点を一括描画（未選択ルートは円形で小さく）
      * @param {Array} allRoutes - 全ルート配列
      * @param {number} selectedRouteIndex - 選択中のルートインデックス（-1 = 未選択）
      * @param {number} canvasScale - キャンバスのスケール値 (デフォルト: 1.0)
@@ -149,11 +149,13 @@ export class CanvasRenderer {
         allRoutes.forEach((route, index) => {
             const waypoints = route.routePoints || [];
             if (index === selectedRouteIndex) {
-                // 選択中のルート: 通常サイズ（radius=6）
+                // 選択中のルート: 菱形、通常サイズ（radius=6）
                 this.drawRoutePoints(waypoints, canvasScale, 6);
             } else {
-                // 未選択ルート: 小さいサイズ（radius=5）
-                this.drawRoutePoints(waypoints, canvasScale, 5);
+                // 未選択ルート: 円形、小さいサイズ（radius=4）
+                waypoints.forEach(point => {
+                    this.drawPoint(point, '#ff9500', 4, 1, canvasScale);
+                });
             }
         });
     }
