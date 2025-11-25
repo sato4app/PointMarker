@@ -1,5 +1,5 @@
-# Firebase設定ファイル（機密情報のため除外）
-js/firebase/firebase.config.js
+# Firebase設定ファイル（HTTPリファラー制限設定済みのため公開可能）
+# firebase.config.example.js はサンプルファイルとして保持
 
 # ローカルテストデータ
 *.json
