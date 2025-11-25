@@ -1,0 +1,28 @@
+# Firebase設定ファイル（機密情報のため除外）
+js/firebase/firebase.config.js
+
+# ローカルテストデータ
+*.json
+!package.json
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
+
+# エディタ設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ログファイル
+*.log
+npm-debug.log*
+
+# 依存関係
+node_modules/
+
+# ビルド成果物
+dist/
+build/
