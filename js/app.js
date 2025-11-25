@@ -727,9 +727,15 @@ export class PointMarkerApp {
         if (mode === 'route') {
             const routePointInfo = this.routeManager.findRoutePointAt(coords.x, coords.y);
             if (routePointInfo) {
-                // 開始・終了ポイントが設定済みの場合のみドラッグ可能
                 const selectedRoute = this.routeManager.getSelectedRoute();
-                if (selectedRoute && selectedRoute.startPointId && selectedRoute.endPointId) {
+                // ルートが選択されていない場合
+                if (!selectedRoute) {
+                    UIHelper.showWarning('ルートが選択されていません。ルートを選択または追加してください');
+                    event.preventDefault();
+                    return;
+                }
+                // 開始・終了ポイントが設定済みの場合のみドラッグ可能
+                if (selectedRoute.startPointId && selectedRoute.endPointId) {
                     this.dragDropHandler.startDrag(
                         'routePoint',
                         routePointInfo.index,
@@ -847,7 +853,12 @@ export class PointMarkerApp {
             }
             // 開始・終了ポイントが設定済みの場合のみ中間点を追加
             const selectedRoute = this.routeManager.getSelectedRoute();
-            if (selectedRoute && selectedRoute.startPointId && selectedRoute.endPointId) {
+            // ルートが選択されていない場合
+            if (!selectedRoute) {
+                UIHelper.showWarning('ルートが選択されていません。ルートを選択または追加してください');
+                return;
+            }
+            if (selectedRoute.startPointId && selectedRoute.endPointId) {
                 this.handleNewObjectCreation(coords, mode);
             } else {
                 UIHelper.showWarning('開始ポイントと終了ポイントを先に選択してください');
