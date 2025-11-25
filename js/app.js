@@ -501,14 +501,14 @@ export class PointMarkerApp {
 
                 // ルート選択時のメッセージ表示
                 if (selectedIndex >= 0) {
-                    const routes = this.routeManager.getRoutes();
+                    const routes = this.routeManager.getAllRoutes();
                     const selectedRoute = routes[selectedIndex];
                     if (selectedRoute) {
-                        const startPoint = selectedRoute.startPoint || '未設定';
-                        const endPoint = selectedRoute.endPoint || '未設定';
+                        const startPoint = selectedRoute.startPointId || '未設定';
+                        const endPoint = selectedRoute.endPointId || '未設定';
                         const waypointCount = (selectedRoute.routePoints || []).length;
                         this.uiHelper.showMessage(
-                            `ルート ${startPoint} ～ ${endPoint} (中間点: ${waypointCount}個) が選択されました`,
+                            `ルート ${selectedIndex + 1} を選択: ${startPoint} → ${endPoint} (中間点: ${waypointCount}個)`,
                             'info'
                         );
                     }
