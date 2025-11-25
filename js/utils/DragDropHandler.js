@@ -67,9 +67,10 @@ export class DragDropHandler {
      * @param {Object} pointManager - PointManagerインスタンス
      * @param {Function} onPointDragEndCallback - ポイントドラッグ終了時のコールバック（オプション）
      * @param {Function} onSpotDragEndCallback - スポットドラッグ終了時のコールバック（オプション）
+     * @param {Function} onRoutePointDragEndCallback - ルート中間点ドラッグ終了時のコールバック（オプション）
      * @returns {boolean} ドラッグが終了されたかどうか
      */
-    endDrag(inputManager, pointManager, onPointDragEndCallback, onSpotDragEndCallback) {
+    endDrag(inputManager, pointManager, onPointDragEndCallback, onSpotDragEndCallback, onRoutePointDragEndCallback) {
         if (!this.isDragging) return false;
 
         const wasDragging = true;
@@ -90,6 +91,11 @@ export class DragDropHandler {
             // スポットドラッグ終了コールバック実行（スポットインデックスを渡す）
             if (onSpotDragEndCallback && typeof onSpotDragEndCallback === 'function') {
                 onSpotDragEndCallback(draggedIndex);
+            }
+        } else if (this.draggedObjectType === 'routePoint') {
+            // ルート中間点ドラッグ終了コールバック実行
+            if (onRoutePointDragEndCallback && typeof onRoutePointDragEndCallback === 'function') {
+                onRoutePointDragEndCallback(draggedIndex);
             }
         }
 

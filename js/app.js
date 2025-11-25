@@ -149,15 +149,12 @@ export class PointMarkerApp {
             if (dropdown) {
                 dropdown.value = index >= 0 ? index.toString() : '';
             }
-            // 選択が変わったら「要保存」ラベルの表示を更新
-            this.updateUnsavedLabel();
             // 開始・終了ポイントがスポット名の場合、常に表示するように設定
             this.updateAlwaysVisibleSpotNames();
         });
 
         // ルート更新状態変更時のコールバック
         this.routeManager.setCallback('onModifiedStateChange', (data) => {
-            this.updateUnsavedLabel();
             this.updateRouteDropdown(this.routeManager.getAllRoutes());
         });
 
@@ -527,11 +524,6 @@ export class PointMarkerApp {
             this.handleAddRoute();
         });
 
-        document.getElementById('saveRouteBtn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await this.handleSaveRoute();
-        });
-
         document.getElementById('deleteRouteBtn').addEventListener('click', (e) => {
             e.preventDefault();
             this.handleDeleteRoute();
@@ -816,7 +808,13 @@ export class PointMarkerApp {
             await this.firebaseSyncManager.updateSpotToFirebase(spotIndex);
         };
 
-        this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd);
+        // ルート中間点ドラッグ終了時のコールバック
+        const onRoutePointDragEnd = async (routePointIndex) => {
+            // 中間点移動後、自動保存
+            await this.handleSaveRoute();
+        };
+
+        this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd, onRoutePointDragEnd);
     }
 
     /**
@@ -945,10 +943,12 @@ export class PointMarkerApp {
      * @param {Object} coords - 座標
      * @param {string} mode - 編集モード
      */
-    handleNewObjectCreation(coords, mode) {
+    async handleNewObjectCreation(coords, mode) {
         switch (mode) {
             case 'route':
                 this.routeManager.addRoutePoint(coords.x, coords.y);
+                // 中間点追加後、自動保存
+                await this.handleSaveRoute();
                 break;
             case 'point':
                 this.createNewPoint(coords);
@@ -979,24 +979,6 @@ export class PointMarkerApp {
         this.spotManager.addSpot(coords.x, coords.y);
         const newIndex = this.spotManager.getSpots().length - 1;
         setTimeout(() => UIHelper.focusInputForSpot(newIndex), 30);
-    }
-
-    /**
-     * 「要保存」ラベルの表示を更新
-     */
-    updateUnsavedLabel() {
-        const unsavedLabel = document.getElementById('routeUnsavedLabel');
-        if (!unsavedLabel) return;
-
-        // いずれかのルートが更新されている場合は「要保存」を表示
-        const allRoutes = this.routeManager.getAllRoutes();
-        const hasModifiedRoute = allRoutes.some(route => route.isModified);
-
-        if (hasModifiedRoute) {
-            unsavedLabel.classList.add('visible');
-        } else {
-            unsavedLabel.classList.remove('visible');
-        }
     }
 
     /**
@@ -1044,9 +1026,8 @@ export class PointMarkerApp {
         routes.forEach((route, index) => {
             const option = document.createElement('option');
             option.value = index.toString();
-            // isModifiedフラグが立っている場合は先頭に*をつける
             const routeName = route.routeName || `${route.startPointId} ～ ${route.endPointId}`;
-            option.textContent = route.isModified ? `*${routeName}` : routeName;
+            option.textContent = routeName;
             dropdown.appendChild(option);
         });
 
