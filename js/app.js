@@ -1270,14 +1270,6 @@ export class PointMarkerApp {
             this.routeManager.notify('onModifiedStateChange', { isModified: false });
             this.routeManager.notify('onRouteListChange', allRoutes);
 
-            // 保存したルートの一覧を表示
-            if (savedRouteNames.length > 0) {
-                const message = 'ルートを保存しました\n' + savedRouteNames.join('\n');
-                UIHelper.showMessage(message);
-            } else {
-                UIHelper.showMessage('保存するルートがありませんでした');
-            }
-
         } catch (error) {
             UIHelper.showError('ルート保存中にエラーが発生しました: ' + error.message);
         }
