@@ -312,7 +312,11 @@ export class FirebaseSyncManager {
             // プロジェクトの存在確認
             const projectMetadata = await window.firestoreManager.getProjectMetadata(projectId);
             if (!projectMetadata) {
-                UIHelper.showError(`プロジェクト「${projectId}」のデータが見つかりません`);
+                UIHelper.showWarning(`画像 ${projectId} に対するデータがありません`);
+                // データがない場合でも処理を続行（新規プロジェクトとして扱う）
+                if (onLoadComplete) {
+                    onLoadComplete(0, 0, 0);
+                }
                 return;
             }
 
