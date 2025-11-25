@@ -507,13 +507,13 @@ export class PointMarkerApp {
                         const startPoint = selectedRoute.startPointId || '未設定';
                         const endPoint = selectedRoute.endPointId || '未設定';
                         const waypointCount = (selectedRoute.routePoints || []).length;
-                        this.uiHelper.showMessage(
+                        UIHelper.showMessage(
                             `ルート ${selectedIndex + 1} を選択: ${startPoint} → ${endPoint} (中間点: ${waypointCount}個)`,
                             'info'
                         );
                     }
                 } else {
-                    this.uiHelper.showMessage('ルート選択を解除しました', 'info');
+                    UIHelper.showMessage('ルート選択を解除しました', 'info');
                 }
             });
         }
