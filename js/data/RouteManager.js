@@ -1,45 +1,16 @@
-import { CoordinateUtils } from '../utils/Coordinates.js';
 import { Validators } from '../utils/Validators.js';
+import { BaseManager } from '../core/BaseManager.js';
 
 /**
  * ルートデータの管理を行うクラス（複数ルート対応）
  */
-export class RouteManager {
+export class RouteManager extends BaseManager {
     constructor() {
+        super();
         // 複数ルートを管理
         this.routes = [];
         // 現在選択されているルートのインデックス（-1 = 未選択）
         this.selectedRouteIndex = -1;
-
-        this.callbacks = {
-            onChange: null,
-            onCountChange: null,
-            onStartEndChange: null,
-            onRouteListChange: null,  // ルート一覧変更時
-            onSelectionChange: null,   // ルート選択変更時
-            onModifiedStateChange: null,  // ルート更新状態変更時
-            onNoRouteSelected: null  // ルート未選択時の通知
-        };
-    }
-
-    /**
-     * コールバック関数を設定
-     * @param {string} event - イベント名
-     * @param {Function} callback - コールバック関数
-     */
-    setCallback(event, callback) {
-        this.callbacks[event] = callback;
-    }
-
-    /**
-     * 変更通知を発行
-     * @param {string} event - イベント名
-     * @param {any} data - イベントデータ
-     */
-    notify(event, data) {
-        if (this.callbacks[event]) {
-            this.callbacks[event](data);
-        }
     }
 
     /**

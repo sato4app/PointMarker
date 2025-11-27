@@ -10,6 +10,7 @@ import { ValidationManager } from './ui/ValidationManager.js';
 import { ViewportManager } from './ui/ViewportManager.js';
 import { CoordinateUtils } from './utils/Coordinates.js';
 import { Validators } from './utils/Validators.js';
+import { ObjectDetector } from './utils/ObjectDetector.js';
 import { DragDropHandler } from './utils/DragDropHandler.js';
 import { ResizeHandler } from './utils/ResizeHandler.js';
 import { FirebaseSyncManager } from './firebase/FirebaseSyncManager.js';
@@ -59,15 +60,8 @@ export class PointMarkerApp {
         // 現在の画像情報
         this.currentImage = null;
 
-        // ホバー状態管理
-        this.isHoveringPoint = false;
-
         // ファイルピッカーのアクティブ状態管理（重複呼び出し防止）
         this.isFilePickerActive = false;
-
-        // ルート編集用の編集前ポイントID保存
-        this.previousStartPoint = '';
-        this.previousEndPoint = '';
 
         // スポットドラッグ開始時の座標保存（Firebase更新用）
         this.spotDragStartCoords = null;
@@ -470,25 +464,18 @@ export class PointMarkerApp {
             }
         });
 
-        // focus時に編集前の値を保存
-        startPointInput.addEventListener('focus', (e) => {
-            this.previousStartPoint = e.target.value.trim();
-        });
-
-        endPointInput.addEventListener('focus', (e) => {
-            this.previousEndPoint = e.target.value.trim();
-        });
-
         // blur時に半角・大文字変換とX-nn形式のフォーマット処理を実行
         startPointInput.addEventListener('blur', (e) => {
             const inputValue = e.target.value.trim();
-            const newValue = this.handleRoutePointBlur(inputValue, 'start', this.previousStartPoint);
+            const previousValue = this.routeManager.getStartEndPoints().start;
+            const newValue = this.handleRoutePointBlur(inputValue, 'start', previousValue);
             e.target.value = newValue;
         });
 
         endPointInput.addEventListener('blur', (e) => {
             const inputValue = e.target.value.trim();
-            const newValue = this.handleRoutePointBlur(inputValue, 'end', this.previousEndPoint);
+            const previousValue = this.routeManager.getStartEndPoints().end;
+            const newValue = this.handleRoutePointBlur(inputValue, 'end', previousValue);
             e.target.value = newValue;
         });
 
@@ -634,25 +621,13 @@ export class PointMarkerApp {
      * @returns {{type: string, index: number} | null} 検出されたオブジェクト情報
      */
     findObjectAtMouse(mouseX, mouseY) {
-        // スポットを先にチェック（ポイントより大きいため）
-        const spotIndex = this.spotManager.findSpotAt(mouseX, mouseY, 10);
-        if (spotIndex !== -1) {
-            return { type: 'spot', index: spotIndex };
-        }
-
-        // ポイントをチェック
-        const points = this.pointManager.getPoints();
-        for (let i = 0; i < points.length; i++) {
-            const point = points[i];
-            const dx = mouseX - point.x;
-            const dy = mouseY - point.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance <= 8) {
-                return { type: 'point', index: i };
-            }
-        }
-
-        return null;
+        const managers = {
+            pointManager: this.pointManager,
+            spotManager: this.spotManager,
+            routeManager: null // ルート中間点は別途チェック
+        };
+        const result = ObjectDetector.findObjectAt(mouseX, mouseY, managers);
+        return result ? { type: result.type, index: result.index } : null;
     }
 
 
@@ -694,10 +669,8 @@ export class PointMarkerApp {
      * @param {boolean} hasObject - オブジェクト上にマウスがあるか
      */
     updateCursor(hasObject) {
-        if (hasObject !== this.isHoveringPoint) {
-            this.canvas.style.cursor = 'crosshair';
-            this.isHoveringPoint = hasObject;
-        }
+        // カーソルは常にcrosshairで固定
+        this.canvas.style.cursor = 'crosshair';
     }
 
     /**

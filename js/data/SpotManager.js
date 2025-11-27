@@ -1,34 +1,14 @@
-import { CoordinateUtils } from '../utils/Coordinates.js';
 import { Validators } from '../utils/Validators.js';
+import { BaseManager } from '../core/BaseManager.js';
 
 /**
  * スポット管理クラス
  * 名称を持つ地図上の特定の点（スポット）の管理を行う
  */
-export class SpotManager {
+export class SpotManager extends BaseManager {
     constructor() {
+        super();
         this.spots = [];
-        this.callbacks = {};
-    }
-
-    /**
-     * コールバックを設定
-     * @param {string} event - イベント名
-     * @param {Function} callback - コールバック関数
-     */
-    setCallback(event, callback) {
-        this.callbacks[event] = callback;
-    }
-
-    /**
-     * コールバックを実行
-     * @param {string} event - イベント名
-     * @param {*} data - コールバックに渡すデータ
-     */
-    notify(event, data) {
-        if (this.callbacks[event]) {
-            this.callbacks[event](data);
-        }
     }
 
     /**
