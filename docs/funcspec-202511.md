@@ -38,53 +38,75 @@ PointMarker/
 │   ├── UsersGuide-202510.md     # ユーザーガイド（旧版）
 │   └── UsersGuide-202511.md     # ユーザーガイド（最新版）
 └── js/                          # JavaScriptモジュール
-    ├── app.js                   # メインアプリケーション（1155行）
+    ├── app.js                   # メインアプリケーション（1360行）
     ├── core/
-    │   └── Canvas.js            # キャンバス描画管理（314行）
+    │   ├── BaseManager.js       # 基底マネージャークラス（コールバック統合管理）
+    │   └── Canvas.js            # キャンバス描画管理（348行）
     ├── data/
     │   ├── FileHandler.js       # ファイル操作
-    │   ├── PointManager.js      # ポイント管理（160行）
-    │   ├── RouteManager.js      # ルート管理（245行）
-    │   └── SpotManager.js       # スポット管理（233行）
+    │   ├── PointManager.js      # ポイント管理（BaseManager継承、140行）
+    │   ├── RouteManager.js      # ルート管理（BaseManager継承、445行）
+    │   └── SpotManager.js       # スポット管理（BaseManager継承、220行）
+    ├── firebase/                # Firebase連携（オプション機能）
+    │   ├── AuthManager.js       # Firebase認証管理
+    │   ├── FirebaseClient.js    # Firebaseクライアント
+    │   ├── FirebaseSyncManager.js # Firebase同期マネージャー
+    │   ├── FirestoreDataManager.js # Firestore データ管理
+    │   └── firebase.config.js   # Firebase設定（公開設定）
     ├── ui/
+    │   ├── DuplicateDialog.js   # 重複ダイアログ管理
     │   ├── InputManager.js      # 動的入力管理
     │   ├── LayoutManager.js     # レイアウト管理（145行）
     │   ├── UIHelper.js          # UI補助機能
-    │   └── ValidationManager.js # バリデーション統合管理
+    │   ├── ValidationManager.js # バリデーション統合管理
+    │   └── ViewportManager.js   # ビューポート管理（ズーム・パン統合）
     └── utils/
         ├── Coordinates.js       # 座標変換（88行）
-        ├── Validators.js        # バリデーション（170行）
         ├── DragDropHandler.js   # ドラッグ&ドロップ処理
-        └── ResizeHandler.js     # リサイズ処理
+        ├── ObjectDetector.js    # オブジェクト検出ユーティリティ（NEW）
+        ├── ResizeHandler.js     # リサイズ処理
+        └── Validators.js        # バリデーション（170行）
 ```
 
 ### 2.2 設計パターン
 - **モジュール分離**: ES6モジュールによる機能別分離
 - **MVC風アーキテクチャ**: データ・UI・ビジネスロジック分離
 - **コールバック駆動**: 疎結合なコンポーネント間通信
+- **継承による共通化**: BaseManagerによるコールバック機能統合（DRY原則）
 - **責任単一原則**: 各クラスが特定の責任のみを持つ設計
+- **ユーティリティ分離**: オブジェクト検出などの共通ロジックを独立クラス化
 - **レスポンシブデザイン**: CSS変数とFlexboxによる柔軟なレイアウト
 
 ### 2.3 主要クラス構成
 
-#### メインクラス
-- **PointMarkerApp**: アプリケーション統合管理・イベント処理統合・オブジェクト検出・ドラッグ&ドロップ制御
+#### コア層
+- **BaseManager**: 全マネージャークラスの基底クラス（コールバック機能統合管理）
+- **PointMarkerApp**: アプリケーション統合管理・イベント処理統合・Firebase連携・ドラッグ&ドロップ制御
 - **CanvasRenderer**: キャンバス描画管理・レンダリング処理・ズーム/パン機能・devicePixelRatio補正
 
 #### データ管理層
-- **PointManager**: ポイントデータ管理・永続化・検証・重複ID検証
-- **RouteManager**: ルートデータ管理・検証・開始終了ポイント管理・中間点検索/更新/ドラッグ移動
-- **SpotManager**: スポットデータ管理・四角形マーカー描画・名前管理・部分一致検索
+- **PointManager** (extends BaseManager): ポイントデータ管理・永続化・検証・重複ID検証
+- **RouteManager** (extends BaseManager): 複数ルート管理・検証・開始終了ポイント管理・中間点検索/更新/ドラッグ移動
+- **SpotManager** (extends BaseManager): スポットデータ管理・四角形マーカー描画・名前管理・部分一致検索
 - **FileHandler**: ファイル操作・File System Access API統合・JSON処理・座標変換処理
+
+#### Firebase連携層（オプション機能）
+- **FirebaseClient**: Firebase初期化・接続管理
+- **AuthManager**: Google認証・匿名認証管理
+- **FirestoreDataManager**: Firestoreデータベース操作（CRUD）
+- **FirebaseSyncManager**: ローカルデータとFirebaseの同期管理
 
 #### UI管理層
 - **InputManager**: 動的入力フィールド管理・ポップアップ表示・フォーカス制御・表示/非表示切り替え・ズーム/パン連動更新
 - **LayoutManager**: レイアウト・モード状態管理・表示切り替え（オーバーレイモード固定）
+- **ViewportManager**: ビューポート管理・ズーム/パン操作統合
 - **UIHelper**: UI補助機能・メッセージ表示・フォーカス制御
 - **ValidationManager**: バリデーション統合管理・エラー表示・重複チェック・統一スタイル管理
+- **DuplicateDialog**: 重複データ検出時のダイアログ表示管理
 
 #### ユーティリティ層
 - **CoordinateUtils**: 座標系変換処理（5種類の座標系統一管理）・ズーム/パン逆変換
+- **ObjectDetector**: オブジェクト検出ロジック統合（ポイント・スポット・ルート中間点）・距離計算
 - **Validators**: データ検証・フォーマット処理・ID補正・スポット名フォーマット
 - **DragDropHandler**: ドラッグ&ドロップ機能の統合管理（ポイント・スポット・中間点）
 - **ResizeHandler**: ウィンドウリサイズ処理の統合管理・デバウンス最適化
@@ -705,19 +727,66 @@ PointMarker/
 - **エラーハンドリング強化**: 適切なエラー処理とユーザーフィードバック
 - **コメント充実**: 日本語コメントによる理解容易性向上
 
+### 11.7 アーキテクチャのリファクタリング（2025年11月27日更新）
+#### BaseManagerクラスの導入
+- **目的**: 重複コード削減・保守性向上
+- **統合内容**: PointManager、RouteManager、SpotManagerの共通コールバック機能を基底クラスに集約
+- **削減コード**: 約60行（各クラスから20行ずつ）
+- **メリット**:
+  - コールバック管理ロジックの一元化
+  - 新規マネージャークラス追加時の実装簡素化
+  - DRY原則の徹底
+
+#### ObjectDetectorユーティリティの導入
+- **目的**: オブジェクト検出ロジックの統合・再利用性向上
+- **統合内容**: ポイント・スポット・ルート中間点の検出ロジックを統一
+- **提供メソッド**:
+  - `findObjectAt()`: 全オブジェクトタイプの統一検出
+  - `findPointAt()`: ポイント検出
+  - `calculateDistance()`: 2点間距離計算
+- **削減コード**: app.jsから約20行削減
+- **メリット**:
+  - 検出ロジックの再利用
+  - 新オブジェクトタイプ追加時の拡張容易性
+  - テスト容易性の向上
+
+#### 未使用変数・冗長処理の削除
+- **削除変数**:
+  - `isHoveringPoint`: 設定されるだけで未使用
+  - `previousStartPoint` / `previousEndPoint`: RouteManagerから直接取得する方式に変更
+- **簡素化処理**:
+  - `updateCursor()`: カーソル状態管理を削除（常にcrosshair固定）
+  - blur時の前回値取得: RouteManager.getStartEndPoints()から直接取得
+- **効果**: メモリ効率向上・コード明瞭性向上
+
+#### Firebase連携機能の追加（オプション）
+- **FirebaseSyncManager**: ローカルデータとFirebaseの自動同期
+- **リアルタイム更新**: ポイント・スポット・ルート変更時の即時Firebase反映
+- **複数ルート対応**: Firestoreでのルートデータ管理・CRUD操作
+- **認証連携**: Google認証・匿名認証サポート
+
+#### コード統計
+- **新規ファイル**: 2（BaseManager.js, ObjectDetector.js）
+- **変更ファイル**: 5（app.js, PointManager.js, RouteManager.js, SpotManager.js, Validators.js）
+- **削減コード行数**: 約90行
+- **機能への影響**: なし（完全後方互換）
+
 ---
 
-**最終更新**: 2025年11月11日
-**バージョン**: 5.3 (2025年11月版)
+**最終更新**: 2025年11月27日
+**バージョン**: 5.4 (2025年11月版・リファクタリング完了)
 **作成者**: Claude Code Analysis
 **更新内容**:
-- devicePixelRatio対応（Windows拡大率125%, 150%等への完全対応）
-- オーバーレイレイアウト固定（サイドバーモード削除）
-- 画像左上配置 + 余白最小化（2px padding、calc(100vw - 4px)キャンバスサイズ）
-- z-index調整（コントロールパネル10001）
-- 空白ID削除機能（blur時自動削除）
-- JSON空白IDフィルタリング（出力/入力時に除外）
-- 座標系管理強化（5種類の座標系統一管理）
-- マーカーサイズ補正システム（dpr + canvasScale二重補正）
-- コード品質・保守性向上
+- BaseManagerクラス導入（コールバック機能統合）
+- ObjectDetectorユーティリティ導入（オブジェクト検出統合）
+- 未使用変数削除（メモリ効率化）
+- Firebase連携機能追加（オプション）
+- 複数ルート管理機能の完成
+- コード品質・保守性の大幅向上
 - 全体的な機能仕様の最新化と詳細化
+
+**v5.3からの主な変更**:
+- アーキテクチャのリファクタリング（BaseManager、ObjectDetector導入）
+- Firebase連携機能の追加
+- 複数ルート管理の完全実装
+- コードベースの約90行削減（重複コード排除）
