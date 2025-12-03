@@ -229,6 +229,17 @@ header p {
     border-color: #f39c12;
 }
 
+/* 設定ボタン専用スタイル */
+#settingsBtn {
+    background-color: white;
+    color: #7f8c8d;
+    border-color: #7f8c8d;
+}
+
+#settingsBtn:hover:not(:disabled) {
+    background-color: rgba(127, 140, 141, 0.1);
+}
+
 /* リセットボタン専用スタイル */
 #resetViewBtn {
     background-color: white;
