@@ -28,17 +28,21 @@ export class FirebaseClient {
             // Firestore インスタンスの取得
             this.db = firebase.firestore();
 
-            // Firestore設定（オフライン永続化を有効化）
-            // 注: enablePersistence()は将来非推奨となる予定だが、Compat版SDKでは
-            // 新しいFirestoreSettings.cacheがサポートされていないため、現行のAPIを使用
-            this.db.enablePersistence({synchronizeTabs: true})
-                .catch((err) => {
-                    if (err.code === 'failed-precondition') {
-                        console.warn('複数のタブが開いているため、永続化を有効にできません');
-                    } else if (err.code === 'unimplemented') {
-                        console.warn('このブラウザは永続化をサポートしていません');
-                    }
-                });
+            // Firestore設定（オフライン永続化）
+            // 永続化は任意機能のため、失敗してもアプリは動作する
+            try {
+                await this.db.enablePersistence({synchronizeTabs: true});
+                console.log('Firestore永続化が有効化されました');
+            } catch (err) {
+                if (err.code === 'failed-precondition') {
+                    console.warn('Firestore永続化: 複数のタブが開いているため有効化できません（メモリキャッシュで動作）');
+                } else if (err.code === 'unimplemented') {
+                    console.warn('Firestore永続化: このブラウザはサポートしていません（メモリキャッシュで動作）');
+                } else {
+                    // 古いバージョンのデータが残っている場合など
+                    console.warn('Firestore永続化エラー（メモリキャッシュで動作）:', err.message);
+                }
+            }
 
             this.initialized = true;
         } catch (error) {
