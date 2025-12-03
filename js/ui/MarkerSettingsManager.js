@@ -49,6 +49,13 @@ export class MarkerSettingsManager {
             spot: document.getElementById('spotSizeInput')
         };
 
+        this.sliders = {
+            point: document.getElementById('pointSizeSlider'),
+            selectedWaypoint: document.getElementById('selectedWaypointSizeSlider'),
+            unselectedWaypoint: document.getElementById('unselectedWaypointSizeSlider'),
+            spot: document.getElementById('spotSizeSlider')
+        };
+
         // ボタン要素の取得
         this.okBtn = document.getElementById('settingsOkBtn');
         this.cancelBtn = document.getElementById('settingsCancelBtn');
@@ -87,6 +94,12 @@ export class MarkerSettingsManager {
             this.resetToDefaultAndApply();
         });
 
+        // スライダーと数値入力欄の同期
+        this.setupSliderSync('point');
+        this.setupSliderSync('selectedWaypoint');
+        this.setupSliderSync('unselectedWaypoint');
+        this.setupSliderSync('spot');
+
         // オーバーレイクリックで閉じる
         this.overlay.addEventListener('click', (e) => {
             if (e.target === this.overlay) {
@@ -98,6 +111,28 @@ export class MarkerSettingsManager {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.dialog.style.display !== 'none') {
                 this.closeDialog();
+            }
+        });
+    }
+
+    /**
+     * スライダーと数値入力欄の同期設定
+     * @param {string} key - マーカータイプのキー
+     */
+    setupSliderSync(key) {
+        const slider = this.sliders[key];
+        const input = this.inputs[key];
+
+        // スライダー変更時 → 数値入力欄を更新
+        slider.addEventListener('input', () => {
+            input.value = parseFloat(slider.value).toFixed(1);
+        });
+
+        // 数値入力欄変更時 → スライダーを更新
+        input.addEventListener('input', () => {
+            const value = parseFloat(input.value);
+            if (!isNaN(value)) {
+                slider.value = value;
             }
         });
     }
@@ -115,11 +150,18 @@ export class MarkerSettingsManager {
             return;
         }
 
-        // 現在の設定値を入力フィールドに反映
-        this.inputs.point.value = this.currentSizes.point;
-        this.inputs.selectedWaypoint.value = this.currentSizes.selectedWaypoint;
-        this.inputs.unselectedWaypoint.value = this.currentSizes.unselectedWaypoint;
-        this.inputs.spot.value = this.currentSizes.spot;
+        // 現在の設定値を入力フィールドとスライダーに反映（小数点1桁まで表示）
+        this.inputs.point.value = this.currentSizes.point.toFixed(1);
+        this.sliders.point.value = this.currentSizes.point;
+
+        this.inputs.selectedWaypoint.value = this.currentSizes.selectedWaypoint.toFixed(1);
+        this.sliders.selectedWaypoint.value = this.currentSizes.selectedWaypoint;
+
+        this.inputs.unselectedWaypoint.value = this.currentSizes.unselectedWaypoint.toFixed(1);
+        this.sliders.unselectedWaypoint.value = this.currentSizes.unselectedWaypoint;
+
+        this.inputs.spot.value = this.currentSizes.spot.toFixed(1);
+        this.sliders.spot.value = this.currentSizes.spot;
 
         // ダイアログを表示
         this.dialog.style.display = 'flex';
@@ -137,12 +179,12 @@ export class MarkerSettingsManager {
      * 設定を適用
      */
     applySettings() {
-        // 入力値を取得
+        // 入力値を取得（実数値として解析）
         const newSizes = {
-            point: parseInt(this.inputs.point.value, 10),
-            selectedWaypoint: parseInt(this.inputs.selectedWaypoint.value, 10),
-            unselectedWaypoint: parseInt(this.inputs.unselectedWaypoint.value, 10),
-            spot: parseInt(this.inputs.spot.value, 10)
+            point: parseFloat(this.inputs.point.value),
+            selectedWaypoint: parseFloat(this.inputs.selectedWaypoint.value),
+            unselectedWaypoint: parseFloat(this.inputs.unselectedWaypoint.value),
+            spot: parseFloat(this.inputs.spot.value)
         };
 
         // バリデーション
@@ -172,17 +214,17 @@ export class MarkerSettingsManager {
      * サイズのバリデーション
      */
     validateSizes(sizes) {
-        // ポイント: 2-20px
-        if (sizes.point < 2 || sizes.point > 20) return false;
+        // ポイント: 2-12px
+        if (sizes.point < 2 || sizes.point > 12) return false;
 
-        // 選択ルート中間点: 2-20px
-        if (sizes.selectedWaypoint < 2 || sizes.selectedWaypoint > 20) return false;
+        // 選択ルート中間点: 2-12px
+        if (sizes.selectedWaypoint < 2 || sizes.selectedWaypoint > 12) return false;
 
-        // 非選択ルート中間点: 2-20px
-        if (sizes.unselectedWaypoint < 2 || sizes.unselectedWaypoint > 20) return false;
+        // 非選択ルート中間点: 2-12px
+        if (sizes.unselectedWaypoint < 2 || sizes.unselectedWaypoint > 12) return false;
 
-        // スポット: 4-30px
-        if (sizes.spot < 4 || sizes.spot > 30) return false;
+        // スポット: 4-20px
+        if (sizes.spot < 4 || sizes.spot > 20) return false;
 
         return true;
     }
@@ -253,32 +295,19 @@ export class MarkerSettingsManager {
      * 初期値に戻して適用
      */
     resetToDefaultAndApply() {
-        // 確認ダイアログを表示
-        const confirmed = confirm('マーカーサイズを初期値に戻しますか？');
-        if (!confirmed) {
-            return;
-        }
+        // デフォルト値を入力フィールドとスライダーに反映（小数点1桁表示、確認なし）
+        this.inputs.point.value = this.defaultSizes.point.toFixed(1);
+        this.sliders.point.value = this.defaultSizes.point;
 
-        // デフォルト値を入力フィールドに反映
-        this.inputs.point.value = this.defaultSizes.point;
-        this.inputs.selectedWaypoint.value = this.defaultSizes.selectedWaypoint;
-        this.inputs.unselectedWaypoint.value = this.defaultSizes.unselectedWaypoint;
-        this.inputs.spot.value = this.defaultSizes.spot;
+        this.inputs.selectedWaypoint.value = this.defaultSizes.selectedWaypoint.toFixed(1);
+        this.sliders.selectedWaypoint.value = this.defaultSizes.selectedWaypoint;
 
-        // 現在のサイズをデフォルトに更新
-        this.currentSizes = { ...this.defaultSizes };
+        this.inputs.unselectedWaypoint.value = this.defaultSizes.unselectedWaypoint.toFixed(1);
+        this.sliders.unselectedWaypoint.value = this.defaultSizes.unselectedWaypoint;
 
-        // localStorageに保存
-        this.saveSettings();
+        this.inputs.spot.value = this.defaultSizes.spot.toFixed(1);
+        this.sliders.spot.value = this.defaultSizes.spot;
 
-        // コールバックを実行
-        if (this.onSettingsChange) {
-            this.onSettingsChange(this.currentSizes);
-        }
-
-        // ダイアログを閉じる
-        this.closeDialog();
-
-        console.log('マーカーサイズを初期値に戻しました:', this.currentSizes);
+        console.log('入力フィールドを初期値に戻しました（OKで反映されます）');
     }
 }

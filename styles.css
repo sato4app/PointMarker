@@ -1172,6 +1172,8 @@ header p {
 
 .settings-dialog-body {
     padding: 24px;
+    max-height: calc(90vh - 180px);
+    overflow-y: auto;
 }
 
 .settings-dialog-message {
@@ -1277,13 +1279,52 @@ header p {
     background-color: blue;
 }
 
+.settings-slider {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: #e9ecef;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #3498db;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.settings-slider::-webkit-slider-thumb:hover {
+    background: #2980b9;
+}
+
+.settings-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #3498db;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s ease;
+}
+
+.settings-slider::-moz-range-thumb:hover {
+    background: #2980b9;
+}
+
 .settings-input {
     width: 60px;
     padding: 6px 8px;
     border: 2px solid #e9ecef;
     border-radius: 6px;
     font-size: 14px;
-    text-align: center;
+    text-align: right;
     font-family: inherit;
     transition: border-color 0.2s ease;
 }

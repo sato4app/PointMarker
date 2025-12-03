@@ -156,7 +156,7 @@ export class CanvasRenderer {
     }
 
     /**
-     * 複数ルートの中間点を一括描画（未選択ルートは円形で小さく）
+     * 複数ルートの中間点を一括描画（未選択ルートは菱形で小さく）
      * @param {Array} allRoutes - 全ルート配列
      * @param {number} selectedRouteIndex - 選択中のルートインデックス（-1 = 未選択）
      * @param {number} canvasScale - キャンバスのスケール値 (デフォルト: 1.0)
@@ -168,9 +168,9 @@ export class CanvasRenderer {
                 // 選択中のルート: 菱形、通常サイズ（マーカーサイズ設定を使用）
                 this.drawRoutePoints(waypoints, canvasScale, this.markerSizes.selectedWaypoint);
             } else {
-                // 未選択ルート: 円形、小さいサイズ（マーカーサイズ設定を使用）
+                // 未選択ルート: 菱形、小さいサイズ（マーカーサイズ設定を使用）
                 waypoints.forEach(point => {
-                    this.drawPoint(point, '#ff9500', this.markerSizes.unselectedWaypoint, 1, canvasScale);
+                    this.drawDiamond(point.x, point.y, this.markerSizes.unselectedWaypoint, '#ff9500', '#ffffff', 1, canvasScale);
                 });
             }
         });

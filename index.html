@@ -179,7 +179,8 @@
                             <span class="settings-marker-preview point-marker"></span>
                             <span class="settings-label-text">ポイント:</span>
                         </label>
-                        <input type="number" id="pointSizeInput" class="settings-input" min="2" max="20" value="6" step="1">
+                        <input type="range" id="pointSizeSlider" class="settings-slider" min="2" max="12" value="6" step="0.5">
+                        <input type="number" id="pointSizeInput" class="settings-input" min="2" max="12" value="6" step="0.5">
                         <span class="settings-unit">px</span>
                     </div>
 
@@ -189,7 +190,8 @@
                             <span class="settings-marker-preview waypoint-marker selected"></span>
                             <span class="settings-label-text">選択ルート中間点:</span>
                         </label>
-                        <input type="number" id="selectedWaypointSizeInput" class="settings-input" min="2" max="20" value="6" step="1">
+                        <input type="range" id="selectedWaypointSizeSlider" class="settings-slider" min="2" max="12" value="6" step="0.5">
+                        <input type="number" id="selectedWaypointSizeInput" class="settings-input" min="2" max="12" value="6" step="0.5">
                         <span class="settings-unit">px</span>
                     </div>
 
@@ -199,7 +201,8 @@
                             <span class="settings-marker-preview waypoint-marker unselected"></span>
                             <span class="settings-label-text">非選択ルート中間点:</span>
                         </label>
-                        <input type="number" id="unselectedWaypointSizeInput" class="settings-input" min="2" max="20" value="4" step="1">
+                        <input type="range" id="unselectedWaypointSizeSlider" class="settings-slider" min="2" max="12" value="4" step="0.5">
+                        <input type="number" id="unselectedWaypointSizeInput" class="settings-input" min="2" max="12" value="4" step="0.5">
                         <span class="settings-unit">px</span>
                     </div>
 
@@ -209,7 +212,8 @@
                             <span class="settings-marker-preview spot-marker"></span>
                             <span class="settings-label-text">スポット:</span>
                         </label>
-                        <input type="number" id="spotSizeInput" class="settings-input" min="4" max="30" value="12" step="1">
+                        <input type="range" id="spotSizeSlider" class="settings-slider" min="4" max="20" value="12" step="0.5">
+                        <input type="number" id="spotSizeInput" class="settings-input" min="4" max="20" value="12" step="0.5">
                         <span class="settings-unit">px</span>
                     </div>
                 </div>
