@@ -66,8 +66,6 @@ export class MarkerSettingsManager {
             return;
         }
 
-        console.log('MarkerSettingsManager: 初期化完了');
-
         // イベントリスナーの設定
         this.setupEventListeners();
 
@@ -141,10 +139,6 @@ export class MarkerSettingsManager {
      * ダイアログを開く
      */
     openDialog() {
-        console.log('MarkerSettingsManager: openDialog() が呼ばれました');
-        console.log('MarkerSettingsManager: this.dialog =', this.dialog);
-        console.log('MarkerSettingsManager: currentSizes =', this.currentSizes);
-
         if (!this.dialog) {
             console.error('MarkerSettingsManager: ダイアログ要素が存在しません');
             return;
@@ -165,7 +159,6 @@ export class MarkerSettingsManager {
 
         // ダイアログを表示
         this.dialog.style.display = 'flex';
-        console.log('MarkerSettingsManager: ダイアログの display を flex に設定しました');
     }
 
     /**
@@ -206,8 +199,6 @@ export class MarkerSettingsManager {
 
         // ダイアログを閉じる
         this.closeDialog();
-
-        console.log('マーカーサイズ設定を適用しました:', this.currentSizes);
     }
 
     /**
@@ -235,7 +226,6 @@ export class MarkerSettingsManager {
     saveSettings() {
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(this.currentSizes));
-            console.log('マーカーサイズ設定をlocalStorageに保存しました');
         } catch (error) {
             console.error('localStorageへの保存に失敗しました:', error);
         }
@@ -253,7 +243,6 @@ export class MarkerSettingsManager {
                 // バリデーション
                 if (this.validateSizes(parsed)) {
                     this.currentSizes = parsed;
-                    console.log('localStorageからマーカーサイズ設定を読み込みました:', this.currentSizes);
                 } else {
                     console.warn('保存されたマーカーサイズ設定が無効です。デフォルト値を使用します。');
                 }
@@ -287,8 +276,6 @@ export class MarkerSettingsManager {
         if (this.onSettingsChange) {
             this.onSettingsChange(this.currentSizes);
         }
-
-        console.log('マーカーサイズ設定をデフォルトにリセットしました');
     }
 
     /**
@@ -307,7 +294,5 @@ export class MarkerSettingsManager {
 
         this.inputs.spot.value = this.defaultSizes.spot.toFixed(1);
         this.sliders.spot.value = this.defaultSizes.spot;
-
-        console.log('入力フィールドを初期値に戻しました（OKで反映されます）');
     }
 }

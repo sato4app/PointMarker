@@ -828,14 +828,6 @@ export class PointMarkerApp {
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
         const mode = this.layoutManager.getCurrentEditingMode();
 
-        // ルート編集モードの場合、中間点上のクリックは無視（ドラッグ専用）
-        if (mode === 'route') {
-            const routePointInfo = this.routeManager.findRoutePointAt(coords.x, coords.y);
-            if (routePointInfo) {
-                return;
-            }
-        }
-
         const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
 
         // ルート編集モードの場合の処理
