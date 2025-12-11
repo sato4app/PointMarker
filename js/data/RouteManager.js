@@ -156,6 +156,42 @@ export class RouteManager extends BaseManager {
     }
 
     /**
+     * 指定座標に最も近いルート中間点を検索（選択中のルートのみ）
+     * @param {number} x - X座標
+     * @param {number} y - Y座標
+     * @param {number} maxDistance - 最大検索距離（これを超えると検索対象外）
+     * @returns {{index: number, point: Object, distance: number} | null} 最も近い中間点情報
+     */
+    findNearestRoutePoint(x, y, maxDistance = 50) {
+        const selectedRoute = this.getSelectedRoute();
+        if (!selectedRoute || !selectedRoute.routePoints || selectedRoute.routePoints.length === 0) {
+            return null;
+        }
+
+        let nearestIndex = -1;
+        let nearestDistance = Infinity;
+        let nearestPoint = null;
+
+        for (let i = 0; i < selectedRoute.routePoints.length; i++) {
+            const point = selectedRoute.routePoints[i];
+            const dx = point.x - x;
+            const dy = point.y - y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < nearestDistance && distance <= maxDistance) {
+                nearestDistance = distance;
+                nearestIndex = i;
+                nearestPoint = point;
+            }
+        }
+
+        if (nearestIndex !== -1) {
+            return { index: nearestIndex, point: nearestPoint, distance: nearestDistance };
+        }
+        return null;
+    }
+
+    /**
      * ルート中間点の座標を更新（選択中のルートのみ）
      * @param {number} index - 中間点の配列インデックス
      * @param {number} x - 新しいX座標
@@ -175,6 +211,29 @@ export class RouteManager extends BaseManager {
             // 更新状態をチェック
             this.checkAndUpdateModifiedState();
         }
+    }
+
+    /**
+     * ルート中間点を削除（選択中のルートのみ）
+     * @param {number} index - 削除する中間点の配列インデックス
+     * @returns {boolean} 削除成功したかどうか
+     */
+    removeRoutePoint(index) {
+        const selectedRoute = this.getSelectedRoute();
+        if (!selectedRoute || !selectedRoute.routePoints) {
+            return false;
+        }
+
+        if (index >= 0 && index < selectedRoute.routePoints.length) {
+            selectedRoute.routePoints.splice(index, 1);
+            this.notify('onChange');
+            this.notify('onCountChange', selectedRoute.routePoints.length);
+
+            // 更新状態をチェック
+            this.checkAndUpdateModifiedState();
+            return true;
+        }
+        return false;
     }
 
     /**

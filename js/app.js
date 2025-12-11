@@ -406,7 +406,10 @@ export class PointMarkerApp {
 
         // キャンバスクリック
         this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
-        
+
+        // キャンバス右クリック（コンテキストメニュー）
+        this.canvas.addEventListener('contextmenu', (e) => this.handleCanvasContextMenu(e));
+
         // マウス移動（ホバー検出・ドラッグ処理）
         this.canvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
         this.canvas.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
@@ -876,6 +879,45 @@ export class PointMarkerApp {
 
         // 新規オブジェクト作成
         this.handleNewObjectCreation(coords, mode);
+    }
+
+    /**
+     * キャンバス右クリック処理（コンテキストメニュー）
+     * @param {MouseEvent} event - マウスイベント
+     */
+    async handleCanvasContextMenu(event) {
+        event.preventDefault(); // デフォルトのコンテキストメニューを抑制
+
+        if (!this.currentImage) return;
+
+        // ズーム・パン情報を取得
+        const scale = this.canvasRenderer.getScale();
+        const offset = this.canvasRenderer.getOffset();
+
+        // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
+        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
+        const mode = this.layoutManager.getCurrentEditingMode();
+
+        // ルート編集モードの場合のみ処理
+        if (mode === 'route') {
+            // 選択中のルートの最も近い中間点を検索（最大50px以内）
+            const nearestInfo = this.routeManager.findNearestRoutePoint(coords.x, coords.y, 50);
+
+            if (nearestInfo) {
+                // 中間点を削除
+                const deleted = this.routeManager.removeRoutePoint(nearestInfo.index);
+
+                if (deleted) {
+                    // Firebase自動保存
+                    await this.handleSaveRoute();
+
+                    // 削除成功メッセージ
+                    UIHelper.showMessage(`ルート中間点を削除しました（距離: ${Math.round(nearestInfo.distance)}px）`);
+                }
+            } else {
+                UIHelper.showWarning('近くに中間点が見つかりませんでした（50px以内）');
+            }
+        }
     }
 
     /**
