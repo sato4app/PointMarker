@@ -192,35 +192,41 @@ export class RouteManager extends BaseManager {
     }
 
     /**
-     * 指定円内のルート中間点を検索（選択中のルートのみ）
-     * @param {number} centerX - 円の中心X座標
-     * @param {number} centerY - 円の中心Y座標
-     * @param {number} radius - 円の半径
-     * @returns {Array<{index: number, point: Object}>} 円内の中間点配列（インデックス降順）
+     * 指定矩形内のルート中間点を検索（選択中のルートのみ）
+     * @param {number} x1 - 矩形の開始点X座標
+     * @param {number} y1 - 矩形の開始点Y座標
+     * @param {number} x2 - 矩形の終了点X座標
+     * @param {number} y2 - 矩形の終了点Y座標
+     * @returns {Array<{index: number, point: Object}>} 矩形内の中間点配列（インデックス降順）
      */
-    findRoutePointsInCircle(centerX, centerY, radius) {
+    findRoutePointsInRectangle(x1, y1, x2, y2) {
         const selectedRoute = this.getSelectedRoute();
         if (!selectedRoute || !selectedRoute.routePoints || selectedRoute.routePoints.length === 0) {
             return [];
         }
 
-        const pointsInCircle = [];
+        const pointsInRect = [];
+
+        // 矩形の左上・右下座標を計算
+        const left = Math.min(x1, x2);
+        const right = Math.max(x1, x2);
+        const top = Math.min(y1, y2);
+        const bottom = Math.max(y1, y2);
 
         for (let i = 0; i < selectedRoute.routePoints.length; i++) {
             const point = selectedRoute.routePoints[i];
-            const dx = point.x - centerX;
-            const dy = point.y - centerY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
 
-            if (distance <= radius) {
-                pointsInCircle.push({ index: i, point: point });
+            // 矩形内判定
+            if (point.x >= left && point.x <= right &&
+                point.y >= top && point.y <= bottom) {
+                pointsInRect.push({ index: i, point: point });
             }
         }
 
         // インデックスの降順でソート（削除時に配列が崩れないように）
-        pointsInCircle.sort((a, b) => b.index - a.index);
+        pointsInRect.sort((a, b) => b.index - a.index);
 
-        return pointsInCircle;
+        return pointsInRect;
     }
 
     /**

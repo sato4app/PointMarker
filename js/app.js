@@ -682,23 +682,21 @@ export class PointMarkerApp {
         // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
 
-        // 右クリックドラッグ中の処理（削除円の描画）
+        // 右クリックドラッグ中の処理（削除矩形の描画）
         if (this.isRightDragging) {
             this.rightDragCurrentX = coords.x;
             this.rightDragCurrentY = coords.y;
 
-            // キャンバス再描画 + 削除円の描画
+            // キャンバス再描画 + 削除矩形の描画
             this.redrawCanvas();
 
-            // 削除範囲の円を描画（ドラッグ距離を直径とする）
-            const centerX = this.rightDragStartX;
-            const centerY = this.rightDragStartY;
-            const diameter = Math.sqrt(
-                Math.pow(this.rightDragCurrentX - centerX, 2) +
-                Math.pow(this.rightDragCurrentY - centerY, 2)
+            // 削除範囲の長方形を描画（ドラッグ開始点と終了点を角とする）
+            this.canvasRenderer.drawDeletionRectangle(
+                this.rightDragStartX,
+                this.rightDragStartY,
+                this.rightDragCurrentX,
+                this.rightDragCurrentY
             );
-            const radius = diameter / 2; // 直径の半分が半径
-            this.canvasRenderer.drawDeletionCircle(centerX, centerY, radius);
             return;
         }
 
@@ -824,29 +822,25 @@ export class PointMarkerApp {
     async handleCanvasMouseUp(event) {
         // 右クリックドラッグ終了時の処理
         if (this.isRightDragging) {
-            // 削除範囲の計算（ドラッグ距離を直径とする）
-            const centerX = this.rightDragStartX;
-            const centerY = this.rightDragStartY;
-            const diameter = Math.sqrt(
-                Math.pow(this.rightDragCurrentX - centerX, 2) +
-                Math.pow(this.rightDragCurrentY - centerY, 2)
+            // 矩形内の中間点を検索（ドラッグ開始点と終了点を角とする）
+            const pointsInRect = this.routeManager.findRoutePointsInRectangle(
+                this.rightDragStartX,
+                this.rightDragStartY,
+                this.rightDragCurrentX,
+                this.rightDragCurrentY
             );
-            const radius = diameter / 2; // 直径の半分が半径
-
-            // 円内の中間点を検索
-            const pointsInCircle = this.routeManager.findRoutePointsInCircle(centerX, centerY, radius);
 
             // 右クリックドラッグ状態をリセット
             this.isRightDragging = false;
-            this.redrawCanvas(); // 円を消す
+            this.redrawCanvas(); // 矩形を消す
 
             // 中間点が見つかった場合、確認後に削除
-            if (pointsInCircle.length > 0) {
-                const confirmed = confirm(`${pointsInCircle.length}個のルート中間点を削除しますか？`);
+            if (pointsInRect.length > 0) {
+                const confirmed = confirm(`${pointsInRect.length}個のルート中間点を削除しますか？`);
 
                 if (confirmed) {
                     // 削除実行
-                    const indices = pointsInCircle.map(p => p.index);
+                    const indices = pointsInRect.map(p => p.index);
                     const deletedCount = this.routeManager.removeRoutePoints(indices);
 
                     // Firebase自動保存

@@ -349,12 +349,13 @@ export class CanvasRenderer {
     }
 
     /**
-     * 削除範囲指定用の円を描画（薄いピンク色）
-     * @param {number} centerX - 中心X座標
-     * @param {number} centerY - 中心Y座標
-     * @param {number} radius - 半径
+     * 削除範囲指定用の長方形を描画（薄いピンク色）
+     * @param {number} x1 - 開始点X座標
+     * @param {number} y1 - 開始点Y座標
+     * @param {number} x2 - 終了点X座標
+     * @param {number} y2 - 終了点Y座標
      */
-    drawDeletionCircle(centerX, centerY, radius) {
+    drawDeletionRectangle(x1, y1, x2, y2) {
         const ctx = this.ctx;
         const canvasScale = this.scale;
 
@@ -364,18 +365,20 @@ export class CanvasRenderer {
         ctx.translate(this.offsetX, this.offsetY);
         ctx.scale(canvasScale, canvasScale);
 
-        // 薄いピンク色の塗りつぶし円
+        // 左上座標と幅・高さを計算
+        const left = Math.min(x1, x2);
+        const top = Math.min(y1, y2);
+        const width = Math.abs(x2 - x1);
+        const height = Math.abs(y2 - y1);
+
+        // 薄いピンク色の塗りつぶし長方形
         ctx.fillStyle = 'rgba(255, 182, 193, 0.3)'; // lightpink with 30% opacity
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillRect(left, top, width, height);
 
         // ピンク色の縁
         ctx.strokeStyle = 'rgba(255, 105, 180, 0.8)'; // hotpink with 80% opacity
         ctx.lineWidth = 2 / this.dpr / canvasScale;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.strokeRect(left, top, width, height);
 
         ctx.restore();
     }
