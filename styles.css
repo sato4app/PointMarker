@@ -739,7 +739,6 @@ header p {
 }
 
 .spot-name-input {
-    min-width: 80px;
     max-width: 300px;
     width: auto;
     min-height: 24px;
