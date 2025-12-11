@@ -739,18 +739,25 @@ header p {
 }
 
 .spot-name-input {
-    width: 80px;
-    height: 24px;
+    min-width: 80px;
+    max-width: 300px;
+    width: auto;
+    min-height: 24px;
+    height: auto;
     padding: 2px 6px;
     border: none;
     border-radius: var(--border-radius-sm);
     background: transparent;
     font-size: 11px;
     font-weight: normal;
+    font-family: inherit;
     text-align: left;
     outline: none;
+    resize: none;
     overflow: hidden;
-    white-space: nowrap;
+    line-height: 1.4;
+    word-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .spot-name-input::placeholder {
