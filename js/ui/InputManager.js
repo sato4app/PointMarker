@@ -402,20 +402,58 @@ export class InputManager {
         container.style.position = 'absolute';
         container.style.zIndex = '1100';
 
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.maxLength = 10;  // 10文字程度に設定
+        const input = document.createElement('textarea');
+        input.maxLength = 250;  // 250文字まで拡張
         input.className = 'spot-name-input';
         input.placeholder = 'スポット名';
         input.value = spot.name || '';
-        
+        input.rows = 1;  // 初期は1行
+
+        // 入力幅と高さを自動調整する関数
+        const adjustInputSize = () => {
+            // 入力値が空の場合はプレースホルダーの幅を使用、それ以外は入力値の幅を使用
+            const displayText = input.value || input.placeholder;
+
+            // テキストの幅を計測するための隠し要素を作成
+            const span = document.createElement('span');
+            span.style.visibility = 'hidden';
+            span.style.position = 'absolute';
+            span.style.whiteSpace = 'nowrap';
+            span.style.fontSize = window.getComputedStyle(input).fontSize;
+            span.style.fontFamily = window.getComputedStyle(input).fontFamily;
+            span.textContent = displayText;
+            document.body.appendChild(span);
+
+            // テキスト幅を計測（パディング分を追加）
+            const textWidth = span.offsetWidth + 20;
+            document.body.removeChild(span);
+
+            // 幅の調整（入力値がある場合は最小限に、ない場合は80px）
+            if (input.value) {
+                // 入力値がある場合：テキスト幅に合わせる（最大300px）
+                input.style.width = Math.min(textWidth, 300) + 'px';
+            } else {
+                // 入力値がない場合（プレースホルダー表示）：80pxを初期値として使用
+                input.style.width = Math.max(80, Math.min(textWidth, 300)) + 'px';
+            }
+
+            // 高さの自動調整（scrollHeightを使用）
+            input.style.height = 'auto';
+            input.style.height = input.scrollHeight + 'px';
+        };
+
+        // 初期サイズを設定
+        adjustInputSize();
+
         container.appendChild(input);
-        
+
         this.positionSpotInputBox(container, spot);
-        
+
         // input時は変換処理を一切行わない
         input.addEventListener('input', (e) => {
             const value = e.target.value;
+            // 入力サイズを自動調整
+            adjustInputSize();
             // 入力中は変換処理なし、そのまま保存（表示更新なし）
             this.notify('onSpotNameChange', { index, name: value, skipFormatting: true, skipDisplay: true });
         });
