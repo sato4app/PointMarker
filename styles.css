@@ -754,8 +754,7 @@ header p {
     text-align: left;
     outline: none;
     resize: none;
-    overflow-y: visible;
-    overflow-x: hidden;
+    overflow: hidden;
     line-height: 1.4;
     word-wrap: break-word;
     white-space: pre-wrap;
