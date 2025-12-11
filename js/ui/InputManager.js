@@ -446,9 +446,6 @@ export class InputManager {
             input.style.height = (scrollHeight + 4) + 'px';
         };
 
-        // 初期サイズを設定
-        adjustInputSize();
-
         container.appendChild(input);
 
         this.positionSpotInputBox(container, spot);
@@ -469,23 +466,26 @@ export class InputManager {
             this.notify('onSpotNameChange', { index, name: value, skipFormatting: false });
             container.classList.remove('is-editing');
         });
-        
+
         // キーボードイベント（Escapeキーでスポット削除）
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.notify('onSpotRemove', { index, spot });
             }
         });
-        
+
         // フォーカス時に編集中スタイル
         input.addEventListener('focus', () => {
             container.classList.add('is-editing');
         });
-        
+
         // スポットインデックスを属性として設定
         input.setAttribute('data-spot-index', index);
-        
+
         document.body.appendChild(container);
+
+        // 初期サイズを設定（DOM追加後に実行）
+        setTimeout(() => adjustInputSize(), 0);
         this.spotInputElements.push(input);
         // 入力からコンテナへ参照
         input._container = container;
