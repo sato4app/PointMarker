@@ -810,7 +810,12 @@ export class PointMarkerApp {
             await this.handleSaveRoute();
         };
 
-        this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd, onRoutePointDragEnd);
+        const wasDragging = this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd, onRoutePointDragEnd);
+
+        // ドラッグ操作だった場合、clickイベントの発火を防止
+        if (wasDragging && this.dragDropHandler.hasDragged()) {
+            event.preventDefault();
+        }
     }
 
     /**
@@ -818,7 +823,8 @@ export class PointMarkerApp {
      * @param {MouseEvent} event - マウスイベント
      */
     handleCanvasClick(event) {
-        if (!this.currentImage || this.dragDropHandler.isDraggingObject()) return;
+        // ドラッグ中、または実際にドラッグ移動が行われた場合はクリック処理をスキップ
+        if (!this.currentImage || this.dragDropHandler.isDraggingObject() || this.dragDropHandler.hasDragged()) return;
 
         // ズーム・パン情報を取得
         const scale = this.canvasRenderer.getScale();
