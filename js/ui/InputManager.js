@@ -439,7 +439,9 @@ export class InputManager {
 
             // 高さの自動調整（scrollHeightを使用）
             input.style.height = 'auto';
-            input.style.height = input.scrollHeight + 'px';
+            // 少し余裕を持たせて設定（ボーダーやパディングを考慮）
+            const newHeight = input.scrollHeight + 2;
+            input.style.height = newHeight + 'px';
         };
 
         // 初期サイズを設定

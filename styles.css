@@ -744,6 +744,7 @@ header p {
     width: auto;
     min-height: 24px;
     height: auto;
+    max-height: none;
     padding: 2px 6px;
     border: none;
     border-radius: var(--border-radius-sm);
@@ -754,10 +755,12 @@ header p {
     text-align: left;
     outline: none;
     resize: none;
-    overflow: hidden;
+    overflow-y: visible;
+    overflow-x: hidden;
     line-height: 1.4;
     word-wrap: break-word;
     white-space: pre-wrap;
+    box-sizing: border-box;
 }
 
 .spot-name-input::placeholder {
