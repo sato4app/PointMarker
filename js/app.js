@@ -71,6 +71,13 @@ export class PointMarkerApp {
         // ドラッグ操作完了フラグ（clickイベント抑制用）
         this.justFinishedDragging = false;
 
+        // 右クリックドラッグ状態（中間点削除用）
+        this.isRightDragging = false;
+        this.rightDragStartX = 0;
+        this.rightDragStartY = 0;
+        this.rightDragCurrentX = 0;
+        this.rightDragCurrentY = 0;
+
         this.initializeCallbacks();
         this.initializeEventListeners();
         this.enableBasicControls();
@@ -675,6 +682,25 @@ export class PointMarkerApp {
         // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
 
+        // 右クリックドラッグ中の処理（削除円の描画）
+        if (this.isRightDragging) {
+            this.rightDragCurrentX = coords.x;
+            this.rightDragCurrentY = coords.y;
+
+            // キャンバス再描画 + 削除円の描画
+            this.redrawCanvas();
+
+            // 削除範囲の円を描画
+            const centerX = this.rightDragStartX;
+            const centerY = this.rightDragStartY;
+            const radius = Math.sqrt(
+                Math.pow(this.rightDragCurrentX - centerX, 2) +
+                Math.pow(this.rightDragCurrentY - centerY, 2)
+            );
+            this.canvasRenderer.drawDeletionCircle(centerX, centerY, radius);
+            return;
+        }
+
         // ドラッグ中の処理
         if (this.dragDropHandler.updateDrag(coords.x, coords.y, this.pointManager, this.spotManager, this.routeManager)) {
             this.redrawCanvas();
@@ -716,6 +742,17 @@ export class PointMarkerApp {
         // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
         const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
         const mode = this.layoutManager.getCurrentEditingMode();
+
+        // 右クリック（button === 2）の場合、削除範囲ドラッグ開始
+        if (event.button === 2 && mode === 'route') {
+            this.isRightDragging = true;
+            this.rightDragStartX = coords.x;
+            this.rightDragStartY = coords.y;
+            this.rightDragCurrentX = coords.x;
+            this.rightDragCurrentY = coords.y;
+            event.preventDefault();
+            return;
+        }
 
         // ルート編集モードの場合、中間点ドラッグを優先チェック
         if (mode === 'route') {
@@ -783,7 +820,49 @@ export class PointMarkerApp {
      * キャンバスマウスアップ処理
      * @param {MouseEvent} event - マウスイベント
      */
-    handleCanvasMouseUp(event) {
+    async handleCanvasMouseUp(event) {
+        // 右クリックドラッグ終了時の処理
+        if (this.isRightDragging) {
+            // 削除範囲の計算
+            const centerX = this.rightDragStartX;
+            const centerY = this.rightDragStartY;
+            const radius = Math.sqrt(
+                Math.pow(this.rightDragCurrentX - centerX, 2) +
+                Math.pow(this.rightDragCurrentY - centerY, 2)
+            );
+
+            // 円内の中間点を検索
+            const pointsInCircle = this.routeManager.findRoutePointsInCircle(centerX, centerY, radius);
+
+            // 右クリックドラッグ状態をリセット
+            this.isRightDragging = false;
+            this.redrawCanvas(); // 円を消す
+
+            // 中間点が見つかった場合、確認後に削除
+            if (pointsInCircle.length > 0) {
+                const confirmed = confirm(`${pointsInCircle.length}個のルート中間点を削除しますか？`);
+
+                if (confirmed) {
+                    // 削除実行
+                    const indices = pointsInCircle.map(p => p.index);
+                    const deletedCount = this.routeManager.removeRoutePoints(indices);
+
+                    // Firebase自動保存
+                    await this.handleSaveRoute();
+
+                    UIHelper.showMessage(`${deletedCount}個のルート中間点を削除しました`);
+                } else {
+                    // キャンセル時はメッセージのみ表示
+                    UIHelper.showMessage('削除をキャンセルしました');
+                }
+            } else {
+                UIHelper.showWarning('削除対象の中間点が見つかりませんでした');
+            }
+
+            event.preventDefault();
+            return;
+        }
+
         // ポイントドラッグ終了時のコールバック
         const onPointDragEnd = (pointIndex) => {
             // 【リアルタイムFirebase更新】ポイント移動完了時にFirebase更新
@@ -882,42 +961,12 @@ export class PointMarkerApp {
     }
 
     /**
-     * キャンバス右クリック処理（コンテキストメニュー）
+     * キャンバス右クリック処理（コンテキストメニュー抑制）
      * @param {MouseEvent} event - マウスイベント
      */
-    async handleCanvasContextMenu(event) {
-        event.preventDefault(); // デフォルトのコンテキストメニューを抑制
-
-        if (!this.currentImage) return;
-
-        // ズーム・パン情報を取得
-        const scale = this.canvasRenderer.getScale();
-        const offset = this.canvasRenderer.getOffset();
-
-        // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
-        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
-        const mode = this.layoutManager.getCurrentEditingMode();
-
-        // ルート編集モードの場合のみ処理
-        if (mode === 'route') {
-            // 選択中のルートの最も近い中間点を検索（最大50px以内）
-            const nearestInfo = this.routeManager.findNearestRoutePoint(coords.x, coords.y, 50);
-
-            if (nearestInfo) {
-                // 中間点を削除
-                const deleted = this.routeManager.removeRoutePoint(nearestInfo.index);
-
-                if (deleted) {
-                    // Firebase自動保存
-                    await this.handleSaveRoute();
-
-                    // 削除成功メッセージ
-                    UIHelper.showMessage(`ルート中間点を削除しました（距離: ${Math.round(nearestInfo.distance)}px）`);
-                }
-            } else {
-                UIHelper.showWarning('近くに中間点が見つかりませんでした（50px以内）');
-            }
-        }
+    handleCanvasContextMenu(event) {
+        // デフォルトのコンテキストメニューを抑制
+        event.preventDefault();
     }
 
     /**

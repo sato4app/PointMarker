@@ -349,6 +349,38 @@ export class CanvasRenderer {
     }
 
     /**
+     * 削除範囲指定用の円を描画（薄いピンク色）
+     * @param {number} centerX - 中心X座標
+     * @param {number} centerY - 中心Y座標
+     * @param {number} radius - 半径
+     */
+    drawDeletionCircle(centerX, centerY, radius) {
+        const ctx = this.ctx;
+        const canvasScale = this.scale;
+
+        ctx.save();
+
+        // 変換を適用
+        ctx.translate(this.offsetX, this.offsetY);
+        ctx.scale(canvasScale, canvasScale);
+
+        // 薄いピンク色の塗りつぶし円
+        ctx.fillStyle = 'rgba(255, 182, 193, 0.3)'; // lightpink with 30% opacity
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ピンク色の縁
+        ctx.strokeStyle = 'rgba(255, 105, 180, 0.8)'; // hotpink with 80% opacity
+        ctx.lineWidth = 2 / this.dpr / canvasScale;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    /**
      * 現在のスケールを取得
      */
     getScale() {

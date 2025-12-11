@@ -192,6 +192,38 @@ export class RouteManager extends BaseManager {
     }
 
     /**
+     * 指定円内のルート中間点を検索（選択中のルートのみ）
+     * @param {number} centerX - 円の中心X座標
+     * @param {number} centerY - 円の中心Y座標
+     * @param {number} radius - 円の半径
+     * @returns {Array<{index: number, point: Object}>} 円内の中間点配列（インデックス降順）
+     */
+    findRoutePointsInCircle(centerX, centerY, radius) {
+        const selectedRoute = this.getSelectedRoute();
+        if (!selectedRoute || !selectedRoute.routePoints || selectedRoute.routePoints.length === 0) {
+            return [];
+        }
+
+        const pointsInCircle = [];
+
+        for (let i = 0; i < selectedRoute.routePoints.length; i++) {
+            const point = selectedRoute.routePoints[i];
+            const dx = point.x - centerX;
+            const dy = point.y - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= radius) {
+                pointsInCircle.push({ index: i, point: point });
+            }
+        }
+
+        // インデックスの降順でソート（削除時に配列が崩れないように）
+        pointsInCircle.sort((a, b) => b.index - a.index);
+
+        return pointsInCircle;
+    }
+
+    /**
      * ルート中間点の座標を更新（選択中のルートのみ）
      * @param {number} index - 中間点の配列インデックス
      * @param {number} x - 新しいX座標
@@ -234,6 +266,38 @@ export class RouteManager extends BaseManager {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 複数のルート中間点を一括削除（選択中のルートのみ）
+     * @param {Array<number>} indices - 削除する中間点のインデックス配列（降順推奨）
+     * @returns {number} 削除した中間点の数
+     */
+    removeRoutePoints(indices) {
+        const selectedRoute = this.getSelectedRoute();
+        if (!selectedRoute || !selectedRoute.routePoints) {
+            return 0;
+        }
+
+        let deletedCount = 0;
+
+        // インデックスを降順でソート（配列崩れ防止）
+        const sortedIndices = [...indices].sort((a, b) => b - a);
+
+        for (const index of sortedIndices) {
+            if (index >= 0 && index < selectedRoute.routePoints.length) {
+                selectedRoute.routePoints.splice(index, 1);
+                deletedCount++;
+            }
+        }
+
+        if (deletedCount > 0) {
+            this.notify('onChange');
+            this.notify('onCountChange', selectedRoute.routePoints.length);
+            this.checkAndUpdateModifiedState();
+        }
+
+        return deletedCount;
     }
 
     /**
