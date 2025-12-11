@@ -424,8 +424,8 @@ export class InputManager {
             span.textContent = displayText;
             document.body.appendChild(span);
 
-            // テキスト幅を計測（パディング分を追加）
-            const textWidth = span.offsetWidth + 20;
+            // テキスト幅を計測（左右パディング12px = 6px × 2 のみ追加）
+            const textWidth = span.offsetWidth + 12;
             document.body.removeChild(span);
 
             // 幅の調整（入力値がある場合は最小限に、ない場合は80px）
@@ -442,8 +442,8 @@ export class InputManager {
             input.style.height = '1px';
             // scrollHeightを取得（実際に必要な高さ）
             const scrollHeight = input.scrollHeight;
-            // 高さを設定（余裕を持たせる）
-            input.style.height = (scrollHeight + 4) + 'px';
+            // 高さを設定（余白なし）
+            input.style.height = scrollHeight + 'px';
         };
 
         container.appendChild(input);
