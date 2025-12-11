@@ -690,13 +690,14 @@ export class PointMarkerApp {
             // キャンバス再描画 + 削除円の描画
             this.redrawCanvas();
 
-            // 削除範囲の円を描画
+            // 削除範囲の円を描画（ドラッグ距離を直径とする）
             const centerX = this.rightDragStartX;
             const centerY = this.rightDragStartY;
-            const radius = Math.sqrt(
+            const diameter = Math.sqrt(
                 Math.pow(this.rightDragCurrentX - centerX, 2) +
                 Math.pow(this.rightDragCurrentY - centerY, 2)
             );
+            const radius = diameter / 2; // 直径の半分が半径
             this.canvasRenderer.drawDeletionCircle(centerX, centerY, radius);
             return;
         }
@@ -823,13 +824,14 @@ export class PointMarkerApp {
     async handleCanvasMouseUp(event) {
         // 右クリックドラッグ終了時の処理
         if (this.isRightDragging) {
-            // 削除範囲の計算
+            // 削除範囲の計算（ドラッグ距離を直径とする）
             const centerX = this.rightDragStartX;
             const centerY = this.rightDragStartY;
-            const radius = Math.sqrt(
+            const diameter = Math.sqrt(
                 Math.pow(this.rightDragCurrentX - centerX, 2) +
                 Math.pow(this.rightDragCurrentY - centerY, 2)
             );
+            const radius = diameter / 2; // 直径の半分が半径
 
             // 円内の中間点を検索
             const pointsInCircle = this.routeManager.findRoutePointsInCircle(centerX, centerY, radius);
