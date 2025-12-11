@@ -90,14 +90,15 @@ export class DragDropHandler {
      * @param {Function} onPointDragEndCallback - ポイントドラッグ終了時のコールバック（オプション）
      * @param {Function} onSpotDragEndCallback - スポットドラッグ終了時のコールバック（オプション）
      * @param {Function} onRoutePointDragEndCallback - ルート中間点ドラッグ終了時のコールバック（オプション）
-     * @returns {boolean} ドラッグが終了されたかどうか
+     * @returns {{wasDragging: boolean, hasMoved: boolean}} ドラッグ情報
      */
     endDrag(inputManager, pointManager, onPointDragEndCallback, onSpotDragEndCallback, onRoutePointDragEndCallback) {
-        if (!this.isDragging) return false;
+        if (!this.isDragging) return { wasDragging: false, hasMoved: false };
 
         const wasDragging = true;
         const draggedIndex = this.draggedObjectIndex;
         const draggedType = this.draggedObjectType;
+        const hasMoved = this.hasMoved; // reset()前に保存
 
         // ポイント移動後に入力ボックスを再描画
         if (this.draggedObjectType === 'point') {
@@ -122,7 +123,7 @@ export class DragDropHandler {
         }
 
         this.reset();
-        return wasDragging;
+        return { wasDragging, hasMoved };
     }
 
     /**

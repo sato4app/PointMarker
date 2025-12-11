@@ -810,10 +810,10 @@ export class PointMarkerApp {
             await this.handleSaveRoute();
         };
 
-        const wasDragging = this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd, onRoutePointDragEnd);
+        const dragInfo = this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd, onRoutePointDragEnd);
 
         // ドラッグ操作だった場合、clickイベントの発火を防止
-        if (wasDragging && this.dragDropHandler.hasDragged()) {
+        if (dragInfo.wasDragging && dragInfo.hasMoved) {
             event.preventDefault();
         }
     }
