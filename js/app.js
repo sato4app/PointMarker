@@ -68,6 +68,9 @@ export class PointMarkerApp {
         // スポットドラッグ開始時の座標保存（Firebase更新用）
         this.spotDragStartCoords = null;
 
+        // ドラッグ操作完了フラグ（clickイベント抑制用）
+        this.justFinishedDragging = false;
+
         this.initializeCallbacks();
         this.initializeEventListeners();
         this.enableBasicControls();
@@ -814,6 +817,7 @@ export class PointMarkerApp {
 
         // ドラッグ操作だった場合、clickイベントの発火を防止
         if (dragInfo.wasDragging && dragInfo.hasMoved) {
+            this.justFinishedDragging = true;
             event.preventDefault();
         }
     }
@@ -823,8 +827,14 @@ export class PointMarkerApp {
      * @param {MouseEvent} event - マウスイベント
      */
     handleCanvasClick(event) {
-        // ドラッグ中、または実際にドラッグ移動が行われた場合はクリック処理をスキップ
-        if (!this.currentImage || this.dragDropHandler.isDraggingObject() || this.dragDropHandler.hasDragged()) return;
+        // ドラッグ直後の場合はクリック処理をスキップ
+        if (this.justFinishedDragging) {
+            this.justFinishedDragging = false;
+            return;
+        }
+
+        // ドラッグ中の場合はクリック処理をスキップ
+        if (!this.currentImage || this.dragDropHandler.isDraggingObject()) return;
 
         // ズーム・パン情報を取得
         const scale = this.canvasRenderer.getScale();
