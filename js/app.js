@@ -997,10 +997,10 @@ export class PointMarkerApp {
                     await this.handleSaveRoute();
 
                     // 削除成功メッセージ
-                    UIHelper.showMessage(`ルート中間点を削除しました（距離: ${Math.round(nearestInfo.distance)}px）`);
+                    UIHelper.showMessage('ルート中間点を削除しました');
                 }
             } else {
-                UIHelper.showWarning('近くに中間点が見つかりませんでした（50px以内）');
+                UIHelper.showWarning('近くに中間点が見つかりませんでした');
             }
         }
     }
