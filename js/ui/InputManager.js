@@ -312,18 +312,18 @@ export class InputManager {
     }
 
     /**
-     * 入力ボックスの最適な表示位置を計算・設定
-     * @param {HTMLInputElement} input - 入力要素
-     * @param {Object} point - ポイントオブジェクト
+     * 入力ボックスの最適な表示位置を計算・設定（ポイント・スポット共通）
+     * @param {HTMLElement} container - 入力ボックスのコンテナ
+     * @param {Object} object - オブジェクト {x, y} （ポイントまたはスポット）
      */
-    positionInputBox(container, point) {
+    positionInputBox(container, object) {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = rect.width / this.canvas.width;
         const scaleY = rect.height / this.canvas.height;
 
         // ズーム・パン変換を適用
-        const transformedX = point.x * this.scale + this.offsetX;
-        const transformedY = point.y * this.scale + this.offsetY;
+        const transformedX = object.x * this.scale + this.offsetX;
+        const transformedY = object.y * this.scale + this.offsetY;
 
         const inputX = this.findOptimalInputPosition(transformedX, transformedY, scaleX, rect.left);
         const inputY = transformedY * scaleY + rect.top - 15;
@@ -448,7 +448,7 @@ export class InputManager {
 
         container.appendChild(input);
 
-        this.positionSpotInputBox(container, spot);
+        this.positionInputBox(container, spot);
 
         // input時は変換処理を一切行わない
         input.addEventListener('input', (e) => {
@@ -497,27 +497,6 @@ export class InputManager {
                 input.setSelectionRange(input.value.length, input.value.length);
             }, 0);
         }
-    }
-
-    /**
-     * スポット入力ボックスの最適な表示位置を計算・設定
-     * @param {HTMLElement} container - コンテナ要素
-     * @param {Object} spot - スポットオブジェクト
-     */
-    positionSpotInputBox(container, spot) {
-        const rect = this.canvas.getBoundingClientRect();
-        const scaleX = rect.width / this.canvas.width;
-        const scaleY = rect.height / this.canvas.height;
-
-        // ズーム・パン変換を適用
-        const transformedX = spot.x * this.scale + this.offsetX;
-        const transformedY = spot.y * this.scale + this.offsetY;
-
-        const inputX = this.findOptimalInputPosition(transformedX, transformedY, scaleX, rect.left);
-        const inputY = transformedY * scaleY + rect.top - 15;
-
-        container.style.left = inputX + 'px';
-        container.style.top = inputY + 'px';
     }
 
     /**
@@ -712,7 +691,7 @@ export class InputManager {
                 const spot = spots[spotIndex];
 
                 if (spot) {
-                    this.positionSpotInputBox(container, spot);
+                    this.positionInputBox(container, spot);
                 }
             });
         }

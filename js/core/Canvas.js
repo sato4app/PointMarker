@@ -50,6 +50,16 @@ export class CanvasRenderer {
     }
 
     /**
+     * devicePixelRatioとズームスケールによる補正を適用
+     * @param {number} value - 補正する値
+     * @param {number} canvasScale - キャンバスのスケール値
+     * @returns {number} 補正後の値
+     */
+    applyDevicePixelRatioCorrection(value, canvasScale = 1.0) {
+        return value / this.dpr / canvasScale;
+    }
+
+    /**
      * キャンバスをクリアして画像を描画
      */
     drawImage() {
@@ -79,8 +89,8 @@ export class CanvasRenderer {
     drawPoint(point, color = '#ff0000', radius = 6, strokeWidth = 1.5, canvasScale = 1.0) {
         // devicePixelRatio で補正（ディスプレイ設定によらず一貫したサイズ）
         // + canvasScale の逆数で補正（ズーム時もマーカーサイズ固定）
-        const adjustedRadius = radius / this.dpr / canvasScale;
-        const adjustedStrokeWidth = strokeWidth / this.dpr / canvasScale;
+        const adjustedRadius = this.applyDevicePixelRatioCorrection(radius, canvasScale);
+        const adjustedStrokeWidth = this.applyDevicePixelRatioCorrection(strokeWidth, canvasScale);
 
         this.ctx.fillStyle = color;
         this.ctx.strokeStyle = '#ffffff';
@@ -125,8 +135,8 @@ export class CanvasRenderer {
     drawDiamond(cx, cy, radius, fillColor = '#ff0000', strokeColor = '#ffffff', strokeWidth = 1, canvasScale = 1.0) {
         // devicePixelRatio で補正（ディスプレイ設定によらず一貫したサイズ）
         // + canvasScale の逆数で補正（ズーム時もマーカーサイズ固定）
-        const adjustedRadius = radius / this.dpr / canvasScale;
-        const adjustedStrokeWidth = strokeWidth / this.dpr / canvasScale;
+        const adjustedRadius = this.applyDevicePixelRatioCorrection(radius, canvasScale);
+        const adjustedStrokeWidth = this.applyDevicePixelRatioCorrection(strokeWidth, canvasScale);
 
         this.ctx.fillStyle = fillColor;
         this.ctx.strokeStyle = strokeColor;
@@ -190,8 +200,8 @@ export class CanvasRenderer {
     drawSquare(cx, cy, size, fillColor = '#ff9500', strokeColor = '#ffffff', strokeWidth = 1, canvasScale = 1.0) {
         // devicePixelRatio で補正（ディスプレイ設定によらず一貫したサイズ）
         // + canvasScale の逆数で補正（ズーム時もマーカーサイズ固定）
-        const adjustedSize = size / this.dpr / canvasScale;
-        const adjustedStrokeWidth = strokeWidth / this.dpr / canvasScale;
+        const adjustedSize = this.applyDevicePixelRatioCorrection(size, canvasScale);
+        const adjustedStrokeWidth = this.applyDevicePixelRatioCorrection(strokeWidth, canvasScale);
         const halfSize = adjustedSize / 2;
 
         this.ctx.fillStyle = fillColor;
