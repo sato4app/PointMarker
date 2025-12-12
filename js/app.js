@@ -1289,6 +1289,13 @@ export class PointMarkerApp {
         // 開始・終了ポイント入力フィールドを編集可能にする
         this.setRouteInputsEditable(true);
 
+        // ポイントID表示チェックボックスを自動的にONにする
+        const pointIdCheckbox = document.getElementById('showPointIdsCheckbox');
+        if (pointIdCheckbox && !pointIdCheckbox.checked) {
+            pointIdCheckbox.checked = true;
+            this.handlePointIdVisibilityChange(true);
+        }
+
         UIHelper.showMessage('新しいルートを追加しました。開始ポイントを画像上で選択してください');
     }
 
