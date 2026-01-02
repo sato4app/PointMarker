@@ -110,9 +110,12 @@ header p {
 /* オーバーレイモード用の地図コンテナ */
 .main-content[data-layout="overlay"] .map-container {
     width: 100vw;
-    justify-content: flex-start;  /* 左寄せ */
-    align-items: flex-start;      /* 上寄せ */
-    padding: 10px;                /* 余白を最小限に */
+    justify-content: flex-start;
+    /* 左寄せ */
+    align-items: flex-start;
+    /* 上寄せ */
+    padding: 10px;
+    /* 余白を最小限に */
 }
 
 .map-canvas {
@@ -126,8 +129,10 @@ header p {
 
 /* オーバーレイモード用のキャンバス */
 .main-content[data-layout="overlay"] .map-canvas {
-    max-width: calc(100vw - 20px);  /* 余白を最小限に（2px padding × 2） */
-    max-height: calc(100vh - 20px);  /* 余白を最小限に（2px padding × 2） */
+    max-width: calc(100vw - 20px);
+    /* 余白を最小限に（2px padding × 2） */
+    max-height: calc(100vh - 20px);
+    /* 余白を最小限に（2px padding × 2） */
 }
 
 .map-canvas:hover {
@@ -158,7 +163,8 @@ header p {
     right: 10px;
     height: auto;
     max-height: calc(100vh - 40px);
-    z-index: 10001;  /* ポイントID・スポット名ポップアップより前面に表示 */
+    z-index: 10001;
+    /* ポイントID・スポット名ポップアップより前面に表示 */
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow-lg);
 }
@@ -386,7 +392,8 @@ header p {
 
 /* スポット編集ボタンの色分け */
 .btn-clear-spot {
-    background: var(--danger-color);  /* 赤色 */
+    background: var(--danger-color);
+    /* 赤色 */
     color: white;
 }
 
@@ -395,7 +402,8 @@ header p {
 }
 
 .btn-export-spot {
-    background: var(--success-color);  /* 緑色 */
+    background: var(--success-color);
+    /* 緑色 */
     color: white;
 }
 
@@ -404,7 +412,8 @@ header p {
 }
 
 .btn-load-spot {
-    background: var(--primary-color);  /* 青色 */
+    background: var(--primary-color);
+    /* 青色 */
     color: white;
 }
 
@@ -454,7 +463,8 @@ header p {
    ===================================== */
 .point-editor,
 .route-editor,
-.spot-editor {
+.spot-editor,
+.area-editor {
     padding: 15px;
     background: var(--light-gray);
     border: 1px solid var(--border-color);
@@ -466,7 +476,8 @@ header p {
 
 .point-editor h3,
 .route-editor h3,
-.spot-editor h3 {
+.spot-editor h3,
+.area-editor h3 {
     margin: 0;
     color: var(--secondary-color);
     font-size: 1.1em;
@@ -616,10 +627,87 @@ header p {
 }
 
 /* =====================================
+   Area Controls
+   ===================================== */
+.area-selector {
+    margin-bottom: 10px;
+}
+
+.area-selector select {
+    width: 100%;
+    padding: 4px;
+    font-size: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: white;
+}
+
+.area-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.area-action-btn {
+    flex: 1;
+    min-width: 48px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: white;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.area-action-btn:hover:not(:disabled) {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.area-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.area-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.area-points-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+}
+
+.vertex-count {
+    font-size: 0.9em;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-top: 5px;
+}
+
+.vertex-count span {
+    color: #e67e22;
+    font-weight: bold;
+}
+
+/* =====================================
    Counters & Status
    ===================================== */
 .point-count,
 .waypoint-count,
+.vertex-count,
 .spot-count {
     padding: 10px;
     background: var(--light-gray);
@@ -727,14 +815,16 @@ header p {
     gap: 2px;
     padding: 1px 2px;
     background: white;
-    border: 2px solid var(--primary-color);  /* ポイントと同じ青色の枠線 */
+    border: 2px solid var(--primary-color);
+    /* ポイントと同じ青色の枠線 */
     border-radius: 4px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     pointer-events: auto;
 }
 
 .spot-name-popup.is-editing {
-    border-color: var(--primary-dark);  /* 濃い青色 */
+    border-color: var(--primary-dark);
+    /* 濃い青色 */
     box-shadow: 0 2px 4px rgba(52, 152, 219, 0.5);
 }
 
@@ -844,6 +934,7 @@ header p {
         opacity: 0;
         transform: translate(-50%, -60%);
     }
+
     to {
         opacity: 1;
         transform: translate(-50%, -50%);
@@ -1087,6 +1178,7 @@ header p {
         opacity: 0;
         transform: translateY(-30px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -1098,6 +1190,7 @@ header p {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+
     to {
         opacity: 0;
         transform: translateY(-20px) scale(0.95);
@@ -1408,6 +1501,7 @@ header p {
         opacity: 0;
         transform: translateY(-30px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);

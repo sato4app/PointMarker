@@ -2,6 +2,7 @@ import { CanvasRenderer } from './core/Canvas.js';
 import { PointManager } from './data/PointManager.js';
 import { RouteManager } from './data/RouteManager.js';
 import { SpotManager } from './data/SpotManager.js';
+import { AreaManager } from './data/AreaManager.js';
 import { FileHandler } from './data/FileHandler.js';
 import { InputManager } from './ui/InputManager.js';
 import { LayoutManager } from './ui/LayoutManager.js';
@@ -29,6 +30,7 @@ export class PointMarkerApp {
         this.pointManager = new PointManager();
         this.routeManager = new RouteManager();
         this.spotManager = new SpotManager();
+        this.areaManager = new AreaManager();
         this.fileHandler = new FileHandler();
         this.inputManager = new InputManager(this.canvas);
         this.layoutManager = new LayoutManager();
@@ -48,6 +50,7 @@ export class PointMarkerApp {
             this.pointManager,
             this.spotManager,
             this.routeManager,
+            this.areaManager,
             this.fileHandler
         );
 
@@ -94,7 +97,7 @@ export class PointMarkerApp {
                 this.inputManager.redrawInputBoxes(points);
             }
         });
-        
+
         this.pointManager.setCallback('onCountChange', (count) => {
             document.getElementById('pointCount').textContent = count;
         });
@@ -103,11 +106,11 @@ export class PointMarkerApp {
         this.routeManager.setCallback('onChange', () => {
             this.redrawCanvas();
         });
-        
+
         this.routeManager.setCallback('onCountChange', (count) => {
             document.getElementById('waypointCount').textContent = count;
         });
-        
+
         this.routeManager.setCallback('onStartEndChange', (data) => {
             document.getElementById('startPointInput').value = data.start;
             document.getElementById('endPointInput').value = data.end;
@@ -176,7 +179,7 @@ export class PointMarkerApp {
                 this.inputManager.redrawSpotInputBoxes(spots || this.spotManager.getSpots());
             }
         });
-        
+
         this.spotManager.setCallback('onCountChange', (count) => {
             document.getElementById('spotCount').textContent = count;
         });
@@ -184,6 +187,35 @@ export class PointMarkerApp {
         // キャンバスのみの再描画用コールバック（入力ボックス再生成なし）
         this.spotManager.setCallback('onCanvasRedraw', () => {
             this.redrawCanvas();
+        });
+
+        // エリア管理のコールバック
+        this.areaManager.setCallback('onChange', () => {
+            this.redrawCanvas();
+        });
+
+        this.areaManager.setCallback('onCountChange', (count) => {
+            const el = document.getElementById('vertexCount');
+            if (el) el.textContent = count;
+        });
+
+        this.areaManager.setCallback('onAreaListChange', (areas) => {
+            this.updateAreaDropdown(areas);
+        });
+
+        this.areaManager.setCallback('onSelectionChange', (index) => {
+            const dropdown = document.getElementById('areaSelectDropdown');
+            if (dropdown) {
+                dropdown.value = index >= 0 ? index.toString() : '';
+            }
+        });
+
+        this.areaManager.setCallback('onModifiedStateChange', (data) => {
+            this.updateAreaDropdown(this.areaManager.getAllAreas());
+        });
+
+        this.areaManager.setCallback('onNoAreaSelected', (message) => {
+            UIHelper.showMessage(message);
         });
 
         // マーカー設定のコールバック
@@ -265,13 +297,13 @@ export class PointMarkerApp {
                 }
             }
         });
-        
+
         this.inputManager.setCallback('onPointRemove', (data) => {
             if (this.layoutManager.getCurrentEditingMode() === 'point') {
                 this.pointManager.removePoint(data.index);
             }
         });
-        
+
         // スポット名変更のコールバック
         this.inputManager.setCallback('onSpotNameChange', (data) => {
             // blur時にスポット名が空白の場合はスポットを削除
@@ -306,7 +338,7 @@ export class PointMarkerApp {
                 }
             }
         });
-        
+
         this.inputManager.setCallback('onSpotRemove', (data) => {
             if (this.layoutManager.getCurrentEditingMode() === 'spot') {
                 // Firebaseからも削除するため、削除前に座標を取得
@@ -329,13 +361,19 @@ export class PointMarkerApp {
                 }, 300);
             }
         });
-        
+
         this.layoutManager.setCallback('onModeChange', (mode) => {
             this.inputManager.setEditMode(mode);
             const pointIdCheckbox = document.getElementById('showPointIdsCheckbox');
             const spotNameCheckbox = document.getElementById('showSpotNamesCheckbox');
 
-            if (mode === 'route') {
+            if (mode === 'area') {
+                // エリア編集モードに切り替えた時、ポイントID表示を維持（または必要に応じて変更）
+                if (pointIdCheckbox) {
+                    pointIdCheckbox.checked = true;
+                    this.handlePointIdVisibilityChange(true);
+                }
+            } else if (mode === 'route') {
                 // ルート編集モードに切り替えた時、既存の開始・終了ポイントを強調表示
                 const startEndPoints = this.routeManager.getStartEndPoints();
                 const highlightIds = [];
@@ -421,7 +459,7 @@ export class PointMarkerApp {
         this.canvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
         this.canvas.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
         this.canvas.addEventListener('mouseup', (e) => this.handleCanvasMouseUp(e));
-        
+
 
 
         // ズーム・パンコントロール
@@ -552,6 +590,42 @@ export class PointMarkerApp {
             this.handleDeleteRoute();
         });
 
+        // エリア選択ドロップダウン
+        const areaDropdown = document.getElementById('areaSelectDropdown');
+        if (areaDropdown) {
+            areaDropdown.addEventListener('change', (e) => {
+                const selectedIndex = e.target.value === '' ? -1 : parseInt(e.target.value);
+                this.areaManager.selectArea(selectedIndex);
+
+                if (selectedIndex >= 0) {
+                    const areas = this.areaManager.getAllAreas();
+                    const selectedArea = areas[selectedIndex];
+                    if (selectedArea) {
+                        UIHelper.showMessage(`エリア "${selectedArea.areaName}" を選択しました`, 'info');
+                    }
+                } else {
+                    UIHelper.showMessage('エリア選択を解除しました', 'info');
+                }
+            });
+        }
+
+        // エリア操作ボタン
+        const addAreaBtn = document.getElementById('addAreaBtn');
+        if (addAreaBtn) {
+            addAreaBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleAddArea();
+            });
+        }
+
+        const deleteAreaBtn = document.getElementById('deleteAreaBtn');
+        if (deleteAreaBtn) {
+            deleteAreaBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleDeleteArea();
+            });
+        }
+
         // ポイントID表示切り替えチェックボックス
         document.getElementById('showPointIdsCheckbox').addEventListener('change', (e) => {
             this.handlePointIdVisibilityChange(e.target.checked);
@@ -660,7 +734,8 @@ export class PointMarkerApp {
         const managers = {
             pointManager: this.pointManager,
             spotManager: this.spotManager,
-            routeManager: null // ルート中間点は別途チェック
+            routeManager: null, // ルート中間点は別途チェック
+            areaManager: this.areaManager
         };
         const result = ObjectDetector.findObjectAt(mouseX, mouseY, managers);
         return result ? { type: result.type, index: result.index } : null;
@@ -701,7 +776,7 @@ export class PointMarkerApp {
         }
 
         // ドラッグ中の処理
-        if (this.dragDropHandler.updateDrag(coords.x, coords.y, this.pointManager, this.spotManager, this.routeManager)) {
+        if (this.dragDropHandler.updateDrag(coords.x, coords.y, this.pointManager, this.spotManager, this.routeManager, this.areaManager)) {
             this.redrawCanvas();
             return;
         }
@@ -788,12 +863,15 @@ export class PointMarkerApp {
 
         // 適切なモードでのドラッグ開始をチェック
         const canDrag = (objectInfo.type === 'point' && mode === 'point') ||
-                        (objectInfo.type === 'spot' && mode === 'spot');
+            (objectInfo.type === 'spot' && mode === 'spot') ||
+            (objectInfo.type === 'vertex' && mode === 'area');
 
         if (canDrag) {
             const object = objectInfo.type === 'point'
                 ? this.pointManager.getPoints()[objectInfo.index]
-                : this.spotManager.getSpots()[objectInfo.index];
+                : (objectInfo.type === 'spot'
+                    ? this.spotManager.getSpots()[objectInfo.index]
+                    : this.areaManager.getAreaVertex(objectInfo.index));
 
             // スポットドラッグ開始時に元の座標を保存（Firebase更新用）
             if (objectInfo.type === 'spot') {
@@ -899,7 +977,25 @@ export class PointMarkerApp {
             await this.handleSaveRoute();
         };
 
-        const dragInfo = this.dragDropHandler.endDrag(this.inputManager, this.pointManager, onPointDragEnd, onSpotDragEnd, onRoutePointDragEnd);
+        // エリア頂点ドラッグ終了時のコールバック
+        const onVertexDragEnd = () => {
+            const areaIndex = this.areaManager.selectedAreaIndex;
+            if (areaIndex >= 0) {
+                this.areaManager.reorderVertices(areaIndex);
+                // Firebase連携: エリア更新
+                this.firebaseSyncManager.updateAreaToFirebase(areaIndex);
+            }
+            this.redrawCanvas();
+        };
+
+        const dragInfo = this.dragDropHandler.endDrag(
+            this.inputManager,
+            this.pointManager,
+            onPointDragEnd,
+            onSpotDragEnd,
+            onRoutePointDragEnd,
+            onVertexDragEnd
+        );
 
         // ドラッグ操作だった場合、clickイベントの発火を防止
         if (dragInfo.wasDragging && dragInfo.hasMoved) {
@@ -1002,6 +1098,16 @@ export class PointMarkerApp {
             } else {
                 UIHelper.showWarning('近くに中間点が見つかりませんでした');
             }
+        } else if (mode === 'area') {
+            const vertexInfo = this.areaManager.findVertexAt(coords.x, coords.y, 10);
+            if (vertexInfo) {
+                const areaIndex = this.areaManager.selectedAreaIndex;
+                if (this.areaManager.removeVertex(vertexInfo.index)) {
+                    UIHelper.showMessage('エリア頂点を削除しました');
+                    // Firebase連携: エリア更新
+                    this.firebaseSyncManager.updateAreaToFirebase(areaIndex);
+                }
+            }
         }
     }
 
@@ -1087,6 +1193,12 @@ export class PointMarkerApp {
             case 'spot':
                 this.createNewSpot(coords);
                 break;
+            case 'area':
+                if (this.areaManager.addVertex(coords.x, coords.y)) {
+                    // Firebase連携: エリア更新
+                    this.firebaseSyncManager.updateAreaToFirebase(this.areaManager.selectedAreaIndex);
+                }
+                break;
         }
     }
 
@@ -1167,6 +1279,73 @@ export class PointMarkerApp {
     }
 
     /**
+     * エリア選択ドロップダウンを更新
+     */
+    updateAreaDropdown(areas) {
+        const dropdown = document.getElementById('areaSelectDropdown');
+        if (!dropdown) return;
+
+        const currentSelectedIndex = this.areaManager.selectedAreaIndex;
+        dropdown.innerHTML = '<option value="">-- エリアを選択 --</option>';
+
+        areas.forEach((area, index) => {
+            const option = document.createElement('option');
+            option.value = index.toString();
+            option.textContent = area.areaName || `エリア ${index + 1}`;
+            dropdown.appendChild(option);
+        });
+
+        dropdown.value = currentSelectedIndex >= 0 ? currentSelectedIndex.toString() : '';
+    }
+
+    /**
+     * 新しいエリアを追加
+     */
+    handleAddArea() {
+        const defaultName = `エリア ${this.areaManager.getAllAreas().length + 1}`;
+        const areaName = window.prompt('エリア名を入力してください', defaultName);
+
+        if (areaName === null) {
+            return; // Cancelled
+        }
+
+        const newArea = {
+            areaName: areaName.trim() || defaultName,
+            vertices: []
+        };
+        this.areaManager.addArea(newArea);
+        const newIndex = this.areaManager.getAllAreas().length - 1;
+        this.areaManager.selectArea(newIndex);
+
+        // Firebase連携: 新規エリア保存
+        this.firebaseSyncManager.updateAreaToFirebase(newIndex);
+
+        UIHelper.showMessage('新しいエリアを追加しました。画像上で頂点をクリックして追加してください');
+    }
+
+    /**
+     * エリアを削除
+     */
+    handleDeleteArea() {
+        const index = this.areaManager.selectedAreaIndex;
+        if (index < 0) {
+            UIHelper.showError('エリアが選択されていません');
+            return;
+        }
+
+        const area = this.areaManager.getSelectedArea();
+        if (confirm(`エリア「${area.areaName}」を削除しますか？`)) {
+            // Firebase連携: 削除
+            if (area.firestoreId) {
+                this.firebaseSyncManager.deleteAreaFromFirebase(area.firestoreId);
+            }
+
+            this.areaManager.deleteArea(index);
+            UIHelper.showMessage('エリアを削除しました');
+        }
+    }
+
+    /**
      * キャンバスを再描画
      */
     redrawCanvas() {
@@ -1177,12 +1356,15 @@ export class PointMarkerApp {
             this.pointManager.getPoints(),
             this.routeManager.getRoutePoints(),
             this.spotManager.getSpots(),
+            this.areaManager.getAllAreas(), // エリアデータを渡す
             {
                 showRouteMode: mode === 'route',
                 startPointId: routePoints.start,
                 endPointId: routePoints.end,
                 allRoutes: this.routeManager.getAllRoutes(),
-                selectedRouteIndex: this.routeManager.selectedRouteIndex
+                selectedRouteIndex: this.routeManager.selectedRouteIndex,
+                selectedAreaIndex: this.areaManager.selectedAreaIndex, // エリア選択状態
+                showAreaEditMode: mode === 'area' // エリア編集モード
             }
         );
     }

@@ -11,12 +11,15 @@ export class FirebaseSyncManager {
      * @param {Object} pointManager - PointManagerインスタンス
      * @param {Object} spotManager - SpotManagerインスタンス
      * @param {Object} routeManager - RouteManagerインスタンス
+
+     * @param {Object} areaManager - AreaManagerインスタンス
      * @param {Object} fileHandler - FileHandlerインスタンス
      */
-    constructor(pointManager, spotManager, routeManager, fileHandler) {
+    constructor(pointManager, spotManager, routeManager, areaManager, fileHandler) {
         this.pointManager = pointManager;
         this.spotManager = spotManager;
         this.routeManager = routeManager;
+        this.areaManager = areaManager;
         this.fileHandler = fileHandler;
         this.currentImage = null;
         this.canvas = null;
@@ -285,6 +288,75 @@ export class FirebaseSyncManager {
     }
 
     /**
+     * エリアをFirebaseに更新
+     * @param {number} areaIndex - エリアのインデックス
+     */
+    async updateAreaToFirebase(areaIndex) {
+        if (!window.firestoreManager || !this.currentImage) return;
+
+        const projectId = this.fileHandler.getCurrentImageFileName();
+        if (!projectId) return;
+
+        const areas = this.areaManager.getAllAreas();
+        if (areaIndex < 0 || areaIndex >= areas.length) return;
+
+        const area = areas[areaIndex];
+        if (!area.areaName || area.areaName.trim() === '') return;
+
+        try {
+            // 頂点座標の変換
+            const convertedVertices = [];
+            if (area.vertices) {
+                for (const vertex of area.vertices) {
+                    const imageCoords = CoordinateUtils.canvasToImage(
+                        vertex.x, vertex.y,
+                        this.canvas.width, this.canvas.height,
+                        this.currentImage.width, this.currentImage.height
+                    );
+                    convertedVertices.push({ x: imageCoords.x, y: imageCoords.y });
+                }
+            }
+
+            const areaData = {
+                areaName: area.areaName,
+                vertices: convertedVertices
+            };
+
+            if (area.firestoreId) {
+                // 更新
+                await window.firestoreManager.updateArea(projectId, area.firestoreId, areaData);
+            } else {
+                // 新規追加
+                const result = await window.firestoreManager.addArea(projectId, areaData);
+                if (result.status === 'success') {
+                    area.firestoreId = result.firestoreId;
+                } else if (result.status === 'duplicate') {
+                    area.firestoreId = result.existing.firestoreId;
+                    await window.firestoreManager.updateArea(projectId, area.firestoreId, areaData);
+                }
+            }
+        } catch (error) {
+            console.error('エリア保存エラー:', error);
+        }
+    }
+
+    /**
+     * エリアをFirebaseから削除
+     * @param {string} firestoreId - Firestore ID
+     */
+    async deleteAreaFromFirebase(firestoreId) {
+        if (!window.firestoreManager || !this.currentImage || !firestoreId) return;
+        const projectId = this.fileHandler.getCurrentImageFileName();
+        if (!projectId) return;
+
+        try {
+            await window.firestoreManager.deleteArea(projectId, firestoreId);
+        } catch (error) {
+            console.error('エリア削除エラー:', error);
+        }
+    }
+
+    /**
      * Firebaseからデータを読み込み
      * @param {Function} onLoadComplete - 読み込み完了時のコールバック
      */
@@ -333,6 +405,7 @@ export class FirebaseSyncManager {
             this.pointManager.clearPoints();
             this.routeManager.clearAllRoutes();
             this.spotManager.clearSpots();
+            this.areaManager.clearAreas();
 
             // ポイントを読み込み（画像座標→キャンバス座標に変換）
             const points = await window.firestoreManager.getPoints(projectId);
@@ -400,6 +473,33 @@ export class FirebaseSyncManager {
 
                 this.spotManager.addSpot(canvasCoords.x, canvasCoords.y, spot.name);
                 loadedSpots++;
+
+            }
+
+            // エリアを読み込み
+            if (window.firestoreManager.getAreas) {
+                const areas = await window.firestoreManager.getAreas(projectId);
+                let loadedAreas = 0;
+                for (const area of areas) {
+                    const convertedVertices = [];
+                    if (area.vertices) {
+                        for (const vertex of area.vertices) {
+                            const canvasCoords = CoordinateUtils.imageToCanvas(
+                                vertex.x, vertex.y,
+                                this.canvas.width, this.canvas.height,
+                                this.currentImage.width, this.currentImage.height
+                            );
+                            convertedVertices.push({ x: canvasCoords.x, y: canvasCoords.y });
+                        }
+                    }
+
+                    this.areaManager.addArea({
+                        firestoreId: area.firestoreId,
+                        areaName: area.areaName,
+                        vertices: convertedVertices
+                    });
+                    loadedAreas++;
+                }
             }
 
             // 読み込み完了コールバックを実行
