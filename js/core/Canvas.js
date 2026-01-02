@@ -232,6 +232,83 @@ export class CanvasRenderer {
     }
 
     /**
+     * 多角形エリアを描画
+     * @param {Array} vertices - 頂点配列 [{x, y}, ...]
+     * @param {string} fillColor - 塗りつぶし色
+     * @param {string} strokeColor - 枠線色
+     * @param {number} strokeWidth - 枠線の太さ
+     * @param {number} canvasScale - キャンバスのスケール値
+     */
+    drawArea(vertices, fillColor = 'rgba(0, 255, 0, 0.3)', strokeColor = '#00ff00', strokeWidth = 2, canvasScale = 1.0) {
+        if (!vertices || vertices.length < 3) return;
+
+        const adjustedStrokeWidth = this.applyDevicePixelRatioCorrection(strokeWidth, canvasScale);
+
+        this.ctx.fillStyle = fillColor;
+        this.ctx.strokeStyle = strokeColor;
+        this.ctx.lineWidth = adjustedStrokeWidth;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(vertices[0].x, vertices[0].y);
+        for (let i = 1; i < vertices.length; i++) {
+            this.ctx.lineTo(vertices[i].x, vertices[i].y);
+        }
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // 頂点の描画（小さな四角形）
+        vertices.forEach(vertex => {
+            this.drawSquare(vertex.x, vertex.y, 4, strokeColor, '#ffffff', 1, canvasScale);
+        });
+    }
+
+    /**
+     * すべてのエリアを描画
+     * @param {Array} areas - エリア配列
+     * @param {number} selectedAreaIndex - 選択中のエリアインデックス
+     * @param {number} canvasScale - キャンバスのスケール値
+     */
+    drawAllAreas(areas, selectedAreaIndex, canvasScale = 1.0) {
+        if (!areas) return;
+
+        areas.forEach((area, index) => {
+            const isSelected = index === selectedAreaIndex;
+            const fillColor = isSelected ? 'rgba(0, 255, 0, 0.4)' : 'rgba(0, 255, 0, 0.2)';
+            const strokeColor = isSelected ? '#00ff00' : '#00aa00';
+            const strokeWidth = isSelected ? 3 : 2;
+
+            if (area.vertices && area.vertices.length >= 0) {
+                // 3点未満でも頂点は描画したいので、drawArea内でチェックしつつ、頂点描画は別途行うのが理想だが、
+                // ここでは簡単のためdrawAreaに任せる（3点未満ならポリゴンは描画されないが頂点ループは回したい場合は修正が必要）
+                // ただし、作成中は頂点だけ表示したい場合もある。
+
+                // 3点未満の場合の処理（頂点のみ描画）
+                if (area.vertices.length < 3) {
+                    area.vertices.forEach(vertex => {
+                        this.drawSquare(vertex.x, vertex.y, 4, strokeColor, '#ffffff', 1, canvasScale);
+                    });
+                    // 線も引く（閉じてないパス）
+                    if (area.vertices.length > 1) {
+                        const adjustedStrokeWidth = this.applyDevicePixelRatioCorrection(strokeWidth, canvasScale);
+                        this.ctx.strokeStyle = strokeColor;
+                        this.ctx.lineWidth = adjustedStrokeWidth;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(area.vertices[0].x, area.vertices[0].y);
+                        for (let i = 1; i < area.vertices.length; i++) {
+                            this.ctx.lineTo(area.vertices[i].x, area.vertices[i].y);
+                        }
+                        this.ctx.stroke();
+                    }
+
+                } else {
+                    this.drawArea(area.vertices, fillColor, strokeColor, strokeWidth, canvasScale);
+                }
+            }
+        });
+    }
+
+    /**
      * 画像とすべてのポイントを再描画
      * @param {Array} points - 通常ポイント配列
      * @param {Array} routePoints - ルートポイント配列（選択中のルートのみ、後方互換性のため残す）
@@ -241,7 +318,19 @@ export class CanvasRenderer {
      *   - allRoutes: 全ルート配列（複数ルート対応）
      *   - selectedRouteIndex: 選択中のルートインデックス
      */
-    redraw(points = [], routePoints = [], spots = [], options = {}) {
+    /**
+     * 画像とすべてのポイントを再描画
+     * @param {Array} points - 通常ポイント配列
+     * @param {Array} routePoints - ルートポイント配列（選択中のルートのみ、後方互換性のため残す）
+     * @param {Array} spots - スポット配列
+     * @param {Array} areas - エリア配列
+     * @param {Object} options - 描画オプション
+     *   - showRouteMode: ルート編集モードかどうか
+     *   - allRoutes: 全ルート配列（複数ルート対応）
+     *   - selectedRouteIndex: 選択中のルートインデックス
+     *   - selectedAreaIndex: 選択中のエリアインデックス
+     */
+    redraw(points = [], routePoints = [], spots = [], areas = [], options = {}) {
         this.drawImage();
 
         // マーカー描画時にズーム・パン変換を適用
@@ -262,6 +351,10 @@ export class CanvasRenderer {
         }
 
         this.drawSpots(spots, options, this.scale);
+
+        // エリアの描画
+        const selectedAreaIndex = options.selectedAreaIndex !== undefined ? options.selectedAreaIndex : -1;
+        this.drawAllAreas(areas, selectedAreaIndex, this.scale);
 
         this.ctx.restore();
     }
