@@ -234,12 +234,13 @@ export class CanvasRenderer {
     /**
      * 多角形エリアを描画
      * @param {Array} vertices - 頂点配列 [{x, y}, ...]
-     * @param {string} fillColor - 塗りつぶし色
-     * @param {string} strokeColor - 枠線色
+     * @param {string} fillColor - 塗りつぶし色 (デフォルト: 薄いオレンジ)
+     * @param {string} strokeColor - 枠線色 (デフォルト: オレンジ)
      * @param {number} strokeWidth - 枠線の太さ
      * @param {number} canvasScale - キャンバスのスケール値
+     * @param {string} areaName - エリア名 (オプション)
      */
-    drawArea(vertices, fillColor = 'rgba(0, 255, 0, 0.3)', strokeColor = '#00ff00', strokeWidth = 2, canvasScale = 1.0) {
+    drawArea(vertices, fillColor = 'rgba(255, 149, 0, 0.3)', strokeColor = '#ff9500', strokeWidth = 2, canvasScale = 1.0, areaName = null) {
         if (!vertices || vertices.length < 3) return;
 
         const adjustedStrokeWidth = this.applyDevicePixelRatioCorrection(strokeWidth, canvasScale);
@@ -261,6 +262,52 @@ export class CanvasRenderer {
         vertices.forEach(vertex => {
             this.drawSquare(vertex.x, vertex.y, 4, strokeColor, '#ffffff', 1, canvasScale);
         });
+
+        // エリア名の描画
+        if (areaName) {
+            this.drawAreaLabel(vertices, areaName, canvasScale);
+        }
+    }
+
+    /**
+     * エリア名を描画（重心に表示）
+     * @param {Array} vertices - 頂点配列
+     * @param {string} name - エリア名
+     * @param {number} canvasScale - キャンバスのスケール値
+     */
+    drawAreaLabel(vertices, name, canvasScale) {
+        if (!vertices || vertices.length === 0 || !name) return;
+
+        // 重心を計算
+        let cx = 0, cy = 0;
+        vertices.forEach(v => {
+            cx += v.x;
+            cy += v.y;
+        });
+        cx /= vertices.length;
+        cy /= vertices.length;
+
+        const fontSize = this.applyDevicePixelRatioCorrection(12, canvasScale);
+
+        this.ctx.font = `bold ${Math.max(10, fontSize)}px sans-serif`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+
+        // 文字の背景（読みやすくするため）
+        const metrics = this.ctx.measureText(name);
+        const padding = 4 / canvasScale;
+        const textHeight = Math.max(10, fontSize);
+
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.fillRect(
+            cx - metrics.width / 2 - padding,
+            cy - textHeight / 2 - padding,
+            metrics.width + padding * 2,
+            textHeight + padding * 2
+        );
+
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fillText(name, cx, cy);
     }
 
     /**
@@ -274,15 +321,12 @@ export class CanvasRenderer {
 
         areas.forEach((area, index) => {
             const isSelected = index === selectedAreaIndex;
-            const fillColor = isSelected ? 'rgba(0, 255, 0, 0.4)' : 'rgba(0, 255, 0, 0.2)';
-            const strokeColor = isSelected ? '#00ff00' : '#00aa00';
+            // オレンジ色ベースに変更
+            const fillColor = isSelected ? 'rgba(255, 149, 0, 0.4)' : 'rgba(255, 149, 0, 0.2)';
+            const strokeColor = isSelected ? '#ff9500' : '#d47b00';
             const strokeWidth = isSelected ? 3 : 2;
 
             if (area.vertices && area.vertices.length >= 0) {
-                // 3点未満でも頂点は描画したいので、drawArea内でチェックしつつ、頂点描画は別途行うのが理想だが、
-                // ここでは簡単のためdrawAreaに任せる（3点未満ならポリゴンは描画されないが頂点ループは回したい場合は修正が必要）
-                // ただし、作成中は頂点だけ表示したい場合もある。
-
                 // 3点未満の場合の処理（頂点のみ描画）
                 if (area.vertices.length < 3) {
                     area.vertices.forEach(vertex => {
@@ -302,7 +346,7 @@ export class CanvasRenderer {
                     }
 
                 } else {
-                    this.drawArea(area.vertices, fillColor, strokeColor, strokeWidth, canvasScale);
+                    this.drawArea(area.vertices, fillColor, strokeColor, strokeWidth, canvasScale, area.areaName);
                 }
             }
         });
