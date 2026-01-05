@@ -1067,15 +1067,15 @@ export class PointMarkerApp {
 
         const mode = this.layoutManager.getCurrentEditingMode();
 
+        // ズーム・パン情報を取得
+        const scale = this.canvasRenderer.getScale();
+        const offset = this.canvasRenderer.getOffset();
+
+        // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
+        const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
+
         // ルート編集モードの場合のみ処理
         if (mode === 'route') {
-            // ズーム・パン情報を取得
-            const scale = this.canvasRenderer.getScale();
-            const offset = this.canvasRenderer.getOffset();
-
-            // マウス座標をキャンバス座標に変換（ズーム・パン逆変換適用）
-            const coords = CoordinateUtils.mouseToCanvas(event, this.canvas, scale, offset.x, offset.y);
-
             // 最も近い中間点を検索（最大50px以内）
             const nearestInfo = this.routeManager.findNearestRoutePoint(coords.x, coords.y, 50);
 
