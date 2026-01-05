@@ -11,6 +11,7 @@ export class InputManager {
         this.spotInputElements = [];
         this.isRouteEditMode = false;
         this.isSpotEditMode = false;
+        this.isAreaEditMode = false;
         this.highlightedPointIds = new Set(); // 強調表示するポイントIDのセット
         this.highlightedSpotNames = new Set(); // 強調表示するスポット名のセット
         this.errorSpotNames = new Set(); // エラー状態のスポット名のセット
@@ -55,6 +56,7 @@ export class InputManager {
     setEditMode(mode) {
         this.isRouteEditMode = (mode === 'route');
         this.isSpotEditMode = (mode === 'spot');
+        this.isAreaEditMode = (mode === 'area');
 
         if (mode !== 'route') {
             // ルート編集モード終了時は強調表示とエラー状態をクリア
@@ -173,6 +175,18 @@ export class InputManager {
                     }
                     input.title = 'ルート編集モード中はポイントID名の編集はできません';
                 }
+            } else if (this.isAreaEditMode) {
+                // エリア編集モード時は編集不可にする（グレー表示）
+                if (container) {
+                    container.style.display = 'block';
+                }
+                input.disabled = true;
+                input.style.backgroundColor = '#e0e0e0';
+                if (container) {
+                    container.style.backgroundColor = '#e0e0e0';
+                    container.style.border = '1px solid #ccc';
+                }
+                input.title = 'エリア編集モード中はポイントID名の編集はできません';
             } else {
                 // ポイント編集モードでは通常表示
                 if (container) {
@@ -196,7 +210,7 @@ export class InputManager {
      * @param {boolean} shouldFocus - フォーカスするかどうか
      */
     createInputBox(point, index, shouldFocus = false) {
-        
+
         // ポップアップコンテナを作成
         const container = document.createElement('div');
         container.className = 'point-id-popup';
@@ -209,19 +223,19 @@ export class InputManager {
         input.className = 'point-id-input';
         input.placeholder = 'ID';
         input.value = point.id || '';
-        
+
         container.appendChild(input);
-        
+
         this.positionInputBox(container, point);
-        
+
         // input時は変換処理を一切行わない
         input.addEventListener('input', (e) => {
             const value = e.target.value;
-            
+
             // 入力中は変換処理なし、そのまま保存（表示更新なし）
             this.notify('onPointIdChange', { index, id: value, skipFormatting: true, skipDisplay: true });
         });
-        
+
         // blur時はフォーマット処理を実行して保存
         input.addEventListener('blur', (e) => {
             const value = e.target.value.trim();
@@ -230,22 +244,22 @@ export class InputManager {
             this.notify('onPointIdChange', { index, id: value, skipFormatting: false });
             container.classList.remove('is-editing');
         });
-        
+
         // キーボードイベント（Escapeキーでポイント削除）
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.notify('onPointRemove', { index, point });
             }
         });
-        
+
         // フォーカス時に編集中スタイル
         input.addEventListener('focus', () => {
             container.classList.add('is-editing');
         });
-        
+
         // ポイントインデックスを属性として設定
         input.setAttribute('data-point-index', index);
-        
+
         document.body.appendChild(container);
         this.inputElements.push(input);
         // 入力からコンテナへ参照
@@ -272,6 +286,13 @@ export class InputManager {
                 container.style.border = '2px solid #999';
                 input.title = 'ルート編集モード中はポイントID名の編集はできません';
             }
+        } else if (this.isAreaEditMode) {
+            // エリア編集モード時のスタイル（グレー、編集不可）
+            input.disabled = true;
+            input.style.backgroundColor = '#e0e0e0';
+            container.style.backgroundColor = '#e0e0e0';
+            container.style.border = '1px solid #ccc';
+            input.title = 'エリア編集モード中はポイントID名の編集はできません';
         }
 
         if (shouldFocus) {
@@ -344,10 +365,10 @@ export class InputManager {
         const inputWidth = 50;
         const margin = 10;
         const scaledPointX = pointX * scaleX + canvasLeft;
-        
+
         const rightPos = scaledPointX + margin;
         const leftPos = scaledPointX - inputWidth - margin;
-        
+
         if (rightPos + inputWidth < window.innerWidth - 20) {
             return rightPos;
         } else {
@@ -376,7 +397,7 @@ export class InputManager {
      */
     redrawInputBoxes(points) {
         this.clearInputBoxes();
-        
+
         setTimeout(() => {
             points.forEach((point, index) => {
                 this.createInputBox(point, index);
