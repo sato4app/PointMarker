@@ -261,9 +261,10 @@ export class CanvasRenderer {
         this.ctx.fill();
         this.ctx.stroke();
 
-        // 頂点の描画（小さな四角形）
+        // 頂点の描画（小さな菱形）
         vertices.forEach(vertex => {
-            this.drawSquare(vertex.x, vertex.y, vertexSize, strokeColor, '#ffffff', 1, canvasScale);
+            // 頂点サイズを半径として使用（Point等と統一）
+            this.drawDiamond(vertex.x, vertex.y, vertexSize, strokeColor, '#ffffff', 1, canvasScale);
         });
 
         // エリア名の描画
@@ -339,7 +340,7 @@ export class CanvasRenderer {
                 // 3点未満の場合の処理（頂点のみ描画）
                 if (area.vertices.length < 3) {
                     area.vertices.forEach(vertex => {
-                        this.drawSquare(vertex.x, vertex.y, vertexSize, strokeColor, '#ffffff', 1, canvasScale);
+                        this.drawDiamond(vertex.x, vertex.y, vertexSize, strokeColor, '#ffffff', 1, canvasScale);
                     });
                     // 線も引く（閉じてないパス）
                     if (area.vertices.length > 1) {

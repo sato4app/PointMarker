@@ -1380,7 +1380,7 @@ header p {
     background-color: blue;
 }
 
-/* エリア頂点プレビュー（オレンジの枠線の四角） */
+/* エリア頂点プレビュー（ピンクの菱形） */
 .settings-marker-preview.area-vertex-marker {
     background-color: white;
 }
@@ -1390,10 +1390,11 @@ header p {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) rotate(45deg);
     width: 8px;
     height: 8px;
-    border: 2px solid #ff9500;
+    background-color: #ff1493;
+    border: 1px solid white;
 }
 
 .settings-slider {
