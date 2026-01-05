@@ -433,7 +433,7 @@ export class CanvasEventHandler {
             // 選択中のエリアがあれば頂点を追加
             const selectedAreaIndex = this.app.areaManager.selectedAreaIndex;
             if (selectedAreaIndex >= 0) {
-                this.app.areaManager.addVertexToArea(selectedAreaIndex, x, y);
+                this.app.areaManager.addVertex(x, y);
                 // Firebase連携: エリア更新
                 this.app.firebaseSyncManager.updateAreaToFirebase(selectedAreaIndex);
                 this.app.redrawCanvas();
