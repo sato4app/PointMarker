@@ -1380,6 +1380,22 @@ header p {
     background-color: blue;
 }
 
+/* エリア頂点プレビュー（オレンジの枠線の四角） */
+.settings-marker-preview.area-vertex-marker {
+    background-color: white;
+}
+
+.settings-marker-preview.area-vertex-marker::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    border: 2px solid #ff9500;
+}
+
 .settings-slider {
     flex: 1;
     height: 6px;

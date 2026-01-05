@@ -9,7 +9,9 @@ export class MarkerSettingsManager {
             point: 6,
             selectedWaypoint: 6,
             unselectedWaypoint: 4,
-            spot: 12
+            unselectedWaypoint: 4,
+            spot: 12,
+            areaVertex: 6
         };
 
         // 現在のマーカーサイズ
@@ -46,14 +48,18 @@ export class MarkerSettingsManager {
             point: document.getElementById('pointSizeInput'),
             selectedWaypoint: document.getElementById('selectedWaypointSizeInput'),
             unselectedWaypoint: document.getElementById('unselectedWaypointSizeInput'),
-            spot: document.getElementById('spotSizeInput')
+            unselectedWaypoint: document.getElementById('unselectedWaypointSizeInput'),
+            spot: document.getElementById('spotSizeInput'),
+            areaVertex: document.getElementById('areaVertexSizeInput')
         };
 
         this.sliders = {
             point: document.getElementById('pointSizeSlider'),
             selectedWaypoint: document.getElementById('selectedWaypointSizeSlider'),
             unselectedWaypoint: document.getElementById('unselectedWaypointSizeSlider'),
-            spot: document.getElementById('spotSizeSlider')
+            unselectedWaypoint: document.getElementById('unselectedWaypointSizeSlider'),
+            spot: document.getElementById('spotSizeSlider'),
+            areaVertex: document.getElementById('areaVertexSizeSlider')
         };
 
         // ボタン要素の取得
@@ -96,7 +102,9 @@ export class MarkerSettingsManager {
         this.setupSliderSync('point');
         this.setupSliderSync('selectedWaypoint');
         this.setupSliderSync('unselectedWaypoint');
+        this.setupSliderSync('unselectedWaypoint');
         this.setupSliderSync('spot');
+        this.setupSliderSync('areaVertex');
 
         // オーバーレイクリックで閉じる
         this.overlay.addEventListener('click', (e) => {
@@ -157,6 +165,9 @@ export class MarkerSettingsManager {
         this.inputs.spot.value = this.currentSizes.spot.toFixed(1);
         this.sliders.spot.value = this.currentSizes.spot;
 
+        this.inputs.areaVertex.value = this.currentSizes.areaVertex.toFixed(1);
+        this.sliders.areaVertex.value = this.currentSizes.areaVertex;
+
         // ダイアログを表示
         this.dialog.style.display = 'flex';
     }
@@ -177,7 +188,9 @@ export class MarkerSettingsManager {
             point: parseFloat(this.inputs.point.value),
             selectedWaypoint: parseFloat(this.inputs.selectedWaypoint.value),
             unselectedWaypoint: parseFloat(this.inputs.unselectedWaypoint.value),
-            spot: parseFloat(this.inputs.spot.value)
+            unselectedWaypoint: parseFloat(this.inputs.unselectedWaypoint.value),
+            spot: parseFloat(this.inputs.spot.value),
+            areaVertex: parseFloat(this.inputs.areaVertex.value)
         };
 
         // バリデーション
@@ -216,6 +229,9 @@ export class MarkerSettingsManager {
 
         // スポット: 4-20px
         if (sizes.spot < 4 || sizes.spot > 20) return false;
+
+        // エリア頂点: 2-12px
+        if (sizes.areaVertex < 2 || sizes.areaVertex > 12) return false;
 
         return true;
     }
@@ -294,5 +310,8 @@ export class MarkerSettingsManager {
 
         this.inputs.spot.value = this.defaultSizes.spot.toFixed(1);
         this.sliders.spot.value = this.defaultSizes.spot;
+
+        this.inputs.areaVertex.value = this.defaultSizes.areaVertex.toFixed(1);
+        this.sliders.areaVertex.value = this.defaultSizes.areaVertex;
     }
 }

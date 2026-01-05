@@ -29,7 +29,9 @@ export class CanvasRenderer {
             point: 6,
             selectedWaypoint: 6,
             unselectedWaypoint: 4,
-            spot: 12
+            unselectedWaypoint: 4,
+            spot: 12,
+            areaVertex: 6
         };
     }
 
@@ -240,7 +242,7 @@ export class CanvasRenderer {
      * @param {number} canvasScale - キャンバスのスケール値
      * @param {string} areaName - エリア名 (オプション)
      */
-    drawArea(vertices, fillColor = 'rgba(255, 149, 0, 0.3)', strokeColor = '#ff9500', strokeWidth = 2, canvasScale = 1.0, areaName = null) {
+    drawArea(vertices, fillColor = 'rgba(255, 149, 0, 0.3)', strokeColor = '#ff9500', strokeWidth = 2, canvasScale = 1.0, areaName = null, vertexSize = 4) {
         if (!vertices || vertices.length < 3) return;
 
         const adjustedStrokeWidth = this.applyDevicePixelRatioCorrection(strokeWidth, canvasScale);
@@ -260,7 +262,7 @@ export class CanvasRenderer {
 
         // 頂点の描画（小さな四角形）
         vertices.forEach(vertex => {
-            this.drawSquare(vertex.x, vertex.y, 4, strokeColor, '#ffffff', 1, canvasScale);
+            this.drawSquare(vertex.x, vertex.y, vertexSize, strokeColor, '#ffffff', 1, canvasScale);
         });
 
         // エリア名の描画
@@ -321,16 +323,22 @@ export class CanvasRenderer {
 
         areas.forEach((area, index) => {
             const isSelected = index === selectedAreaIndex;
-            // オレンジ色ベースに変更
-            const fillColor = isSelected ? 'rgba(255, 149, 0, 0.4)' : 'rgba(255, 149, 0, 0.2)';
-            const strokeColor = isSelected ? '#ff9500' : '#d47b00';
+
+            // 色設定
+            // 選択中: ピンク (Fill: HotPink 40%, Stroke: DeepPink)
+            // 未選択: オレンジ (Fill: Orange 20%, Stroke: DarkOrange)
+            const fillColor = isSelected ? 'rgba(255, 105, 180, 0.4)' : 'rgba(255, 149, 0, 0.2)';
+            const strokeColor = isSelected ? '#ff1493' : '#d47b00';
             const strokeWidth = isSelected ? 3 : 2;
+
+            // 頂点サイズ (選択中・未選択にかかわらず設定値を使用)
+            const vertexSize = this.markerSizes.areaVertex || 6;
 
             if (area.vertices && area.vertices.length >= 0) {
                 // 3点未満の場合の処理（頂点のみ描画）
                 if (area.vertices.length < 3) {
                     area.vertices.forEach(vertex => {
-                        this.drawSquare(vertex.x, vertex.y, 4, strokeColor, '#ffffff', 1, canvasScale);
+                        this.drawSquare(vertex.x, vertex.y, vertexSize, strokeColor, '#ffffff', 1, canvasScale);
                     });
                     // 線も引く（閉じてないパス）
                     if (area.vertices.length > 1) {
@@ -346,7 +354,7 @@ export class CanvasRenderer {
                     }
 
                 } else {
-                    this.drawArea(area.vertices, fillColor, strokeColor, strokeWidth, canvasScale, area.areaName);
+                    this.drawArea(area.vertices, fillColor, strokeColor, strokeWidth, canvasScale, area.areaName, vertexSize);
                 }
             }
         });
