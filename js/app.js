@@ -151,6 +151,15 @@ export class PointMarkerApp {
             }
             // 開始・終了ポイントがスポット名の場合、常に表示するように設定
             this.updateAlwaysVisibleSpotNames();
+
+            // ルート選択時はポイントID表示チェックボックスを強制的にオンにする
+            if (index >= 0) {
+                const checkbox = document.getElementById('showPointIdsCheckbox');
+                if (checkbox && !checkbox.checked) {
+                    checkbox.checked = true;
+                    this.handlePointIdVisibilityChange(true);
+                }
+            }
         });
 
         // ルート更新状態変更時のコールバック
