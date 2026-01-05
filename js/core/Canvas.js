@@ -255,7 +255,7 @@ export class CanvasRenderer {
         const textHeight = Math.max(10, fontSize);
 
         // 背景色: エリア編集モードは白、それ以外はグレー
-        this.ctx.fillStyle = isAreaEditMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(200, 200, 200, 0.8)';
+        this.ctx.fillStyle = isAreaEditMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(224, 224, 224, 0.8)';
         this.ctx.fillRect(
             cx - metrics.width / 2 - padding,
             cy - textHeight / 2 - padding,
