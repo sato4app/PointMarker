@@ -156,6 +156,7 @@ export class InputManager {
                 // ルート編集モードでは表示し、開始・終了ポイントを強調
                 if (container) {
                     container.style.display = 'block';
+                    container.style.pointerEvents = 'none';
                 }
                 input.disabled = true;
                 if (isHighlighted) {
@@ -191,6 +192,7 @@ export class InputManager {
                 // ポイント編集モードでは通常表示
                 if (container) {
                     container.style.display = 'block';
+                    container.style.pointerEvents = 'auto';
                 }
                 input.disabled = false;
                 input.style.backgroundColor = '';
@@ -288,10 +290,16 @@ export class InputManager {
             }
         } else if (this.isAreaEditMode) {
             // エリア編集モード時のスタイル（グレー、編集不可）
+            if (container) {
+                container.style.display = 'block';
+                container.style.pointerEvents = 'none';
+            }
             input.disabled = true;
             input.style.backgroundColor = '#e0e0e0';
-            container.style.backgroundColor = '#e0e0e0';
-            container.style.border = '1px solid #ccc';
+            if (container) {
+                container.style.backgroundColor = '#e0e0e0';
+                container.style.border = '1px solid #ccc';
+            }
             input.title = 'エリア編集モード中はポイントID名の編集はできません';
         }
 
@@ -536,6 +544,7 @@ export class InputManager {
             // スポット編集モードの場合は常に表示・編集可能
             if (this.isSpotEditMode) {
                 container.style.display = 'block';
+                container.style.pointerEvents = 'auto';
                 input.disabled = false;
                 input.style.backgroundColor = '';
                 container.style.backgroundColor = '';
@@ -550,6 +559,7 @@ export class InputManager {
             // ルート編集モードで、チェックボックスがオンまたは常に表示すべきスポットの場合
             if (this.isRouteEditMode && (this.spotNameVisibility || isAlwaysVisible)) {
                 container.style.display = 'block';
+                container.style.pointerEvents = 'none';
 
                 if (isError) {
                     // エラー状態の場合はピンク背景（複数一致など）
@@ -579,6 +589,7 @@ export class InputManager {
             // その他のモードでチェックボックスがオンの場合
             if (this.spotNameVisibility) {
                 container.style.display = 'block';
+                container.style.pointerEvents = 'none';
                 input.disabled = false;
                 input.style.backgroundColor = '';
                 container.style.backgroundColor = '';

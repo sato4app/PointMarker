@@ -426,9 +426,16 @@ export class CanvasEventHandler {
         } else if (mode === 'spot') {
             this.createNewSpot(x, y);
         } else if (mode === 'route') {
-            // ルート中間点の追加は、既存のルートポイント選択ロジック（RouteManager内）で処理されるか、
-            // 新規作成ボタン経由で行われるため、ここでのクリックは「選択の解除」などに使うのが一般的だが、
-            // 現状の仕様では特に何もしない
+            // ルート中間点を追加
+            const selectedRouteIndex = this.app.routeManager.selectedRouteIndex;
+            if (selectedRouteIndex >= 0) {
+                this.app.routeManager.addRoutePoint(x, y);
+                // Firebase連携: ルート更新
+                this.app.handleSaveRoute();
+                this.app.redrawCanvas();
+            } else {
+                UIHelper.showWarning('ルートを選択してください');
+            }
         } else if (mode === 'area') {
             // 選択中のエリアがあれば頂点を追加
             const selectedAreaIndex = this.app.areaManager.selectedAreaIndex;
