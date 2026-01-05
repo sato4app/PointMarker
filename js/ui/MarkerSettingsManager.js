@@ -218,6 +218,15 @@ export class MarkerSettingsManager {
      * サイズのバリデーション
      */
     validateSizes(sizes) {
+        // 各値が存在し、数値であることを確認
+        if (typeof sizes.point !== 'number' ||
+            typeof sizes.selectedWaypoint !== 'number' ||
+            typeof sizes.unselectedWaypoint !== 'number' ||
+            typeof sizes.spot !== 'number' ||
+            typeof sizes.areaVertex !== 'number') {
+            return false;
+        }
+
         // ポイント: 2-12px
         if (sizes.point < 2 || sizes.point > 12) return false;
 
@@ -256,11 +265,15 @@ export class MarkerSettingsManager {
             if (saved) {
                 const parsed = JSON.parse(saved);
 
+                // デフォルト値とマージして、新しい設定項目（areaVertex等）が欠落しないようにする
+                const merged = { ...this.defaultSizes, ...parsed };
+
                 // バリデーション
-                if (this.validateSizes(parsed)) {
-                    this.currentSizes = parsed;
+                if (this.validateSizes(merged)) {
+                    this.currentSizes = merged;
                 } else {
                     console.warn('保存されたマーカーサイズ設定が無効です。デフォルト値を使用します。');
+                    // 無効な場合はデフォルト値を使用（currentSizesは既にコンストラクタでデフォルト値で初期化されている）
                 }
             }
         } catch (error) {

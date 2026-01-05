@@ -30,6 +30,7 @@ export class CanvasRenderer {
             selectedWaypoint: 6,
             unselectedWaypoint: 4,
             unselectedWaypoint: 4,
+            unselectedWaypoint: 4,
             spot: 12,
             areaVertex: 6
         };
@@ -322,7 +323,7 @@ export class CanvasRenderer {
         if (!areas) return;
 
         areas.forEach((area, index) => {
-            const isSelected = index === selectedAreaIndex;
+            const isSelected = index == selectedAreaIndex; // 型不一致を防ぐため緩い等価比較を使用
 
             // 色設定
             // 選択中: ピンク (Fill: HotPink 40%, Stroke: DeepPink)
