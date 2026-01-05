@@ -195,7 +195,7 @@ export class CanvasRenderer {
     /**
      * 多角形エリアを描画
      */
-    drawArea(vertices, fillColor = 'rgba(255, 149, 0, 0.3)', strokeColor = '#ff9500', strokeWidth = 2, canvasScale = 1.0, areaName = null, vertexSize = 4, vertexColor = null) {
+    drawArea(vertices, fillColor = 'rgba(255, 149, 0, 0.3)', strokeColor = '#ff9500', strokeWidth = 2, canvasScale = 1.0, areaName = null, vertexSize = 4, vertexColor = null, isAreaEditMode = false) {
         if (!vertices || vertices.length < 3) return;
 
         const actualVertexColor = vertexColor || strokeColor;
@@ -220,7 +220,7 @@ export class CanvasRenderer {
         });
 
         if (areaName) {
-            this.drawAreaLabel(vertices, areaName, canvasScale);
+            this.drawAreaLabel(vertices, areaName, canvasScale, isAreaEditMode);
         }
     }
 
@@ -229,8 +229,9 @@ export class CanvasRenderer {
      * @param {Array} vertices - 頂点配列
      * @param {string} name - エリア名
      * @param {number} canvasScale - キャンバスのスケール値
+     * @param {boolean} isAreaEditMode - エリア編集モードかどうか
      */
-    drawAreaLabel(vertices, name, canvasScale) {
+    drawAreaLabel(vertices, name, canvasScale, isAreaEditMode = false) {
         if (!vertices || vertices.length === 0 || !name) return;
 
         // 重心を計算
@@ -253,7 +254,8 @@ export class CanvasRenderer {
         const padding = 4 / canvasScale;
         const textHeight = Math.max(10, fontSize);
 
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        // 背景色: エリア編集モードは白、それ以外はグレー
+        this.ctx.fillStyle = isAreaEditMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(200, 200, 200, 0.8)';
         this.ctx.fillRect(
             cx - metrics.width / 2 - padding,
             cy - textHeight / 2 - padding,
@@ -270,12 +272,14 @@ export class CanvasRenderer {
      * @param {Array} areas - エリア配列
      * @param {number} selectedAreaIndex - 選択中のエリアインデックス
      * @param {number} canvasScale - キャンバスのスケール値
+     * @param {boolean} isAreaEditMode - エリア編集モードかどうか
      */
-    drawAllAreas(areas, selectedAreaIndex, canvasScale = 1.0) {
+    drawAllAreas(areas, selectedAreaIndex, canvasScale = 1.0, isAreaEditMode = false) {
         if (!areas) return;
 
         areas.forEach((area, index) => {
-            const isSelected = index == selectedAreaIndex; // 型不一致を防ぐため緩い等価比較を使用
+            // エリア編集モードでない場合は、すべてのエリアを未選択として描画
+            const isSelected = isAreaEditMode && (index == selectedAreaIndex);
 
             // 色設定
             // 選択中: ピンク (Fill: HotPink 40%, Stroke: DeepPink)
@@ -309,10 +313,8 @@ export class CanvasRenderer {
                     }
 
                 } else {
-                    // drawAreaメソッドにvertexColorを追加引数として渡すか、drawArea内でvertexColorを使用するように変更する必要がある
-                    // ここではdrawAreaの第7引数(vertexSize)の後に、第8引数(vertexColor)を追加する呼び出しに変更する
-                    // ★注意: Canvas.jsのdrawAreaメソッド定義も変更する必要がある
-                    this.drawArea(area.vertices, fillColor, strokeColor, strokeWidth, canvasScale, area.areaName, vertexSize, vertexColor);
+                    // drawAreaメソッドに isAreaEditMode を渡す
+                    this.drawArea(area.vertices, fillColor, strokeColor, strokeWidth, canvasScale, area.areaName, vertexSize, vertexColor, isAreaEditMode);
                 }
             }
         });
@@ -339,6 +341,7 @@ export class CanvasRenderer {
      *   - allRoutes: 全ルート配列（複数ルート対応）
      *   - selectedRouteIndex: 選択中のルートインデックス
      *   - selectedAreaIndex: 選択中のエリアインデックス
+     *   - showAreaEditMode: エリア編集モードかどうか
      */
     redraw(points = [], routePoints = [], spots = [], areas = [], options = {}) {
         this.drawImage();
@@ -364,7 +367,8 @@ export class CanvasRenderer {
 
         // エリアの描画
         const selectedAreaIndex = options.selectedAreaIndex !== undefined ? options.selectedAreaIndex : -1;
-        this.drawAllAreas(areas, selectedAreaIndex, this.scale);
+        const isAreaEditMode = options.showAreaEditMode === true;
+        this.drawAllAreas(areas, selectedAreaIndex, this.scale, isAreaEditMode);
 
         this.ctx.restore();
     }
