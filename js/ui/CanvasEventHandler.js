@@ -1,6 +1,6 @@
 import { CoordinateUtils } from '../utils/Coordinates.js';
 import { ObjectDetector } from '../utils/ObjectDetector.js';
-import { UIHelper } from '../utils/UIHelper.js';
+import { UIHelper } from './UIHelper.js';
 
 /**
  * キャンバスイベント（マウス操作等）を管理するクラス
