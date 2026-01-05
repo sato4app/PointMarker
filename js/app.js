@@ -724,20 +724,15 @@ export class PointMarkerApp {
         });
     }
 
-    /**
-     * 指定座標上のオブジェクト（ポイント/スポット）を検出
-     * @param {number} mouseX - マウスX座標
-     * @param {number} mouseY - マウスY座標
-     * @returns {{type: string, index: number} | null} 検出されたオブジェクト情報
-     */
     findObjectAtMouse(mouseX, mouseY) {
+        const mode = this.layoutManager.getCurrentEditingMode();
         const managers = {
             pointManager: this.pointManager,
             spotManager: this.spotManager,
             routeManager: null, // ルート中間点は別途チェック
             areaManager: this.areaManager
         };
-        const result = ObjectDetector.findObjectAt(mouseX, mouseY, managers);
+        const result = ObjectDetector.findObjectAt(mouseX, mouseY, managers, mode);
         return result ? { type: result.type, index: result.index } : null;
     }
 
