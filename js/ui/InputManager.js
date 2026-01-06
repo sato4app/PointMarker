@@ -230,11 +230,27 @@ export class InputManager {
 
         this.positionInputBox(container, point);
 
-        // input時は変換処理を一切行わない
+        // input時はリアルタイムで変換処理と保存を行う
         input.addEventListener('input', (e) => {
-            const value = e.target.value;
+            let value = e.target.value;
 
-            // 入力中は変換処理なし、そのまま保存（表示更新なし）
+            // 1. 全角英数字を半角英数字に変換
+            value = value.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function (s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+
+            // 2. 英子文字を英大文字に変換
+            value = value.toUpperCase();
+
+            // 入力値を更新（カーソル位置がずれる可能性があるため、必要な場合のみ更新）
+            if (e.target.value !== value) {
+                const selectionStart = e.target.selectionStart;
+                e.target.value = value;
+                // カーソル位置を維持（変換で長さが変わらない前提）
+                e.target.setSelectionRange(selectionStart, selectionStart);
+            }
+
+            // 変換後の値で保存（表示更新なし）
             this.notify('onPointIdChange', { index, id: value, skipFormatting: true, skipDisplay: true });
         });
 
@@ -402,20 +418,24 @@ export class InputManager {
     /**
      * 全入力ボックスをクリア・再作成
      * @param {Array} points - ポイント配列
+     * @returns {Promise<void>} 再作成完了時に解決されるPromise
      */
     redrawInputBoxes(points) {
         this.clearInputBoxes();
 
-        setTimeout(() => {
-            points.forEach((point, index) => {
-                this.createInputBox(point, index);
-                const input = this.inputElements[this.inputElements.length - 1];
-                if (input) {
-                    input.value = point.id || '';
-                    input.setAttribute('data-point-index', index);
-                }
-            });
-        }, 10);
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                points.forEach((point, index) => {
+                    this.createInputBox(point, index);
+                    const input = this.inputElements[this.inputElements.length - 1];
+                    if (input) {
+                        input.value = point.id || '';
+                        input.setAttribute('data-point-index', index);
+                    }
+                });
+                resolve();
+            }, 10);
+        });
     }
 
     /**
