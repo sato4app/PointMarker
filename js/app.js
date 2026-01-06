@@ -208,6 +208,8 @@ export class PointMarkerApp {
             if (dropdown) {
                 dropdown.value = index >= 0 ? index.toString() : '';
             }
+            // 入力フィールドも更新
+            this.updateAreaNameInput();
         });
 
         this.areaManager.setCallback('onModifiedStateChange', (data) => {
@@ -601,6 +603,13 @@ export class PointMarkerApp {
                 } else {
                     UIHelper.showMessage('エリア選択を解除しました', 'info');
                 }
+
+                // 入力フィールドの更新は updateAreaDropdown 経由または setCallback('onSelectionChange') で行われるが、
+                // ここでも念のため更新を呼ぶか、Managerの通知に任せる。
+                // 今回はManagerの onSelectionChange コールバックで updateSelectDropdown が呼ばれ、
+                // そこから updateAreaNameInput を呼ぶように修正したほうがきれいだが、
+                // 既存実装では onSelectionChange -> dropdown.value更新のみ。
+                // なので、コールバック側を修正する。
             });
         }
 
@@ -626,6 +635,19 @@ export class PointMarkerApp {
             renameAreaBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.handleRenameArea();
+            });
+        }
+
+        // エリア名入力フィールド
+        const areaNameInput = document.getElementById('areaNameInput');
+        if (areaNameInput) {
+            // changeイベント（Enter押下またはフォーカスアウト時）
+            areaNameInput.addEventListener('change', (e) => {
+                this.handleAreaNameChange(e.target.value);
+            });
+            // フォーカス時に全選択
+            areaNameInput.addEventListener('focus', (e) => {
+                e.target.select();
             });
         }
 
@@ -862,6 +884,9 @@ export class PointMarkerApp {
         });
 
         dropdown.value = currentSelectedIndex >= 0 ? currentSelectedIndex.toString() : '';
+
+        // エリア名入力フィールドも連動更新
+        this.updateAreaNameInput();
     }
 
     /**
@@ -890,26 +915,38 @@ export class PointMarkerApp {
     }
 
     /**
-     * 選択中のエリア名を変更
+     * エリア名入力フィールドを更新
      */
-    handleRenameArea() {
-        const index = this.areaManager.selectedAreaIndex;
-        if (index < 0) {
-            UIHelper.showError('エリアが選択されていません');
-            return;
-        }
+    updateAreaNameInput() {
+        const input = document.getElementById('areaNameInput');
+        if (!input) return;
 
-        const area = this.areaManager.getSelectedArea();
-        const newName = window.prompt('エリア名を入力してください', area.areaName);
+        const selectedIndex = this.areaManager.selectedAreaIndex;
+        if (selectedIndex >= 0) {
+            const area = this.areaManager.getSelectedArea();
+            if (area) {
+                input.value = area.areaName || '';
+                input.disabled = false;
+            }
+        } else {
+            input.value = '';
+            input.disabled = true;
+        }
+    }
+
+    /**
+     * エリア名変更時の処理
+     * @param {string} newName - 新しいエリア名
+     */
+    handleAreaNameChange(newName) {
+        const index = this.areaManager.selectedAreaIndex;
+        if (index < 0) return;
 
         if (newName !== null) {
             this.areaManager.setAreaName(newName);
 
-            // Firebase連携: 名前更新
-            if (area.firestoreId) {
-                // 名前だけでなく、全体を更新（isModifiedなども含めるため）
-                this.firebaseSyncManager.updateAreaToFirebase(index);
-            }
+            // Firebase連携
+            this.firebaseSyncManager.updateAreaToFirebase(index);
 
             UIHelper.showMessage(`エリア名を「${newName}」に変更しました`);
         }
