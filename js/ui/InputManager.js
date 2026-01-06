@@ -459,11 +459,11 @@ export class InputManager {
 
             // 幅の調整（入力値がある場合は最小限に、ない場合は80px）
             if (input.value) {
-                // 入力値がある場合：テキスト幅に合わせる（最大300px）
-                input.style.width = Math.min(textWidth, 300) + 'px';
+                // 入力値がある場合：テキスト幅に合わせる（最大600px）
+                input.style.width = Math.min(textWidth, 600) + 'px';
             } else {
                 // 入力値がない場合（プレースホルダー表示）：80pxを初期値として使用
-                input.style.width = Math.max(80, Math.min(textWidth, 300)) + 'px';
+                input.style.width = Math.max(80, Math.min(textWidth, 600)) + 'px';
             }
 
             // 高さの自動調整（scrollHeightを使用）
