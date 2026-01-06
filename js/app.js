@@ -621,6 +621,14 @@ export class PointMarkerApp {
             });
         }
 
+        const renameAreaBtn = document.getElementById('renameAreaBtn');
+        if (renameAreaBtn) {
+            renameAreaBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleRenameArea();
+            });
+        }
+
         // ポイントID表示切り替えチェックボックス
         document.getElementById('showPointIdsCheckbox').addEventListener('change', (e) => {
             this.handlePointIdVisibilityChange(e.target.checked);
@@ -879,6 +887,32 @@ export class PointMarkerApp {
         this.firebaseSyncManager.updateAreaToFirebase(newIndex);
 
         UIHelper.showMessage('新しいエリアを追加しました。画像上で頂点をクリックして追加してください');
+    }
+
+    /**
+     * 選択中のエリア名を変更
+     */
+    handleRenameArea() {
+        const index = this.areaManager.selectedAreaIndex;
+        if (index < 0) {
+            UIHelper.showError('エリアが選択されていません');
+            return;
+        }
+
+        const area = this.areaManager.getSelectedArea();
+        const newName = window.prompt('エリア名を入力してください', area.areaName);
+
+        if (newName !== null) {
+            this.areaManager.setAreaName(newName);
+
+            // Firebase連携: 名前更新
+            if (area.firestoreId) {
+                // 名前だけでなく、全体を更新（isModifiedなども含めるため）
+                this.firebaseSyncManager.updateAreaToFirebase(index);
+            }
+
+            UIHelper.showMessage(`エリア名を「${newName}」に変更しました`);
+        }
     }
 
     /**
