@@ -484,11 +484,11 @@ export class CanvasEventHandler {
         // 描画更新
         this.app.redrawCanvas();
 
-        // スポット詳細入力モーダルを表示（新規作成モード）
-        this.app.inputManager.showSpotModal(newIndex, true);
+        // スポット入力ボックスを再描画（完了を待機）
+        await this.app.inputManager.redrawSpotInputBoxes(this.app.spotManager.getSpots());
 
-        // Firebaseにはモーダルで保存ボタンを押したタイミングで保存されるが、
-        // 座標だけ先に保存しておくことも可能（今回はモーダル保存に任せる）
+        // 新規スポットの入力欄にフォーカス
+        UIHelper.focusInputForSpot(newIndex);
     }
     /**
      * ルート編集モードでポイント/スポット選択時の処理

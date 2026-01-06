@@ -470,11 +470,14 @@ export class InputManager {
             span.style.whiteSpace = 'nowrap';
             span.style.fontSize = window.getComputedStyle(input).fontSize;
             span.style.fontFamily = window.getComputedStyle(input).fontFamily;
+            span.style.fontWeight = window.getComputedStyle(input).fontWeight;
+            span.style.letterSpacing = window.getComputedStyle(input).letterSpacing;
             span.textContent = displayText;
             document.body.appendChild(span);
 
-            // テキスト幅を計測（左右パディング12px = 6px × 2 のみ追加）
-            const textWidth = span.offsetWidth + 12;
+            // テキスト幅を計測（左右パディング + バッファを追加）
+            // 12px (padding) + 4px (border/margin) + 20px (buffer for mixed width chars)
+            const textWidth = span.offsetWidth + 36;
             document.body.removeChild(span);
 
             // 幅の調整（入力値がある場合は最小限に、ない場合は80px）
@@ -502,8 +505,9 @@ export class InputManager {
         // input時は変換処理を一切行わない
         input.addEventListener('input', (e) => {
             const value = e.target.value;
-            // 入力サイズを自動調整
-            adjustInputSize();
+            // 入力中は幅の自動調整を行わない（プロンプト指示）
+            // adjustInputSize(); 
+
             // 入力中は変換処理なし、そのまま保存（表示更新なし）
             this.notify('onSpotNameChange', { index, name: value, skipFormatting: true, skipDisplay: true });
         });
@@ -639,23 +643,29 @@ export class InputManager {
     /**
      * 全スポット入力ボックスをクリア・再作成
      * @param {Array} spots - スポット配列
+     * @returns {Promise<void>} 再作成完了時に解決されるPromise
      */
     redrawSpotInputBoxes(spots) {
         this.clearSpotInputBoxes();
 
-        // スポット編集モードまたはスポット名表示チェックボックスがオンの時のみ再作成
-        if (this.isSpotEditMode || this.spotNameVisibility) {
-            setTimeout(() => {
-                spots.forEach((spot, index) => {
-                    this.createSpotInputBox(spot, index);
-                    const input = this.spotInputElements[this.spotInputElements.length - 1];
-                    if (input) {
-                        input.value = spot.name || '';
-                        input.setAttribute('data-spot-index', index);
-                    }
-                });
-            }, 10);
-        }
+        return new Promise((resolve) => {
+            // スポット編集モードまたはスポット名表示チェックボックスがオンの時のみ再作成
+            if (this.isSpotEditMode || this.spotNameVisibility) {
+                setTimeout(() => {
+                    spots.forEach((spot, index) => {
+                        this.createSpotInputBox(spot, index);
+                        const input = this.spotInputElements[this.spotInputElements.length - 1];
+                        if (input) {
+                            input.value = spot.name || '';
+                            input.setAttribute('data-spot-index', index);
+                        }
+                    });
+                    resolve();
+                }, 10);
+            } else {
+                resolve();
+            }
+        });
     }
 
     /**
