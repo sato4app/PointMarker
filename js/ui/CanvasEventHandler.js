@@ -164,6 +164,17 @@ export class CanvasEventHandler {
 
         // カーソル更新（ホバー効果）
         const objectInfo = this.findObjectAtMouse(coords.x, coords.y);
+
+        // エリア編集モードで、エリア名（ラベル）上にいる場合はテキストカーソルにする
+        if (this.app.layoutManager.getCurrentEditingMode() === 'area') {
+            const areas = this.app.areaManager.getAllAreas();
+            const hitAreaIndex = this.findAreaLabelAt(coords.x, coords.y, areas, scale);
+            if (hitAreaIndex !== -1) {
+                this.app.canvas.style.cursor = 'text';
+                return;
+            }
+        }
+
         this.updateCursor(!!objectInfo);
     }
 
