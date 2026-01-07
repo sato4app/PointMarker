@@ -327,9 +327,77 @@ export class CanvasEventHandler {
         if (objectInfo) {
             this.handleExistingObjectClick(objectInfo, mode);
         } else {
+            // エリア編集モードの場合、エリア名のクリック判定を行う
+            if (mode === 'area') {
+                const areas = this.app.areaManager.getAllAreas();
+                const hitAreaIndex = this.findAreaLabelAt(coords.x, coords.y, areas, scale);
+
+                if (hitAreaIndex !== -1) {
+                    // エリアを選択
+                    this.app.areaManager.selectArea(hitAreaIndex);
+
+                    // 現在の名前を取得
+                    const area = areas[hitAreaIndex];
+                    const currentName = area.areaName || '';
+
+                    // リネームダイアログを表示
+                    // eslint-disable-next-line no-alert
+                    const newName = prompt('新しいエリア名を入力してください:', currentName);
+
+                    if (newName !== null) {
+                        // 名前を更新
+                        this.app.areaManager.setAreaName(newName || 'Area ' + (hitAreaIndex + 1));
+                        // Firebase連携: エリア更新
+                        this.app.firebaseSyncManager.updateAreaToFirebase(hitAreaIndex);
+                        this.app.redrawCanvas();
+                        return;
+                    }
+                }
+            }
+
             // 空白部分をクリックした場合（新規作成）
             this.handleNewObjectCreation(coords.x, coords.y, mode);
         }
+    }
+
+    /**
+     * 指定座標がエリア名の表示領域（重心付近）にあるか判定
+     * @param {number} x - クリックしたX座標（画像座標系）
+     * @param {number} y - クリックしたY座標（画像座標系）
+     * @param {Array} areas - エリア配列
+     * @param {number} scale - 現在のズームスケール
+     * @returns {number} ヒットしたエリアのインデックス、なければ-1
+     */
+    findAreaLabelAt(x, y, areas, scale) {
+        // ヒット判定の閾値（画面上のピクセル数 / スケール）
+        // テキストの背景paddingなども考慮して少し広めに設定（画面上で約20px程度）
+        const threshold = 20 / scale;
+
+        for (let i = 0; i < areas.length; i++) {
+            const area = areas[i];
+            const vertices = area.vertices;
+
+            if (!vertices || vertices.length === 0) continue;
+
+            // 重心を計算
+            let cx = 0, cy = 0;
+            vertices.forEach(v => {
+                cx += v.x;
+                cy += v.y;
+            });
+            cx /= vertices.length;
+            cy /= vertices.length;
+
+            // 距離チェック
+            const dx = x - cx;
+            const dy = y - cy;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= threshold) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
