@@ -418,15 +418,17 @@ export class InputManager {
     /**
      * 全入力ボックスをクリア・再作成
      * @param {Array} points - ポイント配列
+     * @param {number} focusedIndex - フォーカスするポイントのインデックス（-1の場合はフォーカスしない）
      * @returns {Promise<void>} 再作成完了時に解決されるPromise
      */
-    redrawInputBoxes(points) {
+    redrawInputBoxes(points, focusedIndex = -1) {
         this.clearInputBoxes();
 
         return new Promise((resolve) => {
             setTimeout(() => {
                 points.forEach((point, index) => {
-                    this.createInputBox(point, index);
+                    const shouldFocus = (index === focusedIndex);
+                    this.createInputBox(point, index, shouldFocus);
                     const input = this.inputElements[this.inputElements.length - 1];
                     if (input) {
                         input.value = point.id || '';

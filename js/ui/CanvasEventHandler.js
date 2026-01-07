@@ -537,7 +537,8 @@ export class CanvasEventHandler {
         this.app.pointManager.addPoint(x, y);
 
         // 入力ボックスを再描画（完了を待機）
-        await this.app.inputManager.redrawInputBoxes(this.app.pointManager.getPoints());
+        // 新規追加したポイント（newIndex）にフォーカスを当てる
+        await this.app.inputManager.redrawInputBoxes(this.app.pointManager.getPoints(), newIndex);
 
         // フォーカスを当てる（追加された最後の要素）
         const points = this.app.pointManager.getPoints();
@@ -546,8 +547,7 @@ export class CanvasEventHandler {
         // 描画更新
         this.app.redrawCanvas();
 
-        // 入力欄にフォーカス
-        UIHelper.focusInputForPoint(newIndex);
+
 
         // 【リアルタイムFirebase更新】新規ポイント作成
         await this.app.firebaseSyncManager.addPointToFirebase(points[newIndex], newIndex);
