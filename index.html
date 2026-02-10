@@ -46,14 +46,14 @@
 
                 <!-- Stage 2: データ入力 -->
                 <div id="stage2-container" class="file-input-wrapper"
-                    style="display: none; flex-direction: column; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <button type="button" id="stage2InputBtn" class="file-input-label" style="flex: 1;"
-                            title="データを読み込み" aria-label="入力">
+                    style="display: none; align-items: flex-start; gap: 10px;">
+                    <div>
+                        <button type="button" id="stage2InputBtn" class="file-input-label"
+                            style="width: auto; padding: 6px 12px; min-width: 60px;" title="データを読み込み" aria-label="入力">
                             入力
                         </button>
                     </div>
-                    <div style="display: flex; justify-content: space-around; font-size: 13px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px;">
                         <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
                             <input type="radio" name="inputSource" value="file" checked>
                             ファイル
@@ -67,14 +67,14 @@
 
                 <!-- Stage 3: データ出力 -->
                 <div id="stage3-container" class="file-input-wrapper"
-                    style="display: none; flex-direction: column; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <button type="button" id="stage3OutputBtn" class="file-input-label" style="flex: 1;"
-                            title="データを保存" aria-label="出力">
+                    style="display: none; align-items: flex-start; gap: 10px;">
+                    <div>
+                        <button type="button" id="stage3OutputBtn" class="file-input-label"
+                            style="width: auto; padding: 6px 12px; min-width: 60px;" title="データを保存" aria-label="出力">
                             出力
                         </button>
                     </div>
-                    <div style="display: flex; justify-content: space-around; font-size: 13px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px;">
                         <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
                             <input type="radio" name="outputTarget" value="file" checked>
                             ファイル
