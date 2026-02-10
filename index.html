@@ -36,10 +36,13 @@
                 <h2>Points/Routes Marker</h2>
 
                 <!-- 画像ファイル入力 -->
-                <div class="file-input-wrapper" style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-weight: bold;">PNG画像</span>
-                    <button type="button" id="fileIoBtn" class="file-input-label" title="ファイル読み込み・保存"
-                        aria-label="ファイル等入出力">
+                <div class="file-input-wrapper" style="display: flex; gap: 10px;">
+                    <button type="button" id="imageInputBtn" class="file-input-label"
+                        style="flex: 1; padding: 10px 5px;" title="PNG画像ファイルを選択" aria-label="PNG画像">
+                        PNG画像
+                    </button>
+                    <button type="button" id="fileIoBtn" class="file-input-label" style="flex: 1; padding: 10px 5px;"
+                        title="ファイル読み込み・保存" aria-label="ファイル等入出力">
                         ファイル等入出力
                     </button>
                 </div>

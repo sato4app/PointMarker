@@ -444,6 +444,15 @@ export class PointMarkerApp {
      * イベントリスナーを設定
      */
     initializeEventListeners() {
+        // 画像選択
+        const imageInputBtn = document.getElementById('imageInputBtn');
+        if (imageInputBtn) {
+            imageInputBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await this.handleImageSelection();
+            });
+        }
+
         // ファイル等入出力
         const fileIoBtn = document.getElementById('fileIoBtn');
         if (fileIoBtn) {
