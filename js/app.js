@@ -445,20 +445,30 @@ export class PointMarkerApp {
      */
     initializeEventListeners() {
         // 画像選択
-        const imageInputBtn = document.getElementById('imageInputBtn');
-        if (imageInputBtn) {
-            imageInputBtn.addEventListener('click', async (e) => {
+        // Stage 1: 画像読み込み
+        const stage1ImageBtn = document.getElementById('stage1ImageBtn');
+        if (stage1ImageBtn) {
+            stage1ImageBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 await this.handleImageSelection();
             });
         }
 
-        // ファイル等入出力
-        const fileIoBtn = document.getElementById('fileIoBtn');
-        if (fileIoBtn) {
-            fileIoBtn.addEventListener('click', async (e) => {
+        // Stage 2: データ入力
+        const stage2InputBtn = document.getElementById('stage2InputBtn');
+        if (stage2InputBtn) {
+            stage2InputBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
-                await this.handleImageSelection();
+                await this.handleInput();
+            });
+        }
+
+        // Stage 3: データ出力
+        const stage3OutputBtn = document.getElementById('stage3OutputBtn');
+        if (stage3OutputBtn) {
+            stage3OutputBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await this.handleOutput();
             });
         }
 
@@ -686,7 +696,24 @@ export class PointMarkerApp {
      * 基本コントロールを有効化
      */
     enableBasicControls() {
-        // 初期状態では画像読み込み前なので無効化
+        // 初期状態: Stage 1のみ表示
+        this.setUIStage(1);
+    }
+
+    /**
+     * UIのステージを設定
+     * @param {number} stage - 1: 画像読み込み, 2: 入力, 3: 出力
+     */
+    setUIStage(stage) {
+        const stage1 = document.getElementById('stage1-container');
+        const stage2 = document.getElementById('stage2-container');
+        const stage3 = document.getElementById('stage3-container');
+
+        if (stage1 && stage2 && stage3) {
+            stage1.style.display = stage === 1 ? 'block' : 'none';
+            stage2.style.display = stage === 2 ? 'flex' : 'none';
+            stage3.style.display = stage === 3 ? 'flex' : 'none';
+        }
     }
 
     /**
@@ -743,21 +770,107 @@ export class PointMarkerApp {
         // FirebaseSyncManagerに画像とキャンバスを設定
         this.firebaseSyncManager.setImageAndCanvas(image, this.canvas);
 
-        // Firebaseから自動的にデータを読み込み
-        await this.firebaseSyncManager.loadFromFirebase((loadedPoints, loadedRoutes, loadedSpots) => {
-            // UIを更新
-            this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
-            this.inputManager.redrawSpotInputBoxes(this.spotManager.getSpots());
-            this.viewportManager.updatePopupPositions();
-            this.redrawCanvas();
+        // Stage 2へ移行
+        this.setUIStage(2);
+    }
 
-            // ポイント数・スポット数を更新
-            document.getElementById('pointCount').textContent = loadedPoints;
-            document.getElementById('spotCount').textContent = loadedSpots;
+    /**
+     * データ入力処理
+     */
+    async handleInput() {
+        const inputSource = document.querySelector('input[name="inputSource"]:checked').value;
 
-            // 中間点数は選択されたルートのものを表示（初期状態は0）
-            document.getElementById('waypointCount').textContent = 0;
-        });
+        try {
+            if (inputSource === 'file') {
+                const file = await this.fileHandler.selectJsonFile();
+                const result = await this.fileHandler.importProjectData(
+                    {
+                        pointManager: this.pointManager,
+                        routeManager: this.routeManager,
+                        spotManager: this.spotManager,
+                        areaManager: this.areaManager
+                    },
+                    file,
+                    this.canvas.width, this.canvas.height, // 現在のキャンバスサイズ
+                    this.currentImage.width, this.currentImage.height // 元画像サイズ
+                );
+
+                this.redrawAndSyncUI(result.pointsCount, result.routesCount, result.spotsCount);
+                UIHelper.showMessage(`ファイルからデータを読み込みました (ポイント: ${result.pointsCount}, ルート: ${result.routesCount}, スポット: ${result.spotsCount})`);
+
+            } else if (inputSource === 'db') {
+                await this.firebaseSyncManager.loadFromFirebase((loadedPoints, loadedRoutes, loadedSpots) => {
+                    this.redrawAndSyncUI(loadedPoints, loadedRoutes, loadedSpots);
+                });
+            }
+
+            // Stage 3へ移行
+            this.setUIStage(3);
+
+        } catch (error) {
+            console.error('入力エラー:', error);
+            if (error.message !== 'ファイル選択がキャンセルされました') {
+                UIHelper.showError('データの読み込みに失敗しました: ' + error.message);
+            }
+        }
+    }
+
+    /**
+     * データ出力処理
+     */
+    async handleOutput() {
+        const outputTarget = document.querySelector('input[name="outputTarget"]:checked').value;
+
+        try {
+            if (outputTarget === 'file') {
+                const projectId = this.fileHandler.getCurrentImageFileName() || 'project_data';
+                await this.fileHandler.exportProjectData(
+                    {
+                        pointManager: this.pointManager,
+                        routeManager: this.routeManager,
+                        spotManager: this.spotManager,
+                        areaManager: this.areaManager
+                    },
+                    this.fileHandler.getCurrentImageFileName() + '.png',
+                    this.canvas.width, this.canvas.height,
+                    this.currentImage.width, this.currentImage.height,
+                    `${projectId}_data.json`
+                );
+
+            } else if (outputTarget === 'db') {
+                await this.firebaseSyncManager.saveAllToFirebase();
+            }
+
+        } catch (error) {
+            console.error('出力エラー:', error);
+            if (error.message !== 'ファイル保存がキャンセルされました') {
+                UIHelper.showError('データの保存に失敗しました: ' + error.message);
+            }
+        }
+    }
+
+    /**
+     * UI同期と再描画
+     */
+    redrawAndSyncUI(pointCount, routeCount, spotCount) {
+        // UIを更新
+        this.inputManager.redrawInputBoxes(this.pointManager.getPoints());
+        this.inputManager.redrawSpotInputBoxes(this.spotManager.getSpots());
+        this.viewportManager.updatePopupPositions();
+        this.redrawCanvas();
+
+        // ポイント数・スポット数を更新
+        if (pointCount !== undefined) document.getElementById('pointCount').textContent = pointCount;
+        if (spotCount !== undefined) document.getElementById('spotCount').textContent = spotCount;
+
+        // 中間点数は初期化
+        document.getElementById('waypointCount').textContent = 0;
+
+        // ルートドロップダウン更新
+        this.updateRouteDropdown(this.routeManager.getAllRoutes());
+
+        // エリアドロップダウン更新
+        this.updateAreaDropdown(this.areaManager.getAllAreas());
     }
 
     /**
