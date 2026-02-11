@@ -829,6 +829,26 @@ export class PointMarkerApp {
         try {
             if (outputTarget === 'file') {
                 const projectId = this.fileHandler.getCurrentImageFileName() || 'project_data';
+
+                // ファイル名生成ロジック
+                // 画像ファイル略称 (区切り文字の前まで)
+                const abbrMatch = projectId.match(/^[^-_ ]+/);
+                const abbr = abbrMatch ? abbrMatch[0] : projectId;
+
+                // 各データのカウント (有効なデータのみ)
+                const pointCount = this.pointManager.getPoints().filter(p => p.id && p.id.trim() !== '').length;
+                const routeCount = this.routeManager.getAllRoutes().length;
+                const spotCount = this.spotManager.getSpots().filter(s => s.name && s.name.trim() !== '').length;
+                const areaCount = this.areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '').length;
+
+                // ファイル名構築
+                let filename = abbr;
+                if (pointCount > 0) filename += `_P${pointCount}`;
+                if (routeCount > 0) filename += `_R${routeCount}`;
+                if (spotCount > 0) filename += `_S${spotCount}`;
+                if (areaCount > 0) filename += `_A${areaCount}`;
+                filename += '.json';
+
                 await this.fileHandler.exportProjectData(
                     {
                         pointManager: this.pointManager,
@@ -839,7 +859,7 @@ export class PointMarkerApp {
                     this.fileHandler.getCurrentImageFileName() + '.png',
                     this.canvas.width, this.canvas.height,
                     this.currentImage.width, this.currentImage.height,
-                    `${projectId}_data.json`
+                    filename
                 );
 
             } else if (outputTarget === 'db') {
