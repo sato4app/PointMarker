@@ -242,7 +242,8 @@ export class PointMarkerApp {
                 if (data.index >= 0 && data.index < points.length) {
                     const point = points[data.index];
                     // Firebase削除処理（非同期だが待たない）
-                    this.firebaseSyncManager.deletePointFromFirebase(point.x, point.y);
+                    // [TEMP_DISABLE_FIREBASE]
+                    // this.firebaseSyncManager.deletePointFromFirebase(point.x, point.y);
                 }
                 // 画面から削除
                 this.pointManager.removePoint(data.index);
@@ -286,7 +287,8 @@ export class PointMarkerApp {
                     }
 
                     // 【リアルタイムFirebase更新】blur時、重複がなく、空白でない場合にFirebase更新
-                    this.firebaseSyncManager.updatePointToFirebase(data.index);
+                    // [TEMP_DISABLE_FIREBASE]
+                    // this.firebaseSyncManager.updatePointToFirebase(data.index);
                 }
             }
 
@@ -315,7 +317,8 @@ export class PointMarkerApp {
                 if (data.index >= 0 && data.index < spots.length) {
                     const spot = spots[data.index];
                     // Firebase削除処理（非同期だが待たない）
-                    this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
+                    // [TEMP_DISABLE_FIREBASE]
+                    // this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
                 }
                 // 画面から削除
                 this.spotManager.removeSpot(data.index);
@@ -328,7 +331,8 @@ export class PointMarkerApp {
             // blur時のみ、フォーマット後のスポット名でFirebase更新
             if (!data.skipFormatting && data.name.trim() !== '') {
                 // 【リアルタイムFirebase更新】スポット名変更完了時にFirebase更新
-                this.firebaseSyncManager.updateSpotToFirebase(data.index);
+                // [TEMP_DISABLE_FIREBASE]
+                // this.firebaseSyncManager.updateSpotToFirebase(data.index);
             }
 
             // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
@@ -348,7 +352,8 @@ export class PointMarkerApp {
                 if (data.index >= 0 && data.index < spots.length) {
                     const spot = spots[data.index];
                     // Firebase削除処理（非同期だが待たない）
-                    this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
+                    // [TEMP_DISABLE_FIREBASE]
+                    // this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
                 }
                 // 画面から削除
                 this.spotManager.removeSpot(data.index);
@@ -911,7 +916,8 @@ export class PointMarkerApp {
             case 'area':
                 if (this.areaManager.addVertex(coords.x, coords.y)) {
                     // Firebase連携: エリア更新
-                    this.firebaseSyncManager.updateAreaToFirebase(this.areaManager.selectedAreaIndex);
+                    // [TEMP_DISABLE_FIREBASE]
+                    // this.firebaseSyncManager.updateAreaToFirebase(this.areaManager.selectedAreaIndex);
                 }
                 break;
         }
@@ -1035,8 +1041,11 @@ export class PointMarkerApp {
         const newIndex = this.areaManager.getAllAreas().length - 1;
         this.areaManager.selectArea(newIndex);
 
+        this.areaManager.selectArea(newIndex);
+
         // Firebase連携: 新規エリア保存
-        this.firebaseSyncManager.updateAreaToFirebase(newIndex);
+        // [TEMP_DISABLE_FIREBASE]
+        // this.firebaseSyncManager.updateAreaToFirebase(newIndex);
 
         UIHelper.showMessage('新しいエリアを追加しました。画像上で頂点をクリックして追加してください');
     }
@@ -1072,8 +1081,11 @@ export class PointMarkerApp {
         if (newName !== null) {
             this.areaManager.setAreaName(newName);
 
+            this.areaManager.setAreaName(newName);
+
             // Firebase連携
-            this.firebaseSyncManager.updateAreaToFirebase(index);
+            // [TEMP_DISABLE_FIREBASE]
+            // this.firebaseSyncManager.updateAreaToFirebase(index);
 
             UIHelper.showMessage(`エリア名を「${newName}」に変更しました`);
         }
@@ -1093,7 +1105,8 @@ export class PointMarkerApp {
         if (confirm(`エリア「${area.areaName}」を削除しますか？`)) {
             // Firebase連携: 削除
             if (area.firestoreId) {
-                this.firebaseSyncManager.deleteAreaFromFirebase(area.firestoreId);
+                // [TEMP_DISABLE_FIREBASE]
+                // this.firebaseSyncManager.deleteAreaFromFirebase(area.firestoreId);
             }
 
             this.areaManager.deleteArea(index);
@@ -1311,11 +1324,17 @@ export class PointMarkerApp {
                 // FirestoreIDがあれば更新、なければ新規追加
                 if (route.firestoreId) {
                     // 既存ルートを更新
-                    await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
+                    // [TEMP_DISABLE_FIREBASE]
+                    // await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
                     updatedCount++;
                 } else {
                     // 新規ルートを追加
-                    const result = await window.firestoreManager.addRoute(projectId, routeData);
+                    // [TEMP_DISABLE_FIREBASE]
+                    // const result = await window.firestoreManager.addRoute(projectId, routeData);
+                    // 
+                    // 開発用ダミー処理
+                    const result = { status: 'success', firestoreId: 'temp_id_' + Date.now() };
+
                     if (result.status === 'success') {
                         // FirestoreIDを保存
                         route.firestoreId = result.firestoreId;
@@ -1324,7 +1343,8 @@ export class PointMarkerApp {
                         // 重複している場合は既存のFirestoreIDを保存
                         route.firestoreId = result.existing.firestoreId;
                         // 既存ルートを更新
-                        await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
+                        // [TEMP_DISABLE_FIREBASE]
+                        // await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
                         updatedCount++;
                     }
                 }
@@ -1369,7 +1389,8 @@ export class PointMarkerApp {
                 // Firebaseから削除
                 if (selectedRoute.firestoreId) {
                     const projectId = this.fileHandler.getCurrentImageFileName();
-                    await window.firestoreManager.deleteRoute(projectId, selectedRoute.firestoreId);
+                    // [TEMP_DISABLE_FIREBASE]
+                    // await window.firestoreManager.deleteRoute(projectId, selectedRoute.firestoreId);
                 }
 
                 // RouteManagerから削除

@@ -233,7 +233,8 @@ export class CanvasEventHandler {
         // ポイントドラッグ終了時のコールバック
         const onPointDragEnd = (pointIndex) => {
             // 【リアルタイムFirebase更新】ポイント移動完了時にFirebase更新
-            this.app.firebaseSyncManager.updatePointToFirebase(pointIndex);
+            // [TEMP_DISABLE_FIREBASE]
+            // this.app.firebaseSyncManager.updatePointToFirebase(pointIndex);
         };
 
         // スポットドラッグ終了時のコールバック
@@ -247,13 +248,15 @@ export class CanvasEventHandler {
                     // 座標が変わった場合のみ、古いデータを削除
                     if (this.spotDragStartCoords.x !== currentSpot.x ||
                         this.spotDragStartCoords.y !== currentSpot.y) {
-                        await this.app.firebaseSyncManager.deleteSpotFromFirebase(this.spotDragStartCoords.x, this.spotDragStartCoords.y);
+                        // [TEMP_DISABLE_FIREBASE]
+                        // await this.app.firebaseSyncManager.deleteSpotFromFirebase(this.spotDragStartCoords.x, this.spotDragStartCoords.y);
                     }
                 }
                 this.spotDragStartCoords = null; // リセット
             }
             // 新しい座標で更新/追加
-            await this.app.firebaseSyncManager.updateSpotToFirebase(spotIndex);
+            // [TEMP_DISABLE_FIREBASE]
+            // await this.app.firebaseSyncManager.updateSpotToFirebase(spotIndex);
         };
 
         // ルート中間点ドラッグ終了時のコールバック
@@ -268,7 +271,8 @@ export class CanvasEventHandler {
             if (areaIndex >= 0) {
                 this.app.areaManager.reorderVertices(areaIndex);
                 // Firebase連携: エリア更新
-                this.app.firebaseSyncManager.updateAreaToFirebase(areaIndex);
+                // [TEMP_DISABLE_FIREBASE]
+                // this.app.firebaseSyncManager.updateAreaToFirebase(areaIndex);
             }
             this.app.redrawCanvas();
         };
@@ -456,7 +460,8 @@ export class CanvasEventHandler {
                 if (this.app.areaManager.removeVertex(vertexInfo.index)) {
                     UIHelper.showMessage('エリア頂点を削除しました');
                     // Firebase連携: エリア更新
-                    this.app.firebaseSyncManager.updateAreaToFirebase(areaIndex);
+                    // [TEMP_DISABLE_FIREBASE]
+                    // this.app.firebaseSyncManager.updateAreaToFirebase(areaIndex);
                 }
             }
         }
@@ -521,7 +526,8 @@ export class CanvasEventHandler {
             if (selectedAreaIndex >= 0) {
                 this.app.areaManager.addVertex(x, y);
                 // Firebase連携: エリア更新
-                this.app.firebaseSyncManager.updateAreaToFirebase(selectedAreaIndex);
+                // [TEMP_DISABLE_FIREBASE]
+                // this.app.firebaseSyncManager.updateAreaToFirebase(selectedAreaIndex);
                 this.app.redrawCanvas();
             } else {
                 UIHelper.showWarning('頂点を追加するには、まずエリアを選択してください');
@@ -550,7 +556,8 @@ export class CanvasEventHandler {
 
 
         // 【リアルタイムFirebase更新】新規ポイント作成
-        await this.app.firebaseSyncManager.addPointToFirebase(points[newIndex], newIndex);
+        // [TEMP_DISABLE_FIREBASE]
+        // await this.app.firebaseSyncManager.addPointToFirebase(points[newIndex], newIndex);
     }
 
     /**
