@@ -841,6 +841,9 @@ export class PointMarkerApp {
                 await this.firebaseSyncManager.saveAllToFirebase();
             }
 
+            // 出力が完了したら、入力ボタン（Stage 2）を表示
+            this.setUIStage(2);
+
         } catch (error) {
             console.error('出力エラー:', error);
             if (error.message !== 'ファイル保存がキャンセルされました') {
