@@ -748,7 +748,7 @@ export class PointMarkerApp {
         try {
             this.isFilePickerActive = true;
             const result = await this.fileHandler.selectImage();
-            await this.processLoadedImage(result.image, result.fileName);
+            await this.processLoadedImage(result.image, result.fileName, result.fullFileName);
         } catch (error) {
             if (error.message !== 'ファイル選択がキャンセルされました') {
                 alert('画像選択中にエラーが発生しました: ' + error.message);
@@ -763,7 +763,7 @@ export class PointMarkerApp {
      * @param {HTMLImageElement} image - 読み込まれた画像
      * @param {string} fileName - ファイル名
      */
-    async processLoadedImage(image, fileName) {
+    async processLoadedImage(image, fileName, fullFileName = '') {
         this.currentImage = image;
         this.canvasRenderer.setImage(image);
         this.canvasRenderer.setupCanvas(this.layoutManager.getCurrentLayout());
@@ -771,6 +771,13 @@ export class PointMarkerApp {
         this.enableImageControls();
         this.layoutManager.setDefaultPointMode();
         UIHelper.showMessage(`画像「${fileName}」を読み込みました`);
+
+        // ファイル名表示を更新
+        const filenameDisplay = document.getElementById('imageFilenameDisplay');
+        if (filenameDisplay) {
+            filenameDisplay.textContent = fullFileName || `${fileName}.png`; // fallback
+            filenameDisplay.style.display = 'block';
+        }
 
         // FirebaseSyncManagerに画像とキャンバスを設定
         this.firebaseSyncManager.setImageAndCanvas(image, this.canvas);

@@ -37,7 +37,7 @@ export class FileHandler {
                 this.currentImageFileName = file.name.replace(/\.png$/i, '');
                 const image = await this.loadImageFromFile(file);
 
-                return { file, image, fileName: this.currentImageFileName };
+                return { file, image, fileName: this.currentImageFileName, fullFileName: file.name };
             } else {
                 throw new Error('File System Access API not supported');
             }
@@ -90,7 +90,7 @@ export class FileHandler {
         this.currentImageFileName = file.name.replace(/\.png$/i, '');
         const image = await this.loadImageFromFile(file);
 
-        return { file, image, fileName: this.currentImageFileName };
+        return { file, image, fileName: this.currentImageFileName, fullFileName: file.name };
     }
 
     /**

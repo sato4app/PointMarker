@@ -139,6 +139,25 @@ header p {
     border-color: var(--primary-color);
 }
 
+/* 画像ファイル名表示（左下） */
+.image-filename-display {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--secondary-color);
+    z-index: 10000;
+    pointer-events: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: none;
+    /* 初期状態は非表示 */
+}
+
 /* =====================================
    Controls Sidebar
    ===================================== */
