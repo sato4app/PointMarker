@@ -893,10 +893,10 @@ export class PointMarkerApp {
         document.getElementById('waypointCount').textContent = 0;
 
         // ルートドロップダウン更新
-        this.updateRouteDropdown(this.routeManager.getAllRoutes());
+        this.routeUIManager.updateRouteDropdown(this.routeManager.getAllRoutes());
 
         // エリアドロップダウン更新
-        this.updateAreaDropdown(this.areaManager.getAllAreas());
+        this.areaUIManager.updateAreaDropdown(this.areaManager.getAllAreas());
     }
 
     /**
