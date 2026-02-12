@@ -45,46 +45,19 @@
                     </button>
                 </div>
 
-                <!-- Stage 2: データ入力 -->
-                <div id="stage2-container" class="file-input-wrapper"
-                    style="display: none; align-items: flex-start; gap: 24px;">
-                    <div>
-                        <button type="button" id="stage2InputBtn" class="file-input-label"
-                            style="width: auto; padding: 6px 12px; min-width: 60px;" title="データを読み込み" aria-label="入力">
-                            入力
-                        </button>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px;">
-                        <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                            <input type="radio" name="inputSource" value="file" checked>
-                            JSONファイル
-                        </label>
-                        <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                            <input type="radio" name="inputSource" value="db">
-                            データベース
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Stage 3: データ出力 -->
-                <div id="stage3-container" class="file-input-wrapper"
-                    style="display: none; align-items: flex-start; gap: 20px;">
-                    <div>
-                        <button type="button" id="stage3OutputBtn" class="file-input-label"
-                            style="width: auto; padding: 6px 12px; min-width: 60px;" title="データを保存" aria-label="出力">
-                            出力
-                        </button>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px;">
-                        <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                            <input type="radio" name="outputTarget" value="file" checked>
-                            JSONファイル
-                        </label>
-                        <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                            <input type="radio" name="outputTarget" value="db">
-                            データベース
-                        </label>
-                    </div>
+                <!-- ファイル操作: JSONデータの読み込み・保存 -->
+                <div id="file-operations-container" class="file-input-wrapper"
+                    style="display: none; align-items: center; gap: 12px;">
+                    <button type="button" id="loadJsonBtn" class="file-input-label"
+                        style="width: auto; padding: 6px 12px; min-width: 80px;" title="JSONファイルからデータを読み込み"
+                        aria-label="読み込み">
+                        読み込み
+                    </button>
+                    <button type="button" id="saveJsonBtn" class="file-input-label"
+                        style="width: auto; padding: 6px 12px; min-width: 80px;" title="JSONファイルにデータを保存"
+                        aria-label="保存">
+                        保存
+                    </button>
                 </div>
 
                 <!-- 編集モード選択 -->
@@ -344,7 +317,7 @@
                             ☁️ 読み込み
                         </button>
                         <button id="databaseExportBtn" class="settings-dialog-btn settings-dialog-btn-ok">
-                            ☁️ 出力
+                            ☁️ 保存
                         </button>
                         <button id="databaseCancelBtn" class="settings-dialog-btn settings-dialog-btn-cancel">
                             キャンセル

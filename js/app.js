@@ -459,19 +459,19 @@ export class PointMarkerApp {
             });
         }
 
-        // Stage 2: データ入力
-        const stage2InputBtn = document.getElementById('stage2InputBtn');
-        if (stage2InputBtn) {
-            stage2InputBtn.addEventListener('click', async (e) => {
+        // JSON読み込み
+        const loadJsonBtn = document.getElementById('loadJsonBtn');
+        if (loadJsonBtn) {
+            loadJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 await this.handleInput();
             });
         }
 
-        // Stage 3: データ出力
-        const stage3OutputBtn = document.getElementById('stage3OutputBtn');
-        if (stage3OutputBtn) {
-            stage3OutputBtn.addEventListener('click', async (e) => {
+        // JSON保存
+        const saveJsonBtn = document.getElementById('saveJsonBtn');
+        if (saveJsonBtn) {
+            saveJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 await this.handleOutput();
             });
@@ -735,13 +735,12 @@ export class PointMarkerApp {
      */
     setUIStage(stage) {
         const stage1 = document.getElementById('stage1-container');
-        const stage2 = document.getElementById('stage2-container');
-        const stage3 = document.getElementById('stage3-container');
+        const fileOps = document.getElementById('file-operations-container');
 
-        if (stage1 && stage2 && stage3) {
+        if (stage1 && fileOps) {
             stage1.style.display = stage === 1 ? 'block' : 'none';
-            stage2.style.display = stage === 2 ? 'flex' : 'none';
-            stage3.style.display = stage === 3 ? 'flex' : 'none';
+            // Stage 2以降はファイル操作ボタンを表示
+            fileOps.style.display = stage >= 2 ? 'flex' : 'none';
         }
     }
 
@@ -814,34 +813,25 @@ export class PointMarkerApp {
      * データ入力処理
      */
     async handleInput() {
-        const inputSource = document.querySelector('input[name="inputSource"]:checked').value;
-
         try {
-            if (inputSource === 'file') {
-                const file = await this.fileHandler.selectJsonFile();
-                const result = await this.fileHandler.importProjectData(
-                    {
-                        pointManager: this.pointManager,
-                        routeManager: this.routeManager,
-                        spotManager: this.spotManager,
-                        areaManager: this.areaManager
-                    },
-                    file,
-                    this.canvas.width, this.canvas.height, // 現在のキャンバスサイズ
-                    this.currentImage.width, this.currentImage.height // 元画像サイズ
-                );
+            const file = await this.fileHandler.selectJsonFile();
+            const result = await this.fileHandler.importProjectData(
+                {
+                    pointManager: this.pointManager,
+                    routeManager: this.routeManager,
+                    spotManager: this.spotManager,
+                    areaManager: this.areaManager
+                },
+                file,
+                this.canvas.width, this.canvas.height, // 現在のキャンバスサイズ
+                this.currentImage.width, this.currentImage.height // 元画像サイズ
+            );
 
-                this.redrawAndSyncUI(result.pointsCount, result.routesCount, result.spotsCount);
-                UIHelper.showMessage(`ファイルからデータを読み込みました (ポイント: ${result.pointsCount}, ルート: ${result.routesCount}, スポット: ${result.spotsCount})`);
+            this.redrawAndSyncUI(result.pointsCount, result.routesCount, result.spotsCount);
+            UIHelper.showMessage(`ファイルからデータを読み込みました (ポイント: ${result.pointsCount}, ルート: ${result.routesCount}, スポット: ${result.spotsCount})`);
 
-            } else if (inputSource === 'db') {
-                await this.firebaseSyncManager.loadFromFirebase((loadedPoints, loadedRoutes, loadedSpots) => {
-                    this.redrawAndSyncUI(loadedPoints, loadedRoutes, loadedSpots);
-                });
-            }
-
-            // Stage 3へ移行
-            this.setUIStage(3);
+            // Stage 2へ移行 (読み込み直後と同じ状態)
+            this.setUIStage(2);
 
         } catch (error) {
             console.error('入力エラー:', error);
@@ -855,47 +845,40 @@ export class PointMarkerApp {
      * データ出力処理
      */
     async handleOutput() {
-        const outputTarget = document.querySelector('input[name="outputTarget"]:checked').value;
-
         try {
-            if (outputTarget === 'file') {
-                const projectId = this.fileHandler.getCurrentImageFileName() || 'project_data';
+            const projectId = this.fileHandler.getCurrentImageFileName() || 'project_data';
 
-                // ファイル名生成ロジック
-                // 画像ファイル略称 (区切り文字の前まで)
-                const abbrMatch = projectId.match(/^[^-_ ]+/);
-                const abbr = abbrMatch ? abbrMatch[0] : projectId;
+            // ファイル名生成ロジック
+            // 画像ファイル略称 (区切り文字の前まで)
+            const abbrMatch = projectId.match(/^[^-_ ]+/);
+            const abbr = abbrMatch ? abbrMatch[0] : projectId;
 
-                // 各データのカウント (有効なデータのみ)
-                const pointCount = this.pointManager.getPoints().filter(p => p.id && p.id.trim() !== '').length;
-                const routeCount = this.routeManager.getAllRoutes().length;
-                const spotCount = this.spotManager.getSpots().filter(s => s.name && s.name.trim() !== '').length;
-                const areaCount = this.areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '').length;
+            // 各データのカウント (有効なデータのみ)
+            const pointCount = this.pointManager.getPoints().filter(p => p.id && p.id.trim() !== '').length;
+            const routeCount = this.routeManager.getAllRoutes().length;
+            const spotCount = this.spotManager.getSpots().filter(s => s.name && s.name.trim() !== '').length;
+            const areaCount = this.areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '').length;
 
-                // ファイル名構築
-                let filename = abbr;
-                if (pointCount > 0) filename += `_P${pointCount}`;
-                if (routeCount > 0) filename += `_R${routeCount}`;
-                if (spotCount > 0) filename += `_S${spotCount}`;
-                if (areaCount > 0) filename += `_A${areaCount}`;
-                filename += '.json';
+            // ファイル名構築
+            let filename = abbr;
+            if (pointCount > 0) filename += `_P${pointCount}`;
+            if (routeCount > 0) filename += `_R${routeCount}`;
+            if (spotCount > 0) filename += `_S${spotCount}`;
+            if (areaCount > 0) filename += `_A${areaCount}`;
+            filename += '.json';
 
-                await this.fileHandler.exportProjectData(
-                    {
-                        pointManager: this.pointManager,
-                        routeManager: this.routeManager,
-                        spotManager: this.spotManager,
-                        areaManager: this.areaManager
-                    },
-                    this.fileHandler.getCurrentImageFileName() + '.png',
-                    this.canvas.width, this.canvas.height,
-                    this.currentImage.width, this.currentImage.height,
-                    filename
-                );
-
-            } else if (outputTarget === 'db') {
-                await this.firebaseSyncManager.saveAllToFirebase();
-            }
+            await this.fileHandler.exportProjectData(
+                {
+                    pointManager: this.pointManager,
+                    routeManager: this.routeManager,
+                    spotManager: this.spotManager,
+                    areaManager: this.areaManager
+                },
+                this.fileHandler.getCurrentImageFileName() + '.png',
+                this.canvas.width, this.canvas.height,
+                this.currentImage.width, this.currentImage.height,
+                filename
+            );
 
             // 出力が完了したら、入力ボタン（Stage 2）を表示
             this.setUIStage(2);
