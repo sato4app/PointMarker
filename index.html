@@ -257,73 +257,98 @@
                 <h3>マーカーサイズ設定</h3>
             </div>
             <div class="settings-dialog-body">
-                <p class="settings-dialog-message">各マーカーのサイズを指定してください（ピクセル単位）</p>
+                <!-- タブ切り替えボタン -->
+                <div class="settings-tabs">
+                    <button class="settings-tab-btn active" data-tab="marker-settings">マーカーサイズ設定</button>
+                    <button class="settings-tab-btn" data-tab="database-settings">データベース</button>
+                </div>
 
-                <div class="settings-dialog-controls">
-                    <!-- ポイントマーカー -->
-                    <div class="settings-control-group">
-                        <label for="pointSizeInput">
-                            <span class="settings-marker-preview point-marker"></span>
-                            <span class="settings-label-text">ポイント:</span>
-                        </label>
-                        <input type="range" id="pointSizeSlider" class="settings-slider" min="2" max="12" value="6"
-                            step="0.5">
-                        <input type="number" id="pointSizeInput" class="settings-input" min="2" max="12" value="6"
-                            step="0.5">
-                        <span class="settings-unit">px</span>
-                    </div>
+                <!-- マーカーサイズ設定タブ -->
+                <div id="tab-marker-settings" class="settings-tab-content active">
+                    <p class="settings-dialog-message">各マーカーのサイズを指定してください（ピクセル単位）</p>
 
-                    <!-- 選択ルート中間点 -->
-                    <div class="settings-control-group">
-                        <label for="selectedWaypointSizeInput">
-                            <span class="settings-marker-preview waypoint-marker selected"></span>
-                            <span class="settings-label-text">選択ルート中間点:</span>
-                        </label>
-                        <input type="range" id="selectedWaypointSizeSlider" class="settings-slider" min="2" max="12"
-                            value="6" step="0.5">
-                        <input type="number" id="selectedWaypointSizeInput" class="settings-input" min="2" max="12"
-                            value="6" step="0.5">
-                        <span class="settings-unit">px</span>
-                    </div>
+                    <div class="settings-dialog-controls">
+                        <!-- ポイントマーカー -->
+                        <div class="settings-control-group">
+                            <label for="pointSizeInput">
+                                <span class="settings-marker-preview point-marker"></span>
+                                <span class="settings-label-text">ポイント:</span>
+                            </label>
+                            <input type="range" id="pointSizeSlider" class="settings-slider" min="2" max="12" value="6"
+                                step="0.5">
+                            <input type="number" id="pointSizeInput" class="settings-input" min="2" max="12" value="6"
+                                step="0.5">
+                            <span class="settings-unit">px</span>
+                        </div>
 
-                    <!-- 非選択ルート中間点 -->
-                    <div class="settings-control-group">
-                        <label for="unselectedWaypointSizeInput">
-                            <span class="settings-marker-preview waypoint-marker unselected"></span>
-                            <span class="settings-label-text">非選択ルート中間点:</span>
-                        </label>
-                        <input type="range" id="unselectedWaypointSizeSlider" class="settings-slider" min="2" max="12"
-                            value="4" step="0.5">
-                        <input type="number" id="unselectedWaypointSizeInput" class="settings-input" min="2" max="12"
-                            value="4" step="0.5">
-                        <span class="settings-unit">px</span>
-                    </div>
+                        <!-- 選択ルート中間点 -->
+                        <div class="settings-control-group">
+                            <label for="selectedWaypointSizeInput">
+                                <span class="settings-marker-preview waypoint-marker selected"></span>
+                                <span class="settings-label-text">選択ルート中間点:</span>
+                            </label>
+                            <input type="range" id="selectedWaypointSizeSlider" class="settings-slider" min="2" max="12"
+                                value="6" step="0.5">
+                            <input type="number" id="selectedWaypointSizeInput" class="settings-input" min="2" max="12"
+                                value="6" step="0.5">
+                            <span class="settings-unit">px</span>
+                        </div>
 
-                    <!-- スポット -->
-                    <div class="settings-control-group">
-                        <label for="spotSizeInput">
-                            <span class="settings-marker-preview spot-marker"></span>
-                            <span class="settings-label-text">スポット:</span>
-                        </label>
-                        <input type="range" id="spotSizeSlider" class="settings-slider" min="4" max="20" value="12"
-                            step="0.5">
-                        <input type="number" id="spotSizeInput" class="settings-input" min="4" max="20" value="12"
-                            step="0.5">
-                        <span class="settings-unit">px</span>
-                    </div>
+                        <!-- 非選択ルート中間点 -->
+                        <div class="settings-control-group">
+                            <label for="unselectedWaypointSizeInput">
+                                <span class="settings-marker-preview waypoint-marker unselected"></span>
+                                <span class="settings-label-text">非選択ルート中間点:</span>
+                            </label>
+                            <input type="range" id="unselectedWaypointSizeSlider" class="settings-slider" min="2"
+                                max="12" value="4" step="0.5">
+                            <input type="number" id="unselectedWaypointSizeInput" class="settings-input" min="2"
+                                max="12" value="4" step="0.5">
+                            <span class="settings-unit">px</span>
+                        </div>
 
-                    <!-- エリア頂点 -->
-                    <div class="settings-control-group">
-                        <label for="areaVertexSizeInput">
-                            <span class="settings-marker-preview area-vertex-marker"></span>
-                            <span class="settings-label-text">エリア頂点:</span>
-                        </label>
-                        <input type="range" id="areaVertexSizeSlider" class="settings-slider" min="2" max="12" value="6"
-                            step="0.5">
-                        <input type="number" id="areaVertexSizeInput" class="settings-input" min="2" max="12" value="6"
-                            step="0.5">
-                        <span class="settings-unit">px</span>
+                        <!-- スポット -->
+                        <div class="settings-control-group">
+                            <label for="spotSizeInput">
+                                <span class="settings-marker-preview spot-marker"></span>
+                                <span class="settings-label-text">スポット:</span>
+                            </label>
+                            <input type="range" id="spotSizeSlider" class="settings-slider" min="4" max="20" value="12"
+                                step="0.5">
+                            <input type="number" id="spotSizeInput" class="settings-input" min="4" max="20" value="12"
+                                step="0.5">
+                            <span class="settings-unit">px</span>
+                        </div>
+
+                        <!-- エリア頂点 -->
+                        <div class="settings-control-group">
+                            <label for="areaVertexSizeInput">
+                                <span class="settings-marker-preview area-vertex-marker"></span>
+                                <span class="settings-label-text">エリア頂点:</span>
+                            </label>
+                            <input type="range" id="areaVertexSizeSlider" class="settings-slider" min="2" max="12"
+                                value="6" step="0.5">
+                            <input type="number" id="areaVertexSizeInput" class="settings-input" min="2" max="12"
+                                value="6" step="0.5">
+                            <span class="settings-unit">px</span>
+                        </div>
                     </div>
+                </div>
+
+                <!-- データベースタブ -->
+                <div id="tab-database-settings" class="settings-tab-content">
+                    <p class="settings-dialog-message">Firebaseデータベースとの連携を行います</p>
+                    <div class="settings-dialog-controls"
+                        style="display: flex; gap: 15px; justify-content: center; padding: 20px 0;">
+                        <button id="databaseLoadBtn" class="btn btn-load-spot" style="padding: 10px 20px;">
+                            ☁️ データベースから読み込み
+                        </button>
+                        <button id="databaseExportBtn" class="btn btn-export" style="padding: 10px 20px;">
+                            ☁️ データベースへ保存
+                        </button>
+                    </div>
+                    <p style="font-size: 11px; color: #666; text-align: center;">※ 現在の画像ファイル名に基づくプロジェクトIDで保存・読み込みされます
+                    </p>
                 </div>
             </div>
             <div class="settings-dialog-footer">

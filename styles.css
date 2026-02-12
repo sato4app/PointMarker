@@ -1321,6 +1321,44 @@ header p {
     line-height: 1.6;
 }
 
+/* タブ */
+.settings-tabs {
+    display: flex;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 20px;
+}
+
+.settings-tab-btn {
+    padding: 10px 15px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: #7f8c8d;
+    transition: color 0.2s ease, border-bottom 0.2s ease;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    /* border-bottomが重なるのを防ぐ */
+}
+
+.settings-tab-btn:hover {
+    color: #3498db;
+}
+
+.settings-tab-btn.active {
+    color: #3498db;
+    border-bottom: 3px solid #3498db;
+}
+
+.settings-tab-content {
+    display: none;
+}
+
+.settings-tab-content.active {
+    display: block;
+}
+
 .settings-dialog-controls {
     display: flex;
     flex-direction: column;

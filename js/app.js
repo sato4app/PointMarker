@@ -538,6 +538,30 @@ export class PointMarkerApp {
             this.markerSettingsManager.openDialog();
         });
 
+        // データベース操作のリスナー設定
+        this.markerSettingsManager.setupDatabaseListeners({
+            onLoad: async (e) => {
+                e.preventDefault();
+                // FirebaseSyncManager側でデータがある場合のみ確認が入るので、ここは直接呼び出す
+                await this.firebaseSyncManager.loadFromFirebase((points, routes, spots) => {
+                    // 読み込み完了時の処理
+                    this.redrawCanvas();
+                    this.markerSettingsManager.closeDialog();
+                });
+            },
+            onExport: async (e) => {
+                e.preventDefault();
+                // 保存確認
+                if (!confirm('現在のデータをデータベースに上書き保存しますか？')) {
+                    return;
+                }
+
+                await this.firebaseSyncManager.saveAllToFirebase();
+                // 保存後はダイアログを閉じる
+                this.markerSettingsManager.closeDialog();
+            }
+        });
+
         // 開始・終了ポイント入力
         const startPointInput = document.getElementById('startPointInput');
         const endPointInput = document.getElementById('endPointInput');

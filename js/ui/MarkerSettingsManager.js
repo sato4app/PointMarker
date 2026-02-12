@@ -62,6 +62,14 @@ export class MarkerSettingsManager {
             areaVertex: document.getElementById('areaVertexSizeSlider')
         };
 
+        // タブ要素
+        this.tabs = document.querySelectorAll('.settings-tab-btn');
+        this.tabContents = document.querySelectorAll('.settings-tab-content');
+
+        // データベース操作ボタン
+        this.databaseLoadBtn = document.getElementById('databaseLoadBtn');
+        this.databaseExportBtn = document.getElementById('databaseExportBtn');
+
         // ボタン要素の取得
         this.okBtn = document.getElementById('settingsOkBtn');
         this.cancelBtn = document.getElementById('settingsCancelBtn');
@@ -106,6 +114,14 @@ export class MarkerSettingsManager {
         this.setupSliderSync('spot');
         this.setupSliderSync('areaVertex');
 
+        // タブ切り替え
+        this.tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                this.switchTab(targetTab);
+            });
+        });
+
         // オーバーレイクリックで閉じる
         this.overlay.addEventListener('click', (e) => {
             if (e.target === this.overlay) {
@@ -141,6 +157,43 @@ export class MarkerSettingsManager {
                 slider.value = value;
             }
         });
+    }
+
+    /**
+     * タブを切り替える
+     * @param {string} tabId - タブID ('marker-settings' | 'database-settings')
+     */
+    switchTab(tabId) {
+        // ボタンのアクティブ状態を更新
+        this.tabs.forEach(tab => {
+            if (tab.dataset.tab === tabId) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+
+        // コンテンツの表示状態を更新
+        this.tabContents.forEach(content => {
+            if (content.id === `tab-${tabId}`) {
+                content.classList.add('active');
+            } else {
+                content.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * データベース操作のリスナーを設定
+     * @param {Object} callbacks - { onLoad: Function, onExport: Function }
+     */
+    setupDatabaseListeners(callbacks) {
+        if (this.databaseLoadBtn && callbacks.onLoad) {
+            this.databaseLoadBtn.addEventListener('click', callbacks.onLoad);
+        }
+        if (this.databaseExportBtn && callbacks.onExport) {
+            this.databaseExportBtn.addEventListener('click', callbacks.onExport);
+        }
     }
 
     /**
