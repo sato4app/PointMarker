@@ -69,6 +69,10 @@ export class MarkerSettingsManager {
         // データベース操作ボタン
         this.databaseLoadBtn = document.getElementById('databaseLoadBtn');
         this.databaseExportBtn = document.getElementById('databaseExportBtn');
+        this.databaseCancelBtn = document.getElementById('databaseCancelBtn');
+
+        // フッター要素
+        this.dialogFooter = this.dialog.querySelector('.settings-dialog-footer');
 
         // ボタン要素の取得
         this.okBtn = document.getElementById('settingsOkBtn');
@@ -135,6 +139,13 @@ export class MarkerSettingsManager {
                 this.closeDialog();
             }
         });
+
+        // データベースタブのキャンセルボタン
+        if (this.databaseCancelBtn) {
+            this.databaseCancelBtn.addEventListener('click', () => {
+                this.closeDialog();
+            });
+        }
     }
 
     /**
@@ -181,6 +192,13 @@ export class MarkerSettingsManager {
                 content.classList.remove('active');
             }
         });
+
+        // フッターの表示切り替え
+        if (tabId === 'database-settings') {
+            this.dialogFooter.style.display = 'none';
+        } else {
+            this.dialogFooter.style.display = 'flex';
+        }
     }
 
     /**
