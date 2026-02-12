@@ -214,7 +214,7 @@ export class CanvasEventHandler {
                         const deletedCount = this.app.routeManager.removeRoutePoints(indices);
 
                         // Firebase自動保存
-                        await this.app.handleSaveRoute();
+                        await this.app.routeUIManager.handleSaveRoute();
 
                         UIHelper.showMessage(`${deletedCount}個のルート中間点を削除しました`);
                     } else {
@@ -262,7 +262,7 @@ export class CanvasEventHandler {
         // ルート中間点ドラッグ終了時のコールバック
         const onRoutePointDragEnd = async (routePointIndex) => {
             // 中間点移動後、自動保存
-            await this.app.handleSaveRoute();
+            await this.app.routeUIManager.handleSaveRoute();
         };
 
         // エリア頂点ドラッグ終了時のコールバック
@@ -445,7 +445,7 @@ export class CanvasEventHandler {
 
                 if (deleted) {
                     // Firebase自動保存
-                    await this.app.handleSaveRoute();
+                    await this.app.routeUIManager.handleSaveRoute();
 
                     // 削除成功メッセージ
                     UIHelper.showMessage('ルート中間点を削除しました');
@@ -515,7 +515,7 @@ export class CanvasEventHandler {
             if (selectedRouteIndex >= 0) {
                 this.app.routeManager.addRoutePoint(x, y);
                 // Firebase連携: ルート更新
-                this.app.handleSaveRoute();
+                this.app.routeUIManager.handleSaveRoute();
                 this.app.redrawCanvas();
             } else {
                 UIHelper.showWarning('ルートを選択してください');

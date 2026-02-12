@@ -16,7 +16,9 @@ import { ObjectDetector } from './utils/ObjectDetector.js';
 import { DragDropHandler } from './utils/DragDropHandler.js';
 import { ResizeHandler } from './utils/ResizeHandler.js';
 import { FirebaseSyncManager } from './firebase/FirebaseSyncManager.js';
-import { CanvasEventHandler } from './ui/CanvasEventHandler.js'; // Added import
+import { CanvasEventHandler } from './ui/CanvasEventHandler.js';
+import { RouteUIManager } from './ui/RouteUIManager.js';
+import { AreaUIManager } from './ui/AreaUIManager.js';
 
 /**
  * PointMarkerアプリケーションのメインクラス
@@ -36,6 +38,10 @@ export class PointMarkerApp {
         this.inputManager = new InputManager(this.canvas);
         this.layoutManager = new LayoutManager();
         this.validationManager = new ValidationManager();
+
+        this.canvasEventHandler = new CanvasEventHandler(this);
+        this.routeUIManager = new RouteUIManager(this);
+        this.areaUIManager = new AreaUIManager(this);
         this.dragDropHandler = new DragDropHandler();
         this.resizeHandler = new ResizeHandler();
         this.markerSettingsManager = new MarkerSettingsManager();
@@ -69,8 +75,8 @@ export class PointMarkerApp {
         // ファイルピッカーのアクティブ状態管理（重複呼び出し防止）
         this.isFilePickerActive = false;
 
-        // CanvasEventHandlerの初期化
-        this.canvasEventHandler = new CanvasEventHandler(this);
+        // CanvasEventHandlerの初期化 (済み)
+
 
         this.initializeCallbacks();
         this.initializeEventListeners();
@@ -139,7 +145,7 @@ export class PointMarkerApp {
 
         // ルート一覧変更時のコールバック
         this.routeManager.setCallback('onRouteListChange', (routes) => {
-            this.updateRouteDropdown(routes);
+            this.routeUIManager.updateRouteDropdown(routes);
         });
 
         // ルート選択変更時のコールバック
@@ -164,7 +170,7 @@ export class PointMarkerApp {
 
         // ルート更新状態変更時のコールバック
         this.routeManager.setCallback('onModifiedStateChange', (data) => {
-            this.updateRouteDropdown(this.routeManager.getAllRoutes());
+            this.routeUIManager.updateRouteDropdown(this.routeManager.getAllRoutes());
         });
 
         // ルート未選択時のコールバック
@@ -200,7 +206,7 @@ export class PointMarkerApp {
         });
 
         this.areaManager.setCallback('onAreaListChange', (areas) => {
-            this.updateAreaDropdown(areas);
+            this.areaUIManager.updateAreaDropdown(areas);
         });
 
         this.areaManager.setCallback('onSelectionChange', (index) => {
@@ -209,11 +215,11 @@ export class PointMarkerApp {
                 dropdown.value = index >= 0 ? index.toString() : '';
             }
             // 入力フィールドも更新
-            this.updateAreaNameInput();
+            this.areaUIManager.updateAreaNameInput();
         });
 
         this.areaManager.setCallback('onModifiedStateChange', (data) => {
-            this.updateAreaDropdown(this.areaManager.getAllAreas());
+            this.areaUIManager.updateAreaDropdown(this.areaManager.getAllAreas());
         });
 
         this.areaManager.setCallback('onNoAreaSelected', (message) => {
@@ -241,63 +247,56 @@ export class PointMarkerApp {
                 const points = this.pointManager.getPoints();
                 if (data.index >= 0 && data.index < points.length) {
                     const point = points[data.index];
-                    // Firebase削除処理（非同期だが待たない）
-                    // [TEMP_DISABLE_FIREBASE]
-                    // this.firebaseSyncManager.deletePointFromFirebase(point.x, point.y);
+                    // 画面から削除
+                    this.pointManager.removePoint(data.index);
+                    return;
                 }
-                // 画面から削除
-                this.pointManager.removePoint(data.index);
-                return;
-            }
 
-            // まずフォーマット処理を実行（blur時もinput時も）
-            this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
+                // まずフォーマット処理を実行（blur時もinput時も）
+                this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
 
-            // blur時のみ、フォーマット後のIDで重複チェックを実行
-            if (!data.skipFormatting && data.id.trim() !== '') {
-                // フォーマット後のIDを取得
-                const point = this.pointManager.getPoints()[data.index];
-                const formattedId = point ? point.id : data.id;
+                // blur時のみ、フォーマット後のIDで重複チェックを実行
+                if (!data.skipFormatting && data.id.trim() !== '') {
+                    // フォーマット後のIDを取得
+                    const point = this.pointManager.getPoints()[data.index];
+                    const formattedId = point ? point.id : data.id;
 
-                const registeredIds = this.pointManager.getRegisteredIds();
+                    const registeredIds = this.pointManager.getRegisteredIds();
 
-                // 自分以外で同じIDが存在するかチェック
-                const hasDuplicate = registeredIds.some((id, idx) => {
-                    return id === formattedId && idx !== data.index;
-                });
+                    // 自分以外で同じIDが存在するかチェック
+                    const hasDuplicate = registeredIds.some((id, idx) => {
+                        return id === formattedId && idx !== data.index;
+                    });
 
-                if (hasDuplicate) {
-                    // 重複エラーを表示
-                    const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
-                    if (inputElement) {
-                        inputElement.style.backgroundColor = '#ffebee'; // ピンク背景
-                        inputElement.style.borderColor = '#f44336'; // 赤枠
-                        inputElement.style.borderWidth = '2px';
-                        inputElement.title = `ポイントID "${formattedId}" は既に使用されています`;
+                    if (hasDuplicate) {
+                        // 重複エラーを表示
+                        const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
+                        if (inputElement) {
+                            inputElement.style.backgroundColor = '#ffebee'; // ピンク背景
+                            inputElement.style.borderColor = '#f44336'; // 赤枠
+                            inputElement.style.borderWidth = '2px';
+                            inputElement.title = `ポイントID "${formattedId}" は既に使用されています`;
+                        }
+                        UIHelper.showError(`ポイントID "${formattedId}" は既に使用されています。別のIDを入力してください。`);
+                    } else {
+                        // 重複がない場合はエラー表示をクリア
+                        const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
+                        if (inputElement) {
+                            inputElement.style.backgroundColor = '';
+                            inputElement.style.borderColor = '';
+                            inputElement.style.borderWidth = '';
+                            inputElement.title = '';
+                        }
                     }
-                    UIHelper.showError(`ポイントID "${formattedId}" は既に使用されています。別のIDを入力してください。`);
-                } else {
-                    // 重複がない場合はエラー表示をクリア
-                    const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
-                    if (inputElement) {
-                        inputElement.style.backgroundColor = '';
-                        inputElement.style.borderColor = '';
-                        inputElement.style.borderWidth = '';
-                        inputElement.title = '';
-                    }
-
-                    // 【リアルタイムFirebase更新】blur時、重複がなく、空白でない場合にFirebase更新
-                    // [TEMP_DISABLE_FIREBASE]
-                    // this.firebaseSyncManager.updatePointToFirebase(data.index);
                 }
-            }
 
-            // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
-            if (!data.skipDisplay) {
-                // フォーマット処理後の値を取得して表示
-                const point = this.pointManager.getPoints()[data.index];
-                if (point) {
-                    this.inputManager.updatePointIdDisplay(data.index, point.id);
+                // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
+                if (!data.skipDisplay) {
+                    // フォーマット処理後の値を取得して表示
+                    const point = this.pointManager.getPoints()[data.index];
+                    if (point) {
+                        this.inputManager.updatePointIdDisplay(data.index, point.id);
+                    }
                 }
             }
         });
@@ -315,25 +314,14 @@ export class PointMarkerApp {
                 // Firebaseからも削除するため、削除前に座標を取得
                 const spots = this.spotManager.getSpots();
                 if (data.index >= 0 && data.index < spots.length) {
-                    const spot = spots[data.index];
-                    // Firebase削除処理（非同期だが待たない）
-                    // [TEMP_DISABLE_FIREBASE]
-                    // this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
+                    // 画面から削除
+                    this.spotManager.removeSpot(data.index);
+                    return;
                 }
-                // 画面から削除
-                this.spotManager.removeSpot(data.index);
-                return;
             }
 
             // フォーマット処理を実行（blur時のみ、input時はスキップ）
             this.spotManager.updateSpotName(data.index, data.name, !!data.skipFormatting, !!data.skipDisplay);
-
-            // blur時のみ、フォーマット後のスポット名でFirebase更新
-            if (!data.skipFormatting && data.name.trim() !== '') {
-                // 【リアルタイムFirebase更新】スポット名変更完了時にFirebase更新
-                // [TEMP_DISABLE_FIREBASE]
-                // this.firebaseSyncManager.updateSpotToFirebase(data.index);
-            }
 
             // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
             if (!data.skipDisplay) {
@@ -350,13 +338,9 @@ export class PointMarkerApp {
                 // Firebaseからも削除するため、削除前に座標を取得
                 const spots = this.spotManager.getSpots();
                 if (data.index >= 0 && data.index < spots.length) {
-                    const spot = spots[data.index];
-                    // Firebase削除処理（非同期だが待たない）
-                    // [TEMP_DISABLE_FIREBASE]
-                    // this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
+                    // 画面から削除
+                    this.spotManager.removeSpot(data.index);
                 }
-                // 画面から削除
-                this.spotManager.removeSpot(data.index);
             }
         });
 
@@ -571,7 +555,7 @@ export class PointMarkerApp {
             if (e.target.hasAttribute('readonly')) {
                 const confirmed = confirm('開始ポイントを変更しますか？\n変更すると中間点がクリアされます。');
                 if (confirmed) {
-                    this.handleRoutePointEditRequest('start');
+                    this.routeUIManager.handleRoutePointEditRequest('start');
                 }
             }
         });
@@ -580,7 +564,7 @@ export class PointMarkerApp {
             if (e.target.hasAttribute('readonly')) {
                 const confirmed = confirm('終了ポイントを変更しますか？\n変更すると中間点がクリアされます。');
                 if (confirmed) {
-                    this.handleRoutePointEditRequest('end');
+                    this.routeUIManager.handleRoutePointEditRequest('end');
                 }
             }
         });
@@ -589,14 +573,14 @@ export class PointMarkerApp {
         startPointInput.addEventListener('blur', (e) => {
             const inputValue = e.target.value.trim();
             const previousValue = this.routeManager.getStartEndPoints().start;
-            const newValue = this.handleRoutePointBlur(inputValue, 'start', previousValue);
+            const newValue = this.routeUIManager.handleRoutePointBlur(inputValue, 'start', previousValue);
             e.target.value = newValue;
         });
 
         endPointInput.addEventListener('blur', (e) => {
             const inputValue = e.target.value.trim();
             const previousValue = this.routeManager.getStartEndPoints().end;
-            const newValue = this.handleRoutePointBlur(inputValue, 'end', previousValue);
+            const newValue = this.routeUIManager.handleRoutePointBlur(inputValue, 'end', previousValue);
             e.target.value = newValue;
         });
 
@@ -629,12 +613,12 @@ export class PointMarkerApp {
         // ルート操作ボタン
         document.getElementById('addRouteBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            this.handleAddRoute();
+            this.routeUIManager.handleAddRoute();
         });
 
         document.getElementById('deleteRouteBtn').addEventListener('click', (e) => {
             e.preventDefault();
-            this.handleDeleteRoute();
+            this.routeUIManager.handleDeleteRoute();
         });
 
         // エリア選択ドロップダウン
@@ -668,7 +652,7 @@ export class PointMarkerApp {
         if (addAreaBtn) {
             addAreaBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.handleAddArea();
+                this.areaUIManager.handleAddArea();
             });
         }
 
@@ -676,7 +660,7 @@ export class PointMarkerApp {
         if (deleteAreaBtn) {
             deleteAreaBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.handleDeleteArea();
+                this.areaUIManager.handleDeleteArea();
             });
         }
 
@@ -684,7 +668,7 @@ export class PointMarkerApp {
         if (renameAreaBtn) {
             renameAreaBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.handleRenameArea();
+                this.areaUIManager.handleRenameArea();
             });
         }
 
@@ -693,7 +677,7 @@ export class PointMarkerApp {
         if (areaNameInput) {
             // changeイベント（Enter押下またはフォーカスアウト時）
             areaNameInput.addEventListener('change', (e) => {
-                this.handleAreaNameChange(e.target.value);
+                this.areaUIManager.handleAreaNameChange(e.target.value);
             });
             // フォーカス時に全選択
             areaNameInput.addEventListener('focus', (e) => {
@@ -929,55 +913,11 @@ export class PointMarkerApp {
         }
     }
 
-    /**
-     * 新規オブジェクト作成処理
-     * @param {Object} coords - 座標
-     * @param {string} mode - 編集モード
-     */
-    async handleNewObjectCreation(coords, mode) {
-        switch (mode) {
-            case 'route':
-                this.routeManager.addRoutePoint(coords.x, coords.y);
-                // 中間点追加後、自動保存
-                await this.handleSaveRoute();
-                break;
-            case 'point':
-                this.createNewPoint(coords);
-                break;
-            case 'spot':
-                this.createNewSpot(coords);
-                break;
-            case 'area':
-                if (this.areaManager.addVertex(coords.x, coords.y)) {
-                    // Firebase連携: エリア更新
-                    // [TEMP_DISABLE_FIREBASE]
-                    // this.firebaseSyncManager.updateAreaToFirebase(this.areaManager.selectedAreaIndex);
-                }
-                break;
-        }
-    }
 
-    /**
-     * 新規ポイント作成
-     * @param {Object} coords - 座標
-     */
-    createNewPoint(coords) {
-        this.pointManager.removeTrailingEmptyUserPoints();
-        this.pointManager.addPoint(coords.x, coords.y);
-        const newIndex = this.pointManager.getPoints().length - 1;
-        setTimeout(() => UIHelper.focusInputForPoint(newIndex), 30);
-    }
 
-    /**
-     * 新規スポット作成
-     * @param {Object} coords - 座標
-     */
-    createNewSpot(coords) {
-        this.spotManager.removeTrailingEmptySpots();
-        this.spotManager.addSpot(coords.x, coords.y);
-        const newIndex = this.spotManager.getSpots().length - 1;
-        setTimeout(() => UIHelper.focusInputForSpot(newIndex), 30);
-    }
+
+
+
 
     /**
      * 開始・終了ポイントがスポット名の場合、常に表示するように設定
@@ -1006,147 +946,17 @@ export class PointMarkerApp {
         this.inputManager.setAlwaysVisibleSpotNames(alwaysVisibleSpotNames);
     }
 
-    /**
-     * ルート選択ドロップダウンを更新
-     * @param {Array} routes - ルート配列
-     */
-    updateRouteDropdown(routes) {
-        const dropdown = document.getElementById('routeSelectDropdown');
-        if (!dropdown) return;
 
-        // 現在の選択を保持
-        const currentSelectedIndex = this.routeManager.selectedRouteIndex;
 
-        // 既存のオプションをクリア（最初の「-- ルートを選択 --」以外）
-        dropdown.innerHTML = '<option value="">-- ルートを選択 --</option>';
 
-        // ルートを追加
-        routes.forEach((route, index) => {
-            const option = document.createElement('option');
-            option.value = index.toString();
-            const routeName = route.routeName || `${route.startPointId} ～ ${route.endPointId}`;
-            option.textContent = routeName;
-            dropdown.appendChild(option);
-        });
 
-        // 選択を復元
-        dropdown.value = currentSelectedIndex >= 0 ? currentSelectedIndex.toString() : '';
-    }
 
-    /**
-     * エリア選択ドロップダウンを更新
-     */
-    updateAreaDropdown(areas) {
-        const dropdown = document.getElementById('areaSelectDropdown');
-        if (!dropdown) return;
 
-        const currentSelectedIndex = this.areaManager.selectedAreaIndex;
-        dropdown.innerHTML = '<option value="">-- エリアを選択 --</option>';
 
-        areas.forEach((area, index) => {
-            const option = document.createElement('option');
-            option.value = index.toString();
-            option.textContent = area.areaName || `エリア ${index + 1}`;
-            dropdown.appendChild(option);
-        });
 
-        dropdown.value = currentSelectedIndex >= 0 ? currentSelectedIndex.toString() : '';
 
-        // エリア名入力フィールドも連動更新
-        this.updateAreaNameInput();
-    }
 
-    /**
-     * 新しいエリアを追加
-     */
-    handleAddArea() {
-        const defaultName = `エリア ${this.areaManager.getAllAreas().length + 1}`;
-        const areaName = window.prompt('エリア名を入力してください', defaultName);
 
-        if (areaName === null) {
-            return; // Cancelled
-        }
-
-        const newArea = {
-            areaName: areaName.trim() || defaultName,
-            vertices: []
-        };
-        this.areaManager.addArea(newArea);
-        const newIndex = this.areaManager.getAllAreas().length - 1;
-        this.areaManager.selectArea(newIndex);
-
-        this.areaManager.selectArea(newIndex);
-
-        // Firebase連携: 新規エリア保存
-        // [TEMP_DISABLE_FIREBASE]
-        // this.firebaseSyncManager.updateAreaToFirebase(newIndex);
-
-        UIHelper.showMessage('新しいエリアを追加しました。画像上で頂点をクリックして追加してください');
-    }
-
-    /**
-     * エリア名入力フィールドを更新
-     */
-    updateAreaNameInput() {
-        const input = document.getElementById('areaNameInput');
-        if (!input) return;
-
-        const selectedIndex = this.areaManager.selectedAreaIndex;
-        if (selectedIndex >= 0) {
-            const area = this.areaManager.getSelectedArea();
-            if (area) {
-                input.value = area.areaName || '';
-                input.disabled = false;
-            }
-        } else {
-            input.value = '';
-            input.disabled = true;
-        }
-    }
-
-    /**
-     * エリア名変更時の処理
-     * @param {string} newName - 新しいエリア名
-     */
-    handleAreaNameChange(newName) {
-        const index = this.areaManager.selectedAreaIndex;
-        if (index < 0) return;
-
-        if (newName !== null) {
-            this.areaManager.setAreaName(newName);
-
-            this.areaManager.setAreaName(newName);
-
-            // Firebase連携
-            // [TEMP_DISABLE_FIREBASE]
-            // this.firebaseSyncManager.updateAreaToFirebase(index);
-
-            UIHelper.showMessage(`エリア名を「${newName}」に変更しました`);
-        }
-    }
-
-    /**
-     * エリアを削除
-     */
-    handleDeleteArea() {
-        const index = this.areaManager.selectedAreaIndex;
-        if (index < 0) {
-            UIHelper.showError('エリアが選択されていません');
-            return;
-        }
-
-        const area = this.areaManager.getSelectedArea();
-        if (confirm(`エリア「${area.areaName}」を削除しますか？`)) {
-            // Firebase連携: 削除
-            if (area.firestoreId) {
-                // [TEMP_DISABLE_FIREBASE]
-                // this.firebaseSyncManager.deleteAreaFromFirebase(area.firestoreId);
-            }
-
-            this.areaManager.deleteArea(index);
-            UIHelper.showMessage('エリアを削除しました');
-        }
-    }
 
     /**
      * キャンバスを再描画
@@ -1172,238 +982,15 @@ export class PointMarkerApp {
         );
     }
 
-    /**
-     * ルートポイント（開始・終了）のblur処理を統合処理
-     * @param {string} inputValue - 入力値
-     * @param {string} pointType - ポイントタイプ ('start' or 'end')
-     * @param {string} previousValue - 前回の値
-     * @returns {string} 設定された値
-     */
-    handleRoutePointBlur(inputValue, pointType, previousValue) {
-        const isStartPoint = pointType === 'start';
-        const setPointMethod = isStartPoint ? 'setStartPoint' : 'setEndPoint';
-        const pointLabel = isStartPoint ? '開始ポイント' : '終了ポイント';
-
-        // 入力値が空でない場合のみ処理
-        if (inputValue !== '') {
-            // まず元の入力値でスポット名の部分一致検索
-            const matchingSpots = this.spotManager.findSpotsByPartialName(inputValue);
-
-            if (matchingSpots.length === 1) {
-                // 1件のみ該当する場合、そのスポット名を設定（フォーマット処理も適用）
-                const formattedSpotName = Validators.formatPointId(matchingSpots[0].name);
-                this.routeManager[setPointMethod](formattedSpotName);
-            } else if (matchingSpots.length > 1) {
-                // 複数件該当する場合、ポイントIDとしてフォーマット処理を試みる
-                // （警告は表示せず、バリデーション時にピンク背景で表示）
-                this.routeManager[setPointMethod](inputValue);
-            } else {
-                // スポット名が該当しない場合、ポイントIDとしてフォーマット処理
-                this.routeManager[setPointMethod](inputValue);
-            }
-        } else {
-            // 空の場合はそのまま設定
-            this.routeManager[setPointMethod](inputValue);
-        }
-
-        const newValue = isStartPoint
-            ? this.routeManager.getStartEndPoints().start
-            : this.routeManager.getStartEndPoints().end;
-
-        // 開始・終了ポイント両方の検証フィードバック（複数一致したスポット名を取得）
-        const matchingSpots = ValidationManager.updateBothRoutePointsValidation(this.routeManager, this.pointManager, this.spotManager);
-
-        // 複数一致したスポット名をエラー状態として設定
-        const allMatchingSpotNames = [...matchingSpots.start, ...matchingSpots.end];
-        this.inputManager.setErrorSpotNames(allMatchingSpotNames);
-
-        // 値が変更された場合の処理（ブランクも含む）
-        if (previousValue !== newValue) {
-            this.checkRoutePointChange(previousValue, newValue, pointLabel);
-            // ポイントID表示チェックボックスをオンにする
-            const checkbox = document.getElementById('showPointIdsCheckbox');
-            if (!checkbox.checked) {
-                checkbox.checked = true;
-                this.handlePointIdVisibilityChange(true);
-            }
-        }
-
-        // 開始・終了ポイントがスポット名の場合、常に表示するように設定
-        this.updateAlwaysVisibleSpotNames();
-
-        return newValue;
-    }
 
 
-    /**
-     * ルートポイント変更チェック
-     * @param {string} previousValue - 編集前の値
-     * @param {string} newValue - 編集後の値
-     * @param {string} pointType - ポイントタイプ（'開始ポイント' or '終了ポイント'）
-     */
-    checkRoutePointChange(previousValue, newValue, pointType) {
-        // 値が変更され、かつ中間点が存在する場合
-        if (previousValue !== newValue && this.routeManager.getRoutePoints().length > 0) {
-            const waypointCount = this.routeManager.getRoutePoints().length;
-            const message = `${pointType}が変更されました（${previousValue || '(空)'} → ${newValue || '(空)'}）。\n\n` +
-                `ルート上の中間点（${waypointCount}個）をクリアしますか？`;
-
-            if (confirm(message)) {
-                this.routeManager.clearRoutePoints();
-                UIHelper.showMessage(`${waypointCount}個の中間点をクリアしました`);
-            }
-        }
-    }
 
 
-    /**
-     * 新しいルートを追加
-     */
-    handleAddRoute() {
-        const newRoute = {
-            routeName: `ルート${this.routeManager.getAllRoutes().length + 1}`,
-            startPointId: '',
-            endPointId: '',
-            routePoints: []
-        };
-        this.routeManager.addRoute(newRoute);
-        // 追加したルートを自動選択
-        const newIndex = this.routeManager.getAllRoutes().length - 1;
-        this.routeManager.selectRoute(newIndex);
 
-        // 開始・終了ポイント入力フィールドを編集可能にする
-        this.setRouteInputsEditable(true);
 
-        // ポイントID表示チェックボックスを自動的にONにする
-        const pointIdCheckbox = document.getElementById('showPointIdsCheckbox');
-        if (pointIdCheckbox && !pointIdCheckbox.checked) {
-            pointIdCheckbox.checked = true;
-            this.handlePointIdVisibilityChange(true);
-        }
 
-        UIHelper.showMessage('新しいルートを追加しました。開始ポイントを画像上で選択してください');
-    }
 
-    /**
-     * すべてのルートを保存（Firebase）
-     */
-    async handleSaveRoute() {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            UIHelper.showError('Firebase接続が利用できません');
-            return;
-        }
 
-        const selectedRoute = this.routeManager.getSelectedRoute();
-        if (!selectedRoute) {
-            UIHelper.showError('ルートが選択されていません');
-            return;
-        }
-
-        // 開始・終了ポイントが設定されているか確認
-        if (!selectedRoute.startPointId || !selectedRoute.endPointId) {
-            UIHelper.showError('開始ポイントと終了ポイントを設定してください');
-            return;
-        }
-
-        // 中間点が1件以上設定されているか確認
-        if (!selectedRoute.routePoints || selectedRoute.routePoints.length === 0) {
-            UIHelper.showError('中間点を1件以上設定してください');
-            return;
-        }
-
-        try {
-            // プロジェクトIDを画像ファイル名から取得
-            const projectId = this.fileHandler.getCurrentImageFileName();
-            if (!projectId) {
-                UIHelper.showError('画像ファイル名を取得できません');
-                return;
-            }
-
-            // すべてのルートを保存
-            const allRoutes = this.routeManager.getAllRoutes();
-            let savedCount = 0;
-            let updatedCount = 0;
-            let addedCount = 0;
-            const savedRouteNames = [];
-
-            for (const route of allRoutes) {
-                // 開始・終了ポイント、中間点が設定されていないルートはスキップ
-                if (!route.startPointId || !route.endPointId ||
-                    !route.routePoints || route.routePoints.length === 0) {
-                    continue;
-                }
-
-                // キャンバス座標を画像座標に変換
-                const waypoints = route.routePoints.map(point => {
-                    const imageCoords = CoordinateUtils.canvasToImage(
-                        point.x, point.y,
-                        this.canvas.width, this.canvas.height,
-                        this.currentImage.width, this.currentImage.height
-                    );
-                    return { x: imageCoords.x, y: imageCoords.y };
-                });
-
-                // Firebaseに保存するルートデータ
-                const routeData = {
-                    routeName: route.routeName || `${route.startPointId} ～ ${route.endPointId}`,
-                    startPoint: route.startPointId,
-                    endPoint: route.endPointId,
-                    waypoints: waypoints
-                };
-
-                // 更新されたルートかどうかを記録
-                const wasModified = route.isModified;
-
-                // FirestoreIDがあれば更新、なければ新規追加
-                if (route.firestoreId) {
-                    // 既存ルートを更新
-                    // [TEMP_DISABLE_FIREBASE]
-                    // await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
-                    updatedCount++;
-                } else {
-                    // 新規ルートを追加
-                    // [TEMP_DISABLE_FIREBASE]
-                    // const result = await window.firestoreManager.addRoute(projectId, routeData);
-                    // 
-                    // 開発用ダミー処理
-                    const result = { status: 'success', firestoreId: 'temp_id_' + Date.now() };
-
-                    if (result.status === 'success') {
-                        // FirestoreIDを保存
-                        route.firestoreId = result.firestoreId;
-                        addedCount++;
-                    } else if (result.status === 'duplicate') {
-                        // 重複している場合は既存のFirestoreIDを保存
-                        route.firestoreId = result.existing.firestoreId;
-                        // 既存ルートを更新
-                        // [TEMP_DISABLE_FIREBASE]
-                        // await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
-                        updatedCount++;
-                    }
-                }
-
-                // 更新フラグをクリア
-                route.isModified = false;
-                savedCount++;
-
-                // 更新されたルートのみ一覧に追加
-                if (wasModified) {
-                    savedRouteNames.push(routeData.routeName);
-                }
-            }
-
-            // 開始・終了ポイント入力フィールドを読み取り専用にする
-            this.setRouteInputsEditable(false);
-
-            // UI更新
-            this.routeManager.notify('onModifiedStateChange', { isModified: false });
-            this.routeManager.notify('onRouteListChange', allRoutes);
-
-        } catch (error) {
-            UIHelper.showError('ルート保存中にエラーが発生しました: ' + error.message);
-        }
-    }
 
     /**
      * 選択中のルートを削除
@@ -1423,8 +1010,6 @@ export class PointMarkerApp {
                 // Firebaseから削除
                 if (selectedRoute.firestoreId) {
                     const projectId = this.fileHandler.getCurrentImageFileName();
-                    // [TEMP_DISABLE_FIREBASE]
-                    // await window.firestoreManager.deleteRoute(projectId, selectedRoute.firestoreId);
                 }
 
                 // RouteManagerから削除
