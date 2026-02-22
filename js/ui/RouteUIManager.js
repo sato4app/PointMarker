@@ -156,9 +156,8 @@ export class RouteUIManager {
      * すべてのルートを保存（Firebase）
      */
     async handleSaveRoute() {
-        // Firebaseマネージャーの存在確認
+        // Firebaseマネージャーの存在確認（未接続時はスキップ）
         if (!window.firestoreManager) {
-            UIHelper.showError('Firebase接続が利用できません');
             return;
         }
 
