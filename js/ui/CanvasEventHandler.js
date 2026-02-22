@@ -556,16 +556,19 @@ export class CanvasEventHandler {
      * 新規スポット作成
      */
     async createNewSpot(x, y) {
-        // 新規スポット追加
-        const newIndex = this.app.spotManager.addSpot(x, y);
+        // 追加後のインデックスを事前に計算
+        const newIndex = this.app.spotManager.getSpots().length;
+
+        // 新規スポット追加（onChangeのredrawSpotInputBoxesをスキップして二重描画を防ぐ）
+        this.app.spotManager.addSpot(x, y, '', true);
 
         // 描画更新
         this.app.redrawCanvas();
 
-        // スポット入力ボックスを再描画（完了を待機）
+        // スポット入力ボックスを再描画し、完了を待機
         await this.app.inputManager.redrawSpotInputBoxes(this.app.spotManager.getSpots());
 
-        // 新規スポットの入力欄にフォーカス
+        // 新規スポットの入力欄にフォーカス（カーソルを移動）
         UIHelper.focusInputForSpot(newIndex);
     }
     /**
