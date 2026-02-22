@@ -526,6 +526,14 @@ export class PointMarkerApp {
         this.markerSettingsManager.setupDatabaseListeners({
             onLoad: async (e) => {
                 e.preventDefault();
+                // 読み込み時にFirebaseへ接続（未接続の場合のみ）
+                try {
+                    if (window.connectFirebase) {
+                        await window.connectFirebase();
+                    }
+                } catch (error) {
+                    return; // 接続失敗時は処理中断
+                }
                 // FirebaseSyncManager側でデータがある場合のみ確認が入るので、ここは直接呼び出す
                 await this.firebaseSyncManager.loadFromFirebase((points, routes, spots) => {
                     // 読み込み完了時の処理
@@ -539,7 +547,14 @@ export class PointMarkerApp {
                 if (!confirm('現在のデータをデータベースに上書き保存しますか？')) {
                     return;
                 }
-
+                // 保存時にFirebaseへ接続（未接続の場合のみ）
+                try {
+                    if (window.connectFirebase) {
+                        await window.connectFirebase();
+                    }
+                } catch (error) {
+                    return; // 接続失敗時は処理中断
+                }
                 await this.firebaseSyncManager.saveAllToFirebase();
                 // 保存後はダイアログを閉じる
                 this.markerSettingsManager.closeDialog();

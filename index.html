@@ -349,24 +349,47 @@
         window.AuthManager = AuthManager;
         window.FirestoreDataManager = FirestoreDataManager;
 
-        // アプリケーション初期化
-        document.addEventListener('DOMContentLoaded', async () => {
+        // Firebase接続中フラグ（多重呼び出し防止）
+        let _firebaseConnecting = false;
+
+        /**
+         * Firebase遅延接続関数
+         * 読み込み・保存操作時のみ呼び出す（起動時には接続しない）
+         */
+        window.connectFirebase = async () => {
+            // 既に接続済みの場合はスキップ
+            if (window.firestoreManager) {
+                return;
+            }
+
+            // 接続中の場合は完了まで待機
+            if (_firebaseConnecting) {
+                while (_firebaseConnecting) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                return;
+            }
+
+            _firebaseConnecting = true;
+
+            const authStatusEl = document.getElementById('authStatus');
+            const authTextEl = document.getElementById('authText');
+            const authIconEl = document.getElementById('authIcon');
+
+            authStatusEl.style.display = 'block';
+            authStatusEl.style.opacity = '1';
+            authStatusEl.style.transition = '';
+            authStatusEl.style.backgroundColor = '';
+            authIconEl.textContent = '🔒';
+            authTextEl.textContent = '接続中...';
+
             try {
                 // Firebaseクライアント初期化
                 const firebaseClient = new FirebaseClient(firebaseConfig);
                 await firebaseClient.initialize();
 
-                // 認証マネージャー初期化
+                // 認証マネージャー初期化・匿名ログイン
                 const authManager = new AuthManager(firebaseClient.getApp());
-
-                // 匿名ログイン
-                const authStatusEl = document.getElementById('authStatus');
-                const authTextEl = document.getElementById('authText');
-                const authIconEl = document.getElementById('authIcon');
-
-                authStatusEl.style.display = 'block';
-                authTextEl.textContent = '認証中...';
-
                 await authManager.signInAnonymously();
 
                 authIconEl.textContent = '✅';
@@ -384,29 +407,35 @@
                 window.authManager = authManager;
                 window.firestoreManager = firestoreManager;
 
-                // PointMarkerアプリ起動
-                const app = new PointMarkerApp();
-                window.pointMarkerApp = app;
-
                 // 3秒後に認証状態表示を非表示
                 setTimeout(() => {
                     authStatusEl.style.opacity = '0';
                     authStatusEl.style.transition = 'opacity 0.5s ease';
                     setTimeout(() => {
                         authStatusEl.style.display = 'none';
+                        authStatusEl.style.opacity = '1';
+                        authStatusEl.style.transition = '';
                     }, 500);
                 }, 3000);
 
             } catch (error) {
-                console.error('アプリケーション初期化エラー:', error);
-                const authStatusEl = document.getElementById('authStatus');
-                const authTextEl = document.getElementById('authText');
-                const authIconEl = document.getElementById('authIcon');
-
-                authStatusEl.style.display = 'block';
                 authStatusEl.style.backgroundColor = '#fee';
                 authIconEl.textContent = '❌';
-                authTextEl.textContent = '初期化失敗: ' + error.message;
+                authTextEl.textContent = '接続失敗: ' + error.message;
+                _firebaseConnecting = false;
+                throw error;
+            }
+
+            _firebaseConnecting = false;
+        };
+
+        // アプリケーション初期化（起動時はFirebaseに接続しない）
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const app = new PointMarkerApp();
+                window.pointMarkerApp = app;
+            } catch (error) {
+                console.error('アプリケーション初期化エラー:', error);
             }
         });
     </script>
