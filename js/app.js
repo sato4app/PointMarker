@@ -241,62 +241,60 @@ export class PointMarkerApp {
 
         // 入力管理のコールバック
         this.inputManager.setCallback('onPointIdChange', (data) => {
-            // blur時にIDが空白の場合はポイントを削除
+            // blur時にIDが空白の場合はポイントを削除して終了
             if (!data.skipFormatting && data.id.trim() === '') {
-                // Firebaseからも削除するため、削除前に座標を取得
                 const points = this.pointManager.getPoints();
                 if (data.index >= 0 && data.index < points.length) {
-                    const point = points[data.index];
                     // 画面から削除
                     this.pointManager.removePoint(data.index);
-                    return;
                 }
+                return;
+            }
 
-                // まずフォーマット処理を実行（blur時もinput時も）
-                this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
+            // フォーマット処理を実行（blur時もinput時も）
+            this.pointManager.updatePointId(data.index, data.id, data.skipFormatting, true);
 
-                // blur時のみ、フォーマット後のIDで重複チェックを実行
-                if (!data.skipFormatting && data.id.trim() !== '') {
-                    // フォーマット後のIDを取得
-                    const point = this.pointManager.getPoints()[data.index];
-                    const formattedId = point ? point.id : data.id;
+            // blur時のみ、フォーマット後のIDで重複チェックを実行
+            if (!data.skipFormatting && data.id.trim() !== '') {
+                // フォーマット後のIDを取得
+                const point = this.pointManager.getPoints()[data.index];
+                const formattedId = point ? point.id : data.id;
 
-                    const registeredIds = this.pointManager.getRegisteredIds();
+                const registeredIds = this.pointManager.getRegisteredIds();
 
-                    // 自分以外で同じIDが存在するかチェック
-                    const hasDuplicate = registeredIds.some((id, idx) => {
-                        return id === formattedId && idx !== data.index;
-                    });
+                // 自分以外で同じIDが存在するかチェック
+                const hasDuplicate = registeredIds.some((id, idx) => {
+                    return id === formattedId && idx !== data.index;
+                });
 
-                    if (hasDuplicate) {
-                        // 重複エラーを表示
-                        const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
-                        if (inputElement) {
-                            inputElement.style.backgroundColor = '#ffebee'; // ピンク背景
-                            inputElement.style.borderColor = '#f44336'; // 赤枠
-                            inputElement.style.borderWidth = '2px';
-                            inputElement.title = `ポイントID "${formattedId}" は既に使用されています`;
-                        }
-                        UIHelper.showError(`ポイントID "${formattedId}" は既に使用されています。別のIDを入力してください。`);
-                    } else {
-                        // 重複がない場合はエラー表示をクリア
-                        const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
-                        if (inputElement) {
-                            inputElement.style.backgroundColor = '';
-                            inputElement.style.borderColor = '';
-                            inputElement.style.borderWidth = '';
-                            inputElement.title = '';
-                        }
+                if (hasDuplicate) {
+                    // 重複エラーを表示
+                    const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
+                    if (inputElement) {
+                        inputElement.style.backgroundColor = '#ffebee'; // ピンク背景
+                        inputElement.style.borderColor = '#f44336'; // 赤枠
+                        inputElement.style.borderWidth = '2px';
+                        inputElement.title = `ポイントID "${formattedId}" は既に使用されています`;
+                    }
+                    UIHelper.showError(`ポイントID "${formattedId}" は既に使用されています。別のIDを入力してください。`);
+                } else {
+                    // 重複がない場合はエラー表示をクリア
+                    const inputElement = document.querySelector(`input[data-point-index="${data.index}"]`);
+                    if (inputElement) {
+                        inputElement.style.backgroundColor = '';
+                        inputElement.style.borderColor = '';
+                        inputElement.style.borderWidth = '';
+                        inputElement.title = '';
                     }
                 }
+            }
 
-                // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
-                if (!data.skipDisplay) {
-                    // フォーマット処理後の値を取得して表示
-                    const point = this.pointManager.getPoints()[data.index];
-                    if (point) {
-                        this.inputManager.updatePointIdDisplay(data.index, point.id);
-                    }
+            // 入力中の場合は表示更新をスキップ（入力ボックスの値はそのまま維持）
+            if (!data.skipDisplay) {
+                // フォーマット処理後の値を取得して表示
+                const point = this.pointManager.getPoints()[data.index];
+                if (point) {
+                    this.inputManager.updatePointIdDisplay(data.index, point.id);
                 }
             }
         });
