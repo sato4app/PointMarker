@@ -768,6 +768,14 @@ header p {
     margin-top: 5px;
 }
 
+.area-points-inputs .vertex-count {
+    font-size: 0.9em;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-top: 5px;
+}
+
 .waypoint-count span {
     color: #e67e22;
     font-weight: bold;
