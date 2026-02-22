@@ -539,25 +539,17 @@ export class CanvasEventHandler {
      * 新規ポイント作成
      */
     async createNewPoint(x, y) {
-        // 新規ポイント追加
-        this.app.pointManager.addPoint(x, y);
+        // 追加後のインデックスを事前に計算
+        const newIndex = this.app.pointManager.getPoints().length;
 
-        // 入力ボックスを再描画（完了を待機）
-        // 新規追加したポイント（newIndex）にフォーカスを当てる
+        // 新規ポイント追加（onChangeのredrawInputBoxesをスキップして二重描画を防ぐ）
+        this.app.pointManager.addPoint(x, y, '', true);
+
+        // 入力ボックスを再描画し、新規ポイントにフォーカス（カーソル）を当てる
         await this.app.inputManager.redrawInputBoxes(this.app.pointManager.getPoints(), newIndex);
-
-        // フォーカスを当てる（追加された最後の要素）
-        const points = this.app.pointManager.getPoints();
-        const newIndex = points.length - 1;
 
         // 描画更新
         this.app.redrawCanvas();
-
-
-
-        // 【リアルタイムFirebase更新】新規ポイント作成
-        // [TEMP_DISABLE_FIREBASE]
-        // await this.app.firebaseSyncManager.addPointToFirebase(points[newIndex], newIndex);
     }
 
     /**
