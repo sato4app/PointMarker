@@ -825,7 +825,13 @@ export class PointMarkerApp {
             );
 
             this.redrawAndSyncUI(result.pointsCount, result.routesCount, result.spotsCount);
-            UIHelper.showMessage(`ファイルからデータを読み込みました (ポイント: ${result.pointsCount}, ルート: ${result.routesCount}, スポット: ${result.spotsCount})`);
+            const loadParts = [];
+            if (result.pointsCount > 0) loadParts.push(`ポイント: ${result.pointsCount}`);
+            if (result.routesCount > 0) loadParts.push(`ルート: ${result.routesCount}`);
+            if (result.spotsCount > 0) loadParts.push(`スポット: ${result.spotsCount}`);
+            if (result.areasCount > 0) loadParts.push(`エリア: ${result.areasCount}`);
+            const loadDetail = loadParts.length > 0 ? ` (${loadParts.join(', ')})` : '';
+            UIHelper.showMessage(`ファイルからデータを読み込みました${loadDetail}`);
 
             // Stage 2へ移行 (読み込み直後と同じ状態)
             this.setUIStage(2);

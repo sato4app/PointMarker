@@ -607,9 +607,12 @@ export class FirebaseSyncManager {
                 onLoadComplete(loadedPoints, loadedRoutes, loadedSpots);
             }
 
-            UIHelper.showMessage(
-                `読み込み完了: ポイント${loadedPoints}件、ルート${loadedRoutes}件、スポット${loadedSpots}件`
-            );
+            const fbLoadParts = [];
+            if (loadedPoints > 0) fbLoadParts.push(`ポイント${loadedPoints}件`);
+            if (loadedRoutes > 0) fbLoadParts.push(`ルート${loadedRoutes}件`);
+            if (loadedSpots > 0) fbLoadParts.push(`スポット${loadedSpots}件`);
+            const fbLoadDetail = fbLoadParts.length > 0 ? fbLoadParts.join('、') : 'データなし';
+            UIHelper.showMessage(`読み込み完了: ${fbLoadDetail}`);
 
         } catch (error) {
             UIHelper.showError('読み込み中にエラーが発生しました: ' + error.message);
