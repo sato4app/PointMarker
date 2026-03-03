@@ -942,27 +942,8 @@ export class PointMarkerApp {
      * 開始・終了ポイントがスポット名の場合、常に表示するように設定
      */
     updateAlwaysVisibleSpotNames() {
-        const startEndPoints = this.routeManager.getStartEndPoints();
-        const alwaysVisibleSpotNames = [];
-
-        // 開始ポイントがスポット名かチェック
-        if (startEndPoints.start && startEndPoints.start.trim() !== '') {
-            const spot = this.spotManager.findSpotByName(startEndPoints.start);
-            if (spot) {
-                alwaysVisibleSpotNames.push(startEndPoints.start);
-            }
-        }
-
-        // 終了ポイントがスポット名かチェック
-        if (startEndPoints.end && startEndPoints.end.trim() !== '') {
-            const spot = this.spotManager.findSpotByName(startEndPoints.end);
-            if (spot) {
-                alwaysVisibleSpotNames.push(startEndPoints.end);
-            }
-        }
-
-        // InputManagerに設定
-        this.inputManager.setAlwaysVisibleSpotNames(alwaysVisibleSpotNames);
+        // 仕様変更に伴い、開始・終了ポイントのスポット名強制表示を削除
+        this.inputManager.setAlwaysVisibleSpotNames([]);
     }
 
 

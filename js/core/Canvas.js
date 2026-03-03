@@ -135,7 +135,18 @@ export class CanvasRenderer {
         const radius = this.markerSizes.point;
 
         points.forEach((point) => {
-            this.drawMarker('circle', point.x, point.y, radius, defaultColor, '#ffffff', 1.5, canvasScale);
+            let fillColor = defaultColor;
+            let strokeColor = '#ffffff';
+            let strokeWidth = 1.5;
+
+            // ルート編集モードで開始点・終了点の場合は白抜きにする
+            if (options.showRouteMode && (point.id === options.startPointId || point.id === options.endPointId)) {
+                fillColor = '#ffffff';
+                strokeColor = defaultColor;
+                strokeWidth = 2.0;
+            }
+
+            this.drawMarker('circle', point.x, point.y, radius, fillColor, strokeColor, strokeWidth, canvasScale);
         });
     }
 
@@ -188,7 +199,18 @@ export class CanvasRenderer {
         } = options;
 
         spots.forEach(spot => {
-            this.drawMarker('square', spot.x, spot.y, size, fillColor, strokeColor, strokeWidth, canvasScale);
+            let currentFillColor = fillColor;
+            let currentStrokeColor = strokeColor;
+            let currentStrokeWidth = strokeWidth;
+
+            // ルート編集モードで開始点・終了点の場合は白抜きにする
+            if (options.showRouteMode && (spot.name === options.startPointId || spot.name === options.endPointId)) {
+                currentFillColor = '#ffffff';
+                currentStrokeColor = fillColor;
+                currentStrokeWidth = 2.0;
+            }
+
+            this.drawMarker('square', spot.x, spot.y, size, currentFillColor, currentStrokeColor, currentStrokeWidth, canvasScale);
         });
     }
 
