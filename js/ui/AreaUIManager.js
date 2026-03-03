@@ -19,10 +19,18 @@ export class AreaUIManager {
         const currentSelectedIndex = this.app.areaManager.selectedAreaIndex;
         dropdown.innerHTML = '<option value="">-- エリアを選択 --</option>';
 
-        areas.forEach((area, index) => {
+        // エリアを表示名・元インデックスのペアで昇順ソートして追加
+        const sortedAreas = areas
+            .map((area, index) => ({
+                originalIndex: index,
+                displayName: area.areaName || `エリア ${index + 1}`
+            }))
+            .sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
+
+        sortedAreas.forEach(({ originalIndex, displayName }) => {
             const option = document.createElement('option');
-            option.value = index.toString();
-            option.textContent = area.areaName || `エリア ${index + 1}`;
+            option.value = originalIndex.toString();
+            option.textContent = displayName;
             dropdown.appendChild(option);
         });
 

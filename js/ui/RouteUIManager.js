@@ -25,12 +25,18 @@ export class RouteUIManager {
         // 既存のオプションをクリア（最初の「-- ルートを選択 --」以外）
         dropdown.innerHTML = '<option value="">-- ルートを選択 --</option>';
 
-        // ルートを追加
-        routes.forEach((route, index) => {
+        // ルートを表示名・元インデックスのペアで昇順ソートして追加
+        const sortedRoutes = routes
+            .map((route, index) => ({
+                originalIndex: index,
+                displayName: route.routeName || `${route.startPointId} ～ ${route.endPointId}`
+            }))
+            .sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
+
+        sortedRoutes.forEach(({ originalIndex, displayName }) => {
             const option = document.createElement('option');
-            option.value = index.toString();
-            const routeName = route.routeName || `${route.startPointId} ～ ${route.endPointId}`;
-            option.textContent = routeName;
+            option.value = originalIndex.toString();
+            option.textContent = displayName;
             dropdown.appendChild(option);
         });
 
