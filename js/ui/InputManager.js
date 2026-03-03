@@ -603,7 +603,8 @@ export class InputManager {
                     container.style.backgroundColor = 'white';
                     container.style.border = '2px solid #007bff';
                     input.title = '開始または終了ポイントとして指定されています';
-                    input.style.color = '';
+                    // チェックがオフの場合はスポット名テキストを非表示（白抜きコンテナは表示）
+                    input.style.color = this.spotNameVisibility ? '' : 'transparent';
                 } else {
                     // 通常のスポット名は灰色背景
                     input.disabled = true;
