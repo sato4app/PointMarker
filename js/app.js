@@ -863,12 +863,14 @@ export class PointMarkerApp {
             const areaCount = this.areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '').length;
 
             // ファイル名構築
+            const now = new Date();
+            const dateSuffix = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
             let filename = abbr;
             if (pointCount > 0) filename += `_P${pointCount}`;
             if (routeCount > 0) filename += `_R${routeCount}`;
             if (spotCount > 0) filename += `_S${spotCount}`;
             if (areaCount > 0) filename += `_A${areaCount}`;
-            filename += '.json';
+            filename += `-${dateSuffix}.json`;
 
             await this.fileHandler.exportProjectData(
                 {
