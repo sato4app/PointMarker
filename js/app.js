@@ -705,7 +705,7 @@ export class PointMarkerApp {
 
         // スポット名表示切り替えチェックボックス
         document.getElementById('showSpotNamesCheckbox').addEventListener('change', (e) => {
-            this.handleSpotNameVisibilityChange(e.target.checked);
+            this.handleSpotNameVisibilityChange(e.target.checked, true);
         });
 
         // ウィンドウリサイズ
@@ -938,12 +938,28 @@ export class PointMarkerApp {
 
 
 
-    /**
-     * 開始・終了ポイントがスポット名の場合、常に表示するように設定
-     */
     updateAlwaysVisibleSpotNames() {
-        // 仕様変更に伴い、開始・終了ポイントのスポット名強制表示を削除
-        this.inputManager.setAlwaysVisibleSpotNames([]);
+        const startEndPoints = this.routeManager.getStartEndPoints();
+        const alwaysVisibleSpotNames = [];
+
+        // 開始ポイントがスポット名かチェック
+        if (startEndPoints.start && startEndPoints.start.trim() !== '') {
+            const spot = this.spotManager.findSpotByName(startEndPoints.start);
+            if (spot) {
+                alwaysVisibleSpotNames.push(startEndPoints.start);
+            }
+        }
+
+        // 終了ポイントがスポット名かチェック
+        if (startEndPoints.end && startEndPoints.end.trim() !== '') {
+            const spot = this.spotManager.findSpotByName(startEndPoints.end);
+            if (spot) {
+                alwaysVisibleSpotNames.push(startEndPoints.end);
+            }
+        }
+
+        // InputManagerに設定
+        this.inputManager.setAlwaysVisibleSpotNames(alwaysVisibleSpotNames);
     }
 
 
@@ -1085,10 +1101,10 @@ export class PointMarkerApp {
      * スポット名表示/非表示切り替え処理
      * @param {boolean} visible - 表示するかどうか
      */
-    handleSpotNameVisibilityChange(visible) {
+    handleSpotNameVisibilityChange(visible, isUserAction = false) {
         // スポットデータを取得して渡す
         const spots = this.spotManager.getSpots();
-        this.inputManager.setSpotNameVisibility(visible, spots);
+        this.inputManager.setSpotNameVisibility(visible, spots, isUserAction);
     }
 
     /**

@@ -16,6 +16,7 @@ export class InputManager {
         this.highlightedSpotNames = new Set(); // 強調表示するスポット名のセット
         this.errorSpotNames = new Set(); // エラー状態のスポット名のセット
         this.alwaysVisibleSpotNames = new Set(); // ルートの開始・終了ポイントとして指定されたスポット名（常に表示）
+        this.forceShowRoutePointsSpotNames = false; // ルート選択等で一時的に強制表示するフラグ
         this.spotNameVisibility = false; // スポット名表示チェックボックスの状態
         // ズーム・パン状態
         this.scale = 1.0;
@@ -130,6 +131,10 @@ export class InputManager {
                     this.alwaysVisibleSpotNames.add(name);
                 }
             });
+            // 一時的に強制表示させるフラグを立てる
+            if (spotNames.length > 0) {
+                this.forceShowRoutePointsSpotNames = true;
+            }
         }
         this.updateSpotInputsState();
     }
@@ -583,35 +588,41 @@ export class InputManager {
             // 常に表示すべきスポット名かどうかをチェック
             const isAlwaysVisible = this.alwaysVisibleSpotNames.has(inputValue);
 
-            // ルート編集モードで、チェックボックスがオンの場合のみ表示
-            if (this.isRouteEditMode && this.spotNameVisibility) {
-                container.style.display = 'block';
-                container.style.pointerEvents = 'none';
+            // ルート編集モードの場合
+            if (this.isRouteEditMode) {
+                const shouldDisplay = this.spotNameVisibility || (this.forceShowRoutePointsSpotNames && isAlwaysVisible);
 
-                if (isError) {
-                    // エラー状態の場合はピンク背景（複数一致など）
-                    input.disabled = true;
-                    input.style.backgroundColor = '#ffebee';
-                    container.style.backgroundColor = '#ffebee';
-                    container.style.border = '2px solid #f44336';
-                    input.title = 'このスポット名は複数一致の対象です';
-                    input.style.color = '';
-                } else if (isHighlighted || isAlwaysVisible) {
-                    // 開始・終了ポイントとして指定されている場合は白背景（ポイントIDと同じ扱い）
-                    input.disabled = true;
-                    input.style.backgroundColor = 'white';
-                    container.style.backgroundColor = 'white';
-                    container.style.border = '2px solid #007bff';
-                    input.title = '開始または終了ポイントとして指定されています';
-                    input.style.color = '';
+                if (shouldDisplay) {
+                    container.style.display = 'block';
+                    container.style.pointerEvents = 'none';
+
+                    if (isError) {
+                        // エラー状態の場合はピンク背景（複数一致など）
+                        input.disabled = true;
+                        input.style.backgroundColor = '#ffebee';
+                        container.style.backgroundColor = '#ffebee';
+                        container.style.border = '2px solid #f44336';
+                        input.title = 'このスポット名は複数一致の対象です';
+                        input.style.color = '';
+                    } else if (isHighlighted || isAlwaysVisible) {
+                        // 開始・終了ポイントとして指定されている場合は白背景（ポイントIDと同じ扱い、実質的な白抜きに相当）
+                        input.disabled = true;
+                        input.style.backgroundColor = 'white';
+                        container.style.backgroundColor = 'white';
+                        container.style.border = '2px solid #007bff';
+                        input.title = '開始または終了ポイントとして指定されています';
+                        input.style.color = '';
+                    } else {
+                        // 通常のスポット名は灰色背景
+                        input.disabled = true;
+                        input.style.backgroundColor = '#e0e0e0';
+                        container.style.backgroundColor = '#e0e0e0';
+                        container.style.border = '2px solid #999';
+                        input.title = 'ルート編集モード中はスポット名の編集はできません';
+                        input.style.color = '';
+                    }
                 } else {
-                    // 通常のスポット名は灰色背景
-                    input.disabled = true;
-                    input.style.backgroundColor = '#e0e0e0';
-                    container.style.backgroundColor = '#e0e0e0';
-                    container.style.border = '2px solid #999';
-                    input.title = 'ルート編集モード中はスポット名の編集はできません';
-                    input.style.color = '';
+                    container.style.display = 'none';
                 }
                 return;
             }
@@ -745,10 +756,16 @@ export class InputManager {
      * スポット名入力ボックスの表示/非表示を切り替え
      * @param {boolean} visible - 表示するかどうか
      * @param {Array} spots - スポットデータの配列（オプション）
+     * @param {boolean} isUserAction - ユーザー操作による変更かどうか
      */
-    setSpotNameVisibility(visible, spots = null) {
+    setSpotNameVisibility(visible, spots = null, isUserAction = false) {
         // チェックボックスの状態を保存
         this.spotNameVisibility = visible;
+
+        // ユーザーが明示的にチェックボックスを操作したなら、強制表示状態を解除
+        if (isUserAction) {
+            this.forceShowRoutePointsSpotNames = false;
+        }
 
         // 表示する場合は、すべてのスポット入力ボックスの位置を再計算
         if (visible && spots) {
