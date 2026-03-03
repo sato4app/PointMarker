@@ -928,16 +928,8 @@ export class PointMarkerApp {
     }
 
     /**
-            return;
-        }
-    }
-
-
-
-
-
-
-
+     * 開始・終了ポイントがスポット名の場合、常に表示するように設定
+     */
     updateAlwaysVisibleSpotNames() {
         const startEndPoints = this.routeManager.getStartEndPoints();
         const alwaysVisibleSpotNames = [];
