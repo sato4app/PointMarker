@@ -582,8 +582,8 @@ export class InputManager {
             // 常に表示すべきスポット名かどうかをチェック
             const isAlwaysVisible = this.alwaysVisibleSpotNames.has(inputValue);
 
-            // ルート編集モードで、チェックボックスがオンまたは常に表示すべきスポットの場合
-            if (this.isRouteEditMode && (this.spotNameVisibility || isAlwaysVisible)) {
+            // ルート編集モードで、チェックボックスがオンの場合
+            if (this.isRouteEditMode && this.spotNameVisibility) {
                 container.style.display = 'block';
                 container.style.pointerEvents = 'none';
 
