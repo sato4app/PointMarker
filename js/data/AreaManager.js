@@ -125,9 +125,6 @@ export class AreaManager extends BaseManager {
         }
         selectedArea.vertices.push(point);
 
-        // 頂点の順序を再定義（面積最大化/シンプルポリゴン化）
-        this.reorderVertices(this.selectedAreaIndex);
-
         this.notify('onChange');
         this.notify('onCountChange', selectedArea.vertices.length);
 
@@ -212,9 +209,6 @@ export class AreaManager extends BaseManager {
         if (index >= 0 && index < selectedArea.vertices.length) {
             selectedArea.vertices.splice(index, 1);
 
-            // 頂点の順序を再定義
-            this.reorderVertices(this.selectedAreaIndex);
-
             this.notify('onChange');
             this.notify('onCountChange', selectedArea.vertices.length);
 
@@ -246,9 +240,6 @@ export class AreaManager extends BaseManager {
         }
 
         if (deletedCount > 0) {
-            // 頂点の順序を再定義
-            this.reorderVertices(this.selectedAreaIndex);
-
             this.notify('onChange');
             this.notify('onCountChange', selectedArea.vertices.length);
             this.checkAndUpdateModifiedState();
@@ -258,30 +249,68 @@ export class AreaManager extends BaseManager {
     }
 
     /**
-     * 頂点の順序を面積が最大になるように（重心周りの角度順に）再定義
+     * 移動した頂点を最も近い辺の間に再挿入する
      * @param {number} areaIndex - 対象エリアのインデックス
+     * @param {number} vertexIndex - 移動した頂点の配列インデックス
      */
-    reorderVertices(areaIndex) {
+    reinsertNearestEdge(areaIndex, vertexIndex) {
         if (areaIndex < 0 || areaIndex >= this.areas.length) return;
 
         const area = this.areas[areaIndex];
-        if (!area.vertices || area.vertices.length < 3) return;
+        if (!area.vertices || area.vertices.length < 2) return;
 
-        // 重心を計算
-        let cx = 0, cy = 0;
-        area.vertices.forEach(v => {
-            cx += v.x;
-            cy += v.y;
-        });
-        cx /= area.vertices.length;
-        cy /= area.vertices.length;
+        // 移動した頂点を取り出す
+        const [movedVertex] = area.vertices.splice(vertexIndex, 1);
+        const px = movedVertex.x;
+        const py = movedVertex.y;
 
-        // 重心からの角度でソート
-        area.vertices.sort((a, b) => {
-            const angleA = Math.atan2(a.y - cy, a.x - cx);
-            const angleB = Math.atan2(b.y - cy, b.x - cx);
-            return angleA - angleB;
-        });
+        const n = area.vertices.length;
+        if (n < 2) {
+            // 残り頂点が1つ以下の場合は末尾に戻す
+            area.vertices.push(movedVertex);
+            return;
+        }
+
+        // 最近傍辺を探す（閉じた多角形: 辺は 0-1, 1-2, ..., n-1-0）
+        let bestEdgeIndex = 0;
+        let bestDist = Infinity;
+
+        for (let i = 0; i < n; i++) {
+            const a = area.vertices[i];
+            const b = area.vertices[(i + 1) % n];
+            const dist = this._distanceToSegment(px, py, a.x, a.y, b.x, b.y);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestEdgeIndex = i;
+            }
+        }
+
+        // bestEdgeIndex+1 の位置に挿入（辺 bestEdgeIndex → bestEdgeIndex+1 の間）
+        area.vertices.splice(bestEdgeIndex + 1, 0, movedVertex);
+    }
+
+    /**
+     * 点から線分への最短距離を計算
+     * @param {number} px - 点のX座標
+     * @param {number} py - 点のY座標
+     * @param {number} ax - 線分の始点X
+     * @param {number} ay - 線分の始点Y
+     * @param {number} bx - 線分の終点X
+     * @param {number} by - 線分の終点Y
+     * @returns {number} 最短距離
+     */
+    _distanceToSegment(px, py, ax, ay, bx, by) {
+        const dx = bx - ax;
+        const dy = by - ay;
+        const len2 = dx * dx + dy * dy;
+        if (len2 === 0) {
+            return Math.sqrt((px - ax) ** 2 + (py - ay) ** 2);
+        }
+        let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+        t = Math.max(0, Math.min(1, t));
+        const closestX = ax + t * dx;
+        const closestY = ay + t * dy;
+        return Math.sqrt((px - closestX) ** 2 + (py - closestY) ** 2);
     }
 
     /**

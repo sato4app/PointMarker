@@ -266,10 +266,10 @@ export class CanvasEventHandler {
         };
 
         // エリア頂点ドラッグ終了時のコールバック
-        const onVertexDragEnd = () => {
+        const onVertexDragEnd = (vertexIndex) => {
             const areaIndex = this.app.areaManager.selectedAreaIndex;
             if (areaIndex >= 0) {
-                this.app.areaManager.reorderVertices(areaIndex);
+                this.app.areaManager.reinsertNearestEdge(areaIndex, vertexIndex);
                 // Firebase連携: エリア更新
                 // [TEMP_DISABLE_FIREBASE]
                 // this.app.firebaseSyncManager.updateAreaToFirebase(areaIndex);
