@@ -123,7 +123,28 @@ export class AreaManager extends BaseManager {
         if (!selectedArea.vertices) {
             selectedArea.vertices = [];
         }
-        selectedArea.vertices.push(point);
+
+        // 2頂点以上ある場合は最近傍辺の間に挿入、それ以外は末尾に追加
+        if (selectedArea.vertices.length >= 2) {
+            const n = selectedArea.vertices.length;
+            const px = point.x;
+            const py = point.y;
+            let bestEdgeIndex = 0;
+            let bestDist = Infinity;
+
+            for (let i = 0; i < n; i++) {
+                const a = selectedArea.vertices[i];
+                const b = selectedArea.vertices[(i + 1) % n];
+                const dist = this._distanceToSegment(px, py, a.x, a.y, b.x, b.y);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestEdgeIndex = i;
+                }
+            }
+            selectedArea.vertices.splice(bestEdgeIndex + 1, 0, point);
+        } else {
+            selectedArea.vertices.push(point);
+        }
 
         this.notify('onChange');
         this.notify('onCountChange', selectedArea.vertices.length);
