@@ -576,14 +576,15 @@ export class InputManager {
                 container.style.backgroundColor = '';
                 container.style.border = '';
                 input.title = '';
+                input.style.color = '';
                 return;
             }
 
             // 常に表示すべきスポット名かどうかをチェック
             const isAlwaysVisible = this.alwaysVisibleSpotNames.has(inputValue);
 
-            // ルート編集モードで、チェックボックスがオンの場合
-            if (this.isRouteEditMode && this.spotNameVisibility) {
+            // ルート編集モードで、チェックボックスがオンの場合、またはisAlwaysVisibleの場合
+            if (this.isRouteEditMode && (this.spotNameVisibility || isAlwaysVisible)) {
                 container.style.display = 'block';
                 container.style.pointerEvents = 'none';
 
@@ -594,13 +595,16 @@ export class InputManager {
                     container.style.backgroundColor = '#ffebee';
                     container.style.border = '2px solid #f44336';
                     input.title = 'このスポット名は複数一致の対象です';
-                } else if (isHighlighted) {
+                    input.style.color = '';
+                } else if (isHighlighted || isAlwaysVisible) {
                     // 開始・終了ポイントとして指定されている場合は白背景（ポイントIDと同じ扱い）
                     input.disabled = true;
                     input.style.backgroundColor = 'white';
                     container.style.backgroundColor = 'white';
                     container.style.border = '2px solid #007bff';
                     input.title = '開始または終了ポイントとして指定されています';
+                    // チェックがオフの場合はスポット名テキストを非表示（白抜きコンテナは表示）
+                    input.style.color = this.spotNameVisibility ? '' : 'transparent';
                 } else {
                     // 通常のスポット名は灰色背景
                     input.disabled = true;
@@ -608,6 +612,7 @@ export class InputManager {
                     container.style.backgroundColor = '#e0e0e0';
                     container.style.border = '2px solid #999';
                     input.title = 'ルート編集モード中はスポット名の編集はできません';
+                    input.style.color = '';
                 }
                 return;
             }
@@ -621,6 +626,7 @@ export class InputManager {
                 container.style.backgroundColor = '';
                 container.style.border = '';
                 input.title = '';
+                input.style.color = '';
             } else {
                 container.style.display = 'none';
             }
