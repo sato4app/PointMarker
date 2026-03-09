@@ -846,19 +846,27 @@ export class PointMarkerApp {
 
     /**
      * 保存対象選択ダイアログを表示し、選択結果を返す
+     * @param {{points:number, routes:number, spots:number, areas:number}} counts - 各データの件数
      * @returns {Promise<{points:boolean, routes:boolean, spots:boolean, areas:boolean}|null>}
      */
-    showSaveSelectionDialog() {
+    showSaveSelectionDialog(counts) {
         return new Promise((resolve) => {
             const dialog = document.getElementById('saveSelectionDialog');
             const okBtn = document.getElementById('saveSelectionOkBtn');
             const cancelBtn = document.getElementById('saveSelectionCancelBtn');
 
-            // チェックボックスを全てオンにリセット
-            document.getElementById('savePoints').checked = true;
-            document.getElementById('saveRoutes').checked = true;
-            document.getElementById('saveSpots').checked = true;
-            document.getElementById('saveAreas').checked = true;
+            // 件数表示と、0件の場合はチェックをオフ
+            const items = [
+                { cbId: 'savePoints', countId: 'savePointsCount', count: counts.points, unit: '点' },
+                { cbId: 'saveRoutes', countId: 'saveRoutesCount', count: counts.routes, unit: '本' },
+                { cbId: 'saveSpots',  countId: 'saveSpotsCount',  count: counts.spots,  unit: '個' },
+                { cbId: 'saveAreas',  countId: 'saveAreasCount',  count: counts.areas,  unit: '件' }
+            ];
+            items.forEach(({ cbId, countId, count, unit }) => {
+                const cb = document.getElementById(cbId);
+                cb.checked = count > 0;
+                document.getElementById(countId).textContent = `${count}${unit}`;
+            });
 
             dialog.style.display = 'flex';
 
@@ -893,26 +901,29 @@ export class PointMarkerApp {
      */
     async handleOutput() {
         try {
-            // 保存対象選択ダイアログを表示
-            const saveOptions = await this.showSaveSelectionDialog();
-            if (!saveOptions) return; // キャンセル
-
             const projectId = this.fileHandler.getCurrentImageFileName() || 'project_data';
 
-            // ファイル名生成ロジック
-            // 画像ファイル略称 (区切り文字の前まで)
+            // ファイル名生成ロジック（画像ファイル略称：区切り文字の前まで）
             const abbrMatch = projectId.match(/^[^-_ ]+/);
             const abbr = abbrMatch ? abbrMatch[0] : projectId;
 
-            // 各データのカウント（選択対象かつ有効なデータのみ）
-            const pointCount = saveOptions.points
-                ? this.pointManager.getPoints().filter(p => p.id && p.id.trim() !== '').length : 0;
-            const routeCount = saveOptions.routes
-                ? this.routeManager.getAllRoutes().length : 0;
-            const spotCount = saveOptions.spots
-                ? this.spotManager.getSpots().filter(s => s.name && s.name.trim() !== '').length : 0;
-            const areaCount = saveOptions.areas
-                ? this.areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '').length : 0;
+            // 各データの件数を事前に計算
+            const counts = {
+                points: this.pointManager.getPoints().filter(p => p.id && p.id.trim() !== '').length,
+                routes: this.routeManager.getAllRoutes().length,
+                spots:  this.spotManager.getSpots().filter(s => s.name && s.name.trim() !== '').length,
+                areas:  this.areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '').length
+            };
+
+            // 保存対象選択ダイアログを表示（件数を渡す）
+            const saveOptions = await this.showSaveSelectionDialog(counts);
+            if (!saveOptions) return; // キャンセル
+
+            // 選択対象のみカウント（ファイル名用）
+            const pointCount = saveOptions.points ? counts.points : 0;
+            const routeCount = saveOptions.routes ? counts.routes : 0;
+            const spotCount  = saveOptions.spots  ? counts.spots  : 0;
+            const areaCount  = saveOptions.areas  ? counts.areas  : 0;
 
             // ファイル名構築
             const now = new Date();

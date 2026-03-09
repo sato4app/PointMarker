@@ -1677,6 +1677,13 @@ header p {
     accent-color: #27ae60;
 }
 
+.save-selection-count {
+    margin-left: auto;
+    font-size: 14px;
+    color: #7f8c8d;
+    font-weight: bold;
+}
+
 /* ===================================== */
 .area-name-input:disabled {
     background-color: #f5f5f5;
