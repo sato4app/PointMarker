@@ -462,62 +462,46 @@ export class FileHandler {
      * @param {number} imageHeight - 元画像高さ
      * @param {string} filename - 出力ファイル名
      */
-    async exportProjectData(managers, imageFileName, canvasWidth, canvasHeight, imageWidth, imageHeight, filename) {
+    async exportProjectData(managers, imageFileName, canvasWidth, canvasHeight, imageWidth, imageHeight, filename, saveOptions = { points: true, routes: true, spots: true, areas: true }) {
         const { pointManager, routeManager, spotManager, areaManager } = managers;
 
-        // ポイントデータ
-        const points = pointManager.getPoints().filter(p => p.id && p.id.trim() !== '');
-        const pointsData = points.map((point, index) => {
-            const coords = CoordinateUtils.canvasToImage(point.x, point.y, canvasWidth, canvasHeight, imageWidth, imageHeight);
-            return {
-                id: point.id,
-                x: Math.round(coords.x),
-                y: Math.round(coords.y),
-                index: point.index
-            };
-        });
+        // ポイントデータ（選択時のみ）
+        const pointsData = saveOptions.points
+            ? pointManager.getPoints().filter(p => p.id && p.id.trim() !== '').map((point) => {
+                const coords = CoordinateUtils.canvasToImage(point.x, point.y, canvasWidth, canvasHeight, imageWidth, imageHeight);
+                return { id: point.id, x: Math.round(coords.x), y: Math.round(coords.y), index: point.index };
+            })
+            : [];
 
-        // ルートデータ
-        const routes = routeManager.getAllRoutes();
-        const routesData = routes.map(route => {
-            const waypoints = (route.routePoints || []).map(wp => {
-                const coords = CoordinateUtils.canvasToImage(wp.x, wp.y, canvasWidth, canvasHeight, imageWidth, imageHeight);
-                return { x: Math.round(coords.x), y: Math.round(coords.y) };
-            });
-            return {
-                routeName: route.routeName,
-                startPoint: route.startPointId,
-                endPoint: route.endPointId,
-                waypoints: waypoints,
-                description: route.description
-            };
-        });
+        // ルートデータ（選択時のみ）
+        const routesData = saveOptions.routes
+            ? routeManager.getAllRoutes().map(route => {
+                const waypoints = (route.routePoints || []).map(wp => {
+                    const coords = CoordinateUtils.canvasToImage(wp.x, wp.y, canvasWidth, canvasHeight, imageWidth, imageHeight);
+                    return { x: Math.round(coords.x), y: Math.round(coords.y) };
+                });
+                return { routeName: route.routeName, startPoint: route.startPointId, endPoint: route.endPointId, waypoints, description: route.description };
+            })
+            : [];
 
-        // スポットデータ
-        const spots = spotManager.getSpots().filter(s => s.name && s.name.trim() !== '');
-        const spotsData = spots.map((spot, index) => {
-            const coords = CoordinateUtils.canvasToImage(spot.x, spot.y, canvasWidth, canvasHeight, imageWidth, imageHeight);
-            return {
-                name: spot.name,
-                x: Math.round(coords.x),
-                y: Math.round(coords.y),
-                description: spot.description,
-                category: spot.category
-            };
-        });
+        // スポットデータ（選択時のみ）
+        const spotsData = saveOptions.spots
+            ? spotManager.getSpots().filter(s => s.name && s.name.trim() !== '').map((spot) => {
+                const coords = CoordinateUtils.canvasToImage(spot.x, spot.y, canvasWidth, canvasHeight, imageWidth, imageHeight);
+                return { name: spot.name, x: Math.round(coords.x), y: Math.round(coords.y), description: spot.description, category: spot.category };
+            })
+            : [];
 
-        // エリアデータ
-        const areas = areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '');
-        const areasData = areas.map(area => {
-            const vertices = (area.vertices || []).map(v => {
-                const coords = CoordinateUtils.canvasToImage(v.x, v.y, canvasWidth, canvasHeight, imageWidth, imageHeight);
-                return { x: Math.round(coords.x), y: Math.round(coords.y) };
-            });
-            return {
-                areaName: area.areaName,
-                vertices: vertices
-            };
-        });
+        // エリアデータ（選択時のみ）
+        const areasData = saveOptions.areas
+            ? areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '').map(area => {
+                const vertices = (area.vertices || []).map(v => {
+                    const coords = CoordinateUtils.canvasToImage(v.x, v.y, canvasWidth, canvasHeight, imageWidth, imageHeight);
+                    return { x: Math.round(coords.x), y: Math.round(coords.y) };
+                });
+                return { areaName: area.areaName, vertices };
+            })
+            : [];
 
         const projectData = {
             version: "1.0",

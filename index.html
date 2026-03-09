@@ -335,6 +335,41 @@
         </div>
     </div>
 
+    <!-- 保存対象選択ダイアログ -->
+    <div id="saveSelectionDialog" class="settings-dialog-overlay" style="display: none;">
+        <div class="settings-dialog" style="max-width: 360px;">
+            <div class="settings-dialog-header">
+                <span class="settings-dialog-icon">💾</span>
+                <h3>保存対象の選択</h3>
+            </div>
+            <div class="settings-dialog-body">
+                <p class="settings-dialog-message">保存するデータを選択してください</p>
+                <div class="save-selection-group">
+                    <label class="save-selection-item">
+                        <input type="checkbox" id="savePoints" checked>
+                        <span>ポイント</span>
+                    </label>
+                    <label class="save-selection-item">
+                        <input type="checkbox" id="saveRoutes" checked>
+                        <span>ルート</span>
+                    </label>
+                    <label class="save-selection-item">
+                        <input type="checkbox" id="saveSpots" checked>
+                        <span>スポット</span>
+                    </label>
+                    <label class="save-selection-item">
+                        <input type="checkbox" id="saveAreas" checked>
+                        <span>エリア</span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-dialog-footer">
+                <button id="saveSelectionOkBtn" class="settings-dialog-btn settings-dialog-btn-ok">OK</button>
+                <button id="saveSelectionCancelBtn" class="settings-dialog-btn settings-dialog-btn-cancel">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase設定とモジュールのインポート -->
     <script type="module">
         import { firebaseConfig } from './js/firebase/firebase.config.js';

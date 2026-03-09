@@ -845,10 +845,58 @@ export class PointMarkerApp {
     }
 
     /**
+     * 保存対象選択ダイアログを表示し、選択結果を返す
+     * @returns {Promise<{points:boolean, routes:boolean, spots:boolean, areas:boolean}|null>}
+     */
+    showSaveSelectionDialog() {
+        return new Promise((resolve) => {
+            const dialog = document.getElementById('saveSelectionDialog');
+            const okBtn = document.getElementById('saveSelectionOkBtn');
+            const cancelBtn = document.getElementById('saveSelectionCancelBtn');
+
+            // チェックボックスを全てオンにリセット
+            document.getElementById('savePoints').checked = true;
+            document.getElementById('saveRoutes').checked = true;
+            document.getElementById('saveSpots').checked = true;
+            document.getElementById('saveAreas').checked = true;
+
+            dialog.style.display = 'flex';
+
+            const cleanup = () => {
+                dialog.style.display = 'none';
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+            };
+
+            const onOk = () => {
+                cleanup();
+                resolve({
+                    points: document.getElementById('savePoints').checked,
+                    routes: document.getElementById('saveRoutes').checked,
+                    spots: document.getElementById('saveSpots').checked,
+                    areas: document.getElementById('saveAreas').checked
+                });
+            };
+
+            const onCancel = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+        });
+    }
+
+    /**
      * データ出力処理
      */
     async handleOutput() {
         try {
+            // 保存対象選択ダイアログを表示
+            const saveOptions = await this.showSaveSelectionDialog();
+            if (!saveOptions) return; // キャンセル
+
             const projectId = this.fileHandler.getCurrentImageFileName() || 'project_data';
 
             // ファイル名生成ロジック
@@ -856,11 +904,15 @@ export class PointMarkerApp {
             const abbrMatch = projectId.match(/^[^-_ ]+/);
             const abbr = abbrMatch ? abbrMatch[0] : projectId;
 
-            // 各データのカウント (有効なデータのみ)
-            const pointCount = this.pointManager.getPoints().filter(p => p.id && p.id.trim() !== '').length;
-            const routeCount = this.routeManager.getAllRoutes().length;
-            const spotCount = this.spotManager.getSpots().filter(s => s.name && s.name.trim() !== '').length;
-            const areaCount = this.areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '').length;
+            // 各データのカウント（選択対象かつ有効なデータのみ）
+            const pointCount = saveOptions.points
+                ? this.pointManager.getPoints().filter(p => p.id && p.id.trim() !== '').length : 0;
+            const routeCount = saveOptions.routes
+                ? this.routeManager.getAllRoutes().length : 0;
+            const spotCount = saveOptions.spots
+                ? this.spotManager.getSpots().filter(s => s.name && s.name.trim() !== '').length : 0;
+            const areaCount = saveOptions.areas
+                ? this.areaManager.getAllAreas().filter(a => a.areaName && a.areaName.trim() !== '').length : 0;
 
             // ファイル名構築
             const now = new Date();
@@ -882,7 +934,8 @@ export class PointMarkerApp {
                 this.fileHandler.getCurrentImageFileName() + '.png',
                 this.canvas.width, this.canvas.height,
                 this.currentImage.width, this.currentImage.height,
-                filename
+                filename,
+                saveOptions
             );
 
             // 出力が完了したら、入力ボタン（Stage 2）を表示
