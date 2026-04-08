@@ -716,6 +716,14 @@ export class PointMarkerApp {
                 }, 100);
             }
         });
+
+        // マップコンテナのスクロール時にポップアップ位置を更新
+        const mapContainer = document.querySelector('.map-container');
+        if (mapContainer) {
+            mapContainer.addEventListener('scroll', () => {
+                this.viewportManager.updatePopupPositions();
+            });
+        }
     }
 
     /**
@@ -820,7 +828,7 @@ export class PointMarkerApp {
                     areaManager: this.areaManager
                 },
                 file,
-                this.canvas.width, this.canvas.height, // 現在のキャンバスサイズ
+                this.canvasRenderer.baseWidth, this.canvasRenderer.baseHeight, // ベースキャンバスサイズ（zoom非依存）
                 this.currentImage.width, this.currentImage.height // 元画像サイズ
             );
 
@@ -943,7 +951,7 @@ export class PointMarkerApp {
                     areaManager: this.areaManager
                 },
                 this.fileHandler.getCurrentImageFileName() + '.png',
-                this.canvas.width, this.canvas.height,
+                this.canvasRenderer.baseWidth, this.canvasRenderer.baseHeight, // ベースキャンバスサイズ（zoom非依存）
                 this.currentImage.width, this.currentImage.height,
                 filename,
                 saveOptions
