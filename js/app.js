@@ -441,21 +441,39 @@ export class PointMarkerApp {
             });
         }
 
-        // JSON読み込み
+        // データベース読み込み（メインパネル）
         const loadJsonBtn = document.getElementById('loadJsonBtn');
         if (loadJsonBtn) {
             loadJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
-                await this.handleInput();
+                if (!confirm('データベースからデータを読み込みますか？\n現在のデータは上書きされます。')) return;
+                try {
+                    if (window.connectFirebase) {
+                        await window.connectFirebase();
+                    }
+                } catch (error) {
+                    return;
+                }
+                await this.firebaseSyncManager.loadFromFirebase(() => {
+                    this.redrawCanvas();
+                });
             });
         }
 
-        // JSON保存
+        // データベース保存（メインパネル）
         const saveJsonBtn = document.getElementById('saveJsonBtn');
         if (saveJsonBtn) {
             saveJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
-                await this.handleOutput();
+                if (!confirm('現在のデータをデータベースに保存しますか？')) return;
+                try {
+                    if (window.connectFirebase) {
+                        await window.connectFirebase();
+                    }
+                } catch (error) {
+                    return;
+                }
+                await this.firebaseSyncManager.saveAllToFirebase();
             });
         }
 
@@ -520,41 +538,18 @@ export class PointMarkerApp {
             this.markerSettingsManager.openDialog();
         });
 
-        // データベース操作のリスナー設定
+        // ファイル入出力操作のリスナー設定（設定ダイアログ）
         this.markerSettingsManager.setupDatabaseListeners({
             onLoad: async (e) => {
                 e.preventDefault();
-                // 読み込み時にFirebaseへ接続（未接続の場合のみ）
-                try {
-                    if (window.connectFirebase) {
-                        await window.connectFirebase();
-                    }
-                } catch (error) {
-                    return; // 接続失敗時は処理中断
-                }
-                // FirebaseSyncManager側でデータがある場合のみ確認が入るので、ここは直接呼び出す
-                await this.firebaseSyncManager.loadFromFirebase((points, routes, spots) => {
-                    // 読み込み完了時の処理
-                    this.redrawCanvas();
-                    this.markerSettingsManager.closeDialog();
-                });
+                if (!confirm('JSONファイルからデータを読み込みますか？\n現在のデータは上書きされます。')) return;
+                await this.handleInput();
+                this.markerSettingsManager.closeDialog();
             },
             onExport: async (e) => {
                 e.preventDefault();
-                // 保存確認
-                if (!confirm('現在のデータをデータベースに上書き保存しますか？')) {
-                    return;
-                }
-                // 保存時にFirebaseへ接続（未接続の場合のみ）
-                try {
-                    if (window.connectFirebase) {
-                        await window.connectFirebase();
-                    }
-                } catch (error) {
-                    return; // 接続失敗時は処理中断
-                }
-                await this.firebaseSyncManager.saveAllToFirebase();
-                // 保存後はダイアログを閉じる
+                if (!confirm('現在のデータをJSONファイルに保存しますか？')) return;
+                await this.handleOutput();
                 this.markerSettingsManager.closeDialog();
             }
         });
