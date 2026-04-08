@@ -136,11 +136,11 @@ header p {
     border-color: var(--primary-color);
 }
 
-/* 画像ファイル名表示（右下固定） */
+/* 画像ファイル名表示（左下固定） */
 .image-filename-display {
     position: fixed;
     bottom: 15px;
-    right: 15px;
+    left: 15px;
     background-color: rgba(255, 255, 255, 0.85);
     padding: 6px 10px;
     border-radius: 4px;
