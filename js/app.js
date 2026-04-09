@@ -446,7 +446,6 @@ export class PointMarkerApp {
         if (loadJsonBtn) {
             loadJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
-                if (!confirm('データベースからデータを読み込みますか？\n現在のデータは上書きされます。')) return;
                 try {
                     if (window.connectFirebase) {
                         await window.connectFirebase();
@@ -465,7 +464,6 @@ export class PointMarkerApp {
         if (saveJsonBtn) {
             saveJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
-                if (!confirm('現在のデータをデータベースに保存しますか？')) return;
                 try {
                     if (window.connectFirebase) {
                         await window.connectFirebase();
@@ -542,13 +540,11 @@ export class PointMarkerApp {
         this.markerSettingsManager.setupDatabaseListeners({
             onLoad: async (e) => {
                 e.preventDefault();
-                if (!confirm('JSONファイルからデータを読み込みますか？\n現在のデータは上書きされます。')) return;
                 await this.handleInput();
                 this.markerSettingsManager.closeDialog();
             },
             onExport: async (e) => {
                 e.preventDefault();
-                if (!confirm('現在のデータをJSONファイルに保存しますか？')) return;
                 await this.handleOutput();
                 this.markerSettingsManager.closeDialog();
             }
