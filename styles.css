@@ -971,6 +971,12 @@ header p {
     border: 2px solid #d32f2f;
 }
 
+.message-overlay.message-success {
+    background-color: #b3e5fc;
+    color: #0d47a1;
+    border: 2px solid #4fc3f7;
+}
+
 @keyframes messageSlideIn {
     from {
         opacity: 0;

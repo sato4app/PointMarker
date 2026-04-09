@@ -444,34 +444,56 @@ export class PointMarkerApp {
         // データベース読み込み（メインパネル）
         const loadJsonBtn = document.getElementById('loadJsonBtn');
         if (loadJsonBtn) {
+            let isLoading = false;
             loadJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
+                if (isLoading) {
+                    UIHelper.showMessage('読み込み中です。完了までお待ちください', 'warning');
+                    return;
+                }
+                isLoading = true;
                 try {
                     if (window.connectFirebase) {
                         await window.connectFirebase();
                     }
                 } catch (error) {
+                    isLoading = false;
                     return;
                 }
-                await this.firebaseSyncManager.loadFromFirebase(() => {
-                    this.redrawCanvas();
-                });
+                try {
+                    await this.firebaseSyncManager.loadFromFirebase(() => {
+                        this.redrawCanvas();
+                    });
+                } finally {
+                    isLoading = false;
+                }
             });
         }
 
         // データベース保存（メインパネル）
         const saveJsonBtn = document.getElementById('saveJsonBtn');
         if (saveJsonBtn) {
+            let isSaving = false;
             saveJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
+                if (isSaving) {
+                    UIHelper.showMessage('保存中です。完了までお待ちください', 'warning');
+                    return;
+                }
+                isSaving = true;
                 try {
                     if (window.connectFirebase) {
                         await window.connectFirebase();
                     }
                 } catch (error) {
+                    isSaving = false;
                     return;
                 }
-                await this.firebaseSyncManager.saveAllToFirebase();
+                try {
+                    await this.firebaseSyncManager.saveAllToFirebase();
+                } finally {
+                    isSaving = false;
+                }
             });
         }
 
