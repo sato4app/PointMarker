@@ -10,6 +10,7 @@ import { UIHelper } from './ui/UIHelper.js';
 import { ValidationManager } from './ui/ValidationManager.js';
 import { ViewportManager } from './ui/ViewportManager.js';
 import { MarkerSettingsManager } from './ui/MarkerSettingsManager.js';
+import { PanelDragHandler } from './ui/PanelDragHandler.js';
 import { CoordinateUtils } from './utils/Coordinates.js';
 import { Validators } from './utils/Validators.js';
 import { ObjectDetector } from './utils/ObjectDetector.js';
@@ -45,6 +46,13 @@ export class PointMarkerApp {
         this.dragDropHandler = new DragDropHandler();
         this.resizeHandler = new ResizeHandler();
         this.markerSettingsManager = new MarkerSettingsManager();
+
+        // コントロールパネルをドラッグ可能にする（タイトルh2をハンドルとして使用）
+        const controlsSidebar = document.querySelector('.controls-sidebar');
+        const sidebarHeader = controlsSidebar ? controlsSidebar.querySelector('h2') : null;
+        if (controlsSidebar && sidebarHeader) {
+            this.panelDragHandler = new PanelDragHandler(controlsSidebar, sidebarHeader);
+        }
 
         // ビューポート管理とFirebase同期の初期化
         this.viewportManager = new ViewportManager(

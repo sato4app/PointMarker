@@ -197,6 +197,8 @@ header p {
     font-weight: 600;
     text-align: center;
     line-height: 1.3;
+    cursor: move;
+    user-select: none;
 }
 
 /* =====================================
