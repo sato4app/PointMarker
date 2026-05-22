@@ -189,9 +189,11 @@ header p {
    Controls Sidebar Title
    ===================================== */
 .controls-sidebar h2 {
-    margin: 0 0 15px 0;
-    padding-bottom: 12px;
+    margin: -20px -20px 15px -20px;
+    padding: 12px 20px;
+    background-color: #f5ebe0;
     border-bottom: 2px solid var(--primary-color);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
     color: var(--secondary-color);
     font-size: 16px;
     font-weight: 600;
