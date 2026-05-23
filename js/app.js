@@ -456,7 +456,7 @@ export class PointMarkerApp {
             loadDatabaseBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 if (this.viewportManager.isViewTransformed()) {
-                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\nズームボタンの左にある「反時計回りの矢印」アイコン（表示リセット）で元に戻してから実行してください', 'warning');
                     return;
                 }
                 if (isLoading) {
@@ -489,7 +489,7 @@ export class PointMarkerApp {
             saveDatabaseBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 if (this.viewportManager.isViewTransformed()) {
-                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\nズームボタンの左にある「反時計回りの矢印」アイコン（表示リセット）で元に戻してから実行してください', 'warning');
                     return;
                 }
                 if (isSaving) {
@@ -520,7 +520,7 @@ export class PointMarkerApp {
             exportJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 if (this.viewportManager.isViewTransformed()) {
-                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\nズームボタンの左にある「反時計回りの矢印」アイコン（表示リセット）で元に戻してから実行してください', 'warning');
                     return;
                 }
                 if (isExporting) {
@@ -602,7 +602,7 @@ export class PointMarkerApp {
             onLoad: async (e) => {
                 e.preventDefault();
                 if (this.viewportManager.isViewTransformed()) {
-                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\nズームボタンの左にある「反時計回りの矢印」アイコン（表示リセット）で元に戻してから実行してください', 'warning');
                     return;
                 }
                 await this.handleInput();
@@ -611,7 +611,7 @@ export class PointMarkerApp {
             onExport: async (e) => {
                 e.preventDefault();
                 if (this.viewportManager.isViewTransformed()) {
-                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\nズームボタンの左にある「反時計回りの矢印」アイコン（表示リセット）で元に戻してから実行してください', 'warning');
                     return;
                 }
                 await this.handleOutput();
