@@ -455,6 +455,10 @@ export class PointMarkerApp {
             let isLoading = false;
             loadDatabaseBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
+                if (this.viewportManager.isViewTransformed()) {
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    return;
+                }
                 if (isLoading) {
                     UIHelper.showMessage('読み込み中です。完了までお待ちください', 'warning');
                     return;
@@ -484,6 +488,10 @@ export class PointMarkerApp {
             let isSaving = false;
             saveDatabaseBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
+                if (this.viewportManager.isViewTransformed()) {
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    return;
+                }
                 if (isSaving) {
                     UIHelper.showMessage('保存中です。完了までお待ちください', 'warning');
                     return;
@@ -511,6 +519,10 @@ export class PointMarkerApp {
             let isExporting = false;
             exportJsonBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
+                if (this.viewportManager.isViewTransformed()) {
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    return;
+                }
                 if (isExporting) {
                     UIHelper.showMessage('出力中です。完了までお待ちください', 'warning');
                     return;
@@ -589,11 +601,19 @@ export class PointMarkerApp {
         this.markerSettingsManager.setupFileIoListeners({
             onLoad: async (e) => {
                 e.preventDefault();
+                if (this.viewportManager.isViewTransformed()) {
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    return;
+                }
                 await this.handleInput();
                 this.markerSettingsManager.closeDialog();
             },
             onExport: async (e) => {
                 e.preventDefault();
+                if (this.viewportManager.isViewTransformed()) {
+                    UIHelper.showMessage('画像がズームまたは移動された状態です。\n表示のリセットボタン（緑の丸ボタン）で元に戻してから実行してください', 'warning');
+                    return;
+                }
                 await this.handleOutput();
                 this.markerSettingsManager.closeDialog();
             }
