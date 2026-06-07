@@ -253,6 +253,9 @@ export class PointMarkerApp {
             if (!data.skipFormatting && data.id.trim() === '') {
                 const points = this.pointManager.getPoints();
                 if (data.index >= 0 && data.index < points.length) {
+                    // Firebaseからも削除（削除前の座標で検索）
+                    const point = points[data.index];
+                    this.firebaseSyncManager.deletePointFromFirebase(point.x, point.y);
                     // 画面から削除
                     this.pointManager.removePoint(data.index);
                 }
@@ -309,6 +312,12 @@ export class PointMarkerApp {
 
         this.inputManager.setCallback('onPointRemove', (data) => {
             if (this.layoutManager.getCurrentEditingMode() === 'point') {
+                // Firebaseからも削除（削除前の座標で検索）
+                const points = this.pointManager.getPoints();
+                if (data.index >= 0 && data.index < points.length) {
+                    const point = points[data.index];
+                    this.firebaseSyncManager.deletePointFromFirebase(point.x, point.y);
+                }
                 this.pointManager.removePoint(data.index);
             }
         });
@@ -320,6 +329,9 @@ export class PointMarkerApp {
                 // Firebaseからも削除するため、削除前に座標を取得
                 const spots = this.spotManager.getSpots();
                 if (data.index >= 0 && data.index < spots.length) {
+                    // Firebaseからも削除（削除前の座標で検索）
+                    const spot = spots[data.index];
+                    this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
                     // 画面から削除
                     this.spotManager.removeSpot(data.index);
                     return;
@@ -344,6 +356,9 @@ export class PointMarkerApp {
                 // Firebaseからも削除するため、削除前に座標を取得
                 const spots = this.spotManager.getSpots();
                 if (data.index >= 0 && data.index < spots.length) {
+                    // Firebaseからも削除（削除前の座標で検索）
+                    const spot = spots[data.index];
+                    this.firebaseSyncManager.deleteSpotFromFirebase(spot.x, spot.y);
                     // 画面から削除
                     this.spotManager.removeSpot(data.index);
                 }
@@ -1151,7 +1166,7 @@ export class PointMarkerApp {
             try {
                 // Firebaseから削除
                 if (selectedRoute.firestoreId) {
-                    const projectId = this.fileHandler.getCurrentImageFileName();
+                    await this.firebaseSyncManager.deleteRouteFromFirebase(selectedRoute.firestoreId);
                 }
 
                 // RouteManagerから削除

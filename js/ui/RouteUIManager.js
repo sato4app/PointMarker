@@ -193,6 +193,17 @@ export class RouteUIManager {
                 return;
             }
 
+            // プロジェクトメタデータの存在確認・作成（未作成だと読み込み時に検出されないため）
+            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
+            if (!existingProject) {
+                await window.firestoreManager.createProjectMetadata(projectId, {
+                    projectName: projectId,
+                    imageName: projectId + '.png',
+                    imageWidth: this.app.currentImage.width,
+                    imageHeight: this.app.currentImage.height
+                });
+            }
+
             // すべてのルートを保存
             const allRoutes = this.app.routeManager.getAllRoutes();
             let savedCount = 0;
@@ -231,20 +242,20 @@ export class RouteUIManager {
                 // FirestoreIDがあれば更新、なければ新規追加
                 if (route.firestoreId) {
                     // 既存ルートを更新
+                    await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
                     updatedCount++;
                 } else {
-                    // 新規ルートを追加
-                    // 開発用ダミー処理
-                    const result = { status: 'success', firestoreId: 'temp_id_' + Date.now() };
+                    // 新規ルートをFirestoreに追加
+                    const result = await window.firestoreManager.addRoute(projectId, routeData);
 
                     if (result.status === 'success') {
                         // FirestoreIDを保存
                         route.firestoreId = result.firestoreId;
                         addedCount++;
                     } else if (result.status === 'duplicate') {
-                        // 重複している場合は既存のFirestoreIDを保存
+                        // 重複している場合は既存のFirestoreIDを保存して更新
                         route.firestoreId = result.existing.firestoreId;
-                        // 既存ルートを更新
+                        await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
                         updatedCount++;
                     }
                 }
@@ -288,7 +299,7 @@ export class RouteUIManager {
             try {
                 // Firebaseから削除
                 if (selectedRoute.firestoreId) {
-                    const projectId = this.app.fileHandler.getCurrentImageFileName();
+                    await this.app.firebaseSyncManager.deleteRouteFromFirebase(selectedRoute.firestoreId);
                 }
 
                 // RouteManagerから削除
