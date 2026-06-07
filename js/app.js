@@ -1224,7 +1224,17 @@ export class PointMarkerApp {
     handleSpotNameVisibilityChange(visible, isUserAction = false) {
         // スポットデータを取得して渡す
         const spots = this.spotManager.getSpots();
+        // 表示状態を先に更新（redrawSpotInputBoxes が spotNameVisibility を参照するため）
         this.inputManager.setSpotNameVisibility(visible, spots, isUserAction);
+
+        // 表示する場合、入力ボックスが未生成のケース（スポット編集モードを経由せず
+        // ルート編集モードに入った場合など）に備えて再生成し、
+        // 生成後に現在のモードに応じた表示スタイル（通常=灰色／開始・終了=白抜き）を適用する
+        if (visible) {
+            this.inputManager.redrawSpotInputBoxes(spots).then(() => {
+                this.inputManager.updateSpotInputsState();
+            });
+        }
     }
 
     /**
