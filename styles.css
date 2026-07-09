@@ -772,7 +772,15 @@ header p {
     gap: 8px;
 }
 
-/* ルート経路の最適化ボタン（終了ポイントのテキスト欄と同等サイズ） */
+/* 「中間点数: N」のラベル部分
+   開始・終了ポイント行のラベル（min-width: 80px）と幅を揃えることで、
+   直後の最適化ボタン（幅60px）が終了ポイントのテキスト欄と左右の端で揃う */
+.waypoint-count-label {
+    min-width: 80px;
+    white-space: nowrap;
+}
+
+/* ルート経路の最適化ボタン（終了ポイントのテキスト欄と同等サイズ・右端を揃えて配置） */
 .route-optimize-btn {
     width: 60px;
     padding: 6px 4px;
@@ -801,7 +809,7 @@ header p {
     margin-top: 5px;
 }
 
-.waypoint-count span {
+.waypoint-count #waypointCount {
     color: #e67e22;
     font-weight: bold;
 }
