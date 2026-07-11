@@ -259,7 +259,8 @@ export class RouteUIManager {
             return `・${routeName}: ${summary}`;
         });
 
-        UIHelper.showMessage(
+        // 結果一覧はOKボタンを押すまで表示し続ける（自動では閉じない）
+        UIHelper.showMessageWithOk(
             `全ルート（${allRoutes.length}本）の最適化が完了しました\n` +
             `${lines.join('\n')}\n` +
             `「保存」または「出力」で、最適化の結果を反映してください`
