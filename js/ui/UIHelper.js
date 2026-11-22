@@ -29,6 +29,20 @@ export class UIHelper {
     }
 
     /**
+     * HTMLのエスケープ（innerHTML に渡す文字列へ、ファイルやDBに由来する値を埋め込む際に使用。属性値にも使える）
+     * @param {*} value - 埋め込む値
+     * @returns {string} エスケープ済みの文字列
+     */
+    static escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    /**
      * メッセージを画面中央に表示
      * @param {string} message - 表示するメッセージ
      * @param {string} type - メッセージタイプ ('info', 'warning', 'error')

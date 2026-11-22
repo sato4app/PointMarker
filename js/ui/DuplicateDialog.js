@@ -3,6 +3,10 @@
  * 重複検出時のユーザー選択ダイアログを管理するクラス
  */
 
+import { UIHelper } from './UIHelper.js';
+
+const { escapeHtml } = UIHelper;
+
 export class DuplicateDialog {
     constructor() {
         this.dialog = null;
@@ -44,18 +48,18 @@ export class DuplicateDialog {
             </div>
             <div class="duplicate-dialog-body">
                 <p class="duplicate-dialog-message">
-                    ポイントID <strong>"${existing.id}"</strong> は既に存在します。
+                    ポイントID <strong>"${escapeHtml(existing.id)}"</strong> は既に存在します。
                 </p>
                 <div class="duplicate-dialog-comparison">
                     <div class="duplicate-dialog-item">
                         <h4>既存のポイント</h4>
-                        <p>ID: <span class="highlight">${existing.id}</span></p>
+                        <p>ID: <span class="highlight">${escapeHtml(existing.id)}</span></p>
                         <p>座標: (${Math.round(existing.x)}, ${Math.round(existing.y)})</p>
                     </div>
                     <div class="duplicate-dialog-arrow">→</div>
                     <div class="duplicate-dialog-item">
                         <h4>新しいポイント</h4>
-                        <p>ID: <span class="highlight">${attempted.id}</span></p>
+                        <p>ID: <span class="highlight">${escapeHtml(attempted.id)}</span></p>
                         <p>座標: (${Math.round(attempted.x)}, ${Math.round(attempted.y)})</p>
                     </div>
                 </div>
@@ -96,16 +100,16 @@ export class DuplicateDialog {
                 <div class="duplicate-dialog-comparison">
                     <div class="duplicate-dialog-item">
                         <h4>既存のルート</h4>
-                        <p>開始: <span class="highlight">${existing.startPoint}</span></p>
-                        <p>終了: <span class="highlight">${existing.endPoint}</span></p>
-                        <p>中間点: ${existing.waypointCount || 0}個</p>
+                        <p>開始: <span class="highlight">${escapeHtml(existing.startPoint)}</span></p>
+                        <p>終了: <span class="highlight">${escapeHtml(existing.endPoint)}</span></p>
+                        <p>中間点: ${escapeHtml(existing.waypointCount || 0)}個</p>
                     </div>
                     <div class="duplicate-dialog-arrow">→</div>
                     <div class="duplicate-dialog-item">
                         <h4>新しいルート</h4>
-                        <p>開始: <span class="highlight">${attempted.startPoint}</span></p>
-                        <p>終了: <span class="highlight">${attempted.endPoint}</span></p>
-                        <p>中間点: ${(attempted.waypoints || []).length}個</p>
+                        <p>開始: <span class="highlight">${escapeHtml(attempted.startPoint)}</span></p>
+                        <p>終了: <span class="highlight">${escapeHtml(attempted.endPoint)}</span></p>
+                        <p>中間点: ${escapeHtml((attempted.waypoints || []).length)}個</p>
                     </div>
                 </div>
                 <p class="duplicate-dialog-question">どうしますか？</p>
@@ -142,13 +146,13 @@ export class DuplicateDialog {
                 <div class="duplicate-dialog-comparison">
                     <div class="duplicate-dialog-item">
                         <h4>既存のスポット</h4>
-                        <p>名称: <span class="highlight">${existing.name}</span></p>
+                        <p>名称: <span class="highlight">${escapeHtml(existing.name)}</span></p>
                         <p>座標: (${Math.round(existing.x)}, ${Math.round(existing.y)})</p>
                     </div>
                     <div class="duplicate-dialog-arrow">→</div>
                     <div class="duplicate-dialog-item">
                         <h4>新しいスポット</h4>
-                        <p>名称: <span class="highlight">${attempted.name}</span></p>
+                        <p>名称: <span class="highlight">${escapeHtml(attempted.name)}</span></p>
                         <p>座標: (${Math.round(attempted.x)}, ${Math.round(attempted.y)})</p>
                     </div>
                 </div>
@@ -241,7 +245,7 @@ export class DuplicateDialog {
             </div>
             <div class="duplicate-dialog-body">
                 <p class="duplicate-dialog-message">
-                    "${oldId}" は既に使用されています。<br>
+                    "${escapeHtml(oldId)}" は既に使用されています。<br>
                     別のポイントIDを入力してください。
                 </p>
                 <div class="duplicate-dialog-input-group">
@@ -251,7 +255,7 @@ export class DuplicateDialog {
                         id="newPointId"
                         class="duplicate-dialog-input"
                         placeholder="例: A-14"
-                        value="${oldId}"
+                        value="${escapeHtml(oldId)}"
                     />
                     <p class="duplicate-dialog-hint">※ 形式: X-nn (例: A-01, B-12)</p>
                 </div>
