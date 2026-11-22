@@ -1,5 +1,9 @@
 import { CoordinateUtils } from '../utils/Coordinates.js';
 import { UIHelper } from '../ui/UIHelper.js';
+import { SYNC_KINDS, captureLocal, localState, planSync, remoteState } from './SyncPlanner.js';
+
+// 確認・エラーのメッセージに列挙する項目数の上限
+const MAX_LISTED_ITEMS = 10;
 
 /**
  * Firebase同期処理を管理するクラス
@@ -23,96 +27,81 @@ export class FirebaseSyncManager {
         this.fileHandler = fileHandler;
         this.currentImage = null;
         this.canvas = null;
+        this.canvasRenderer = null;
+        // 読み込み・保存の処理中フラグ（読み込みと保存の同時実行も防ぐ）
+        this.busy = false;
+        this.resetBaselines();
+    }
+
+    /**
+     * 基準情報を初期化（基準情報の無いFirestore上のデータは、保存時に削除しない）
+     */
+    resetBaselines() {
+        this.baselines = new Map(SYNC_KINDS.map((kind) => [kind.name, new Map()]));
+    }
+
+    /**
+     * 画面側のデータを種別ごとに取得
+     * @param {Object} kind - SYNC_KINDSの要素
+     * @returns {Array}
+     */
+    getLocalItems(kind) {
+        switch (kind.name) {
+            case 'points': return this.pointManager.getPoints();
+            case 'routes': return this.routeManager.getAllRoutes();
+            case 'spots': return this.spotManager.getSpots();
+            case 'areas': return this.areaManager.getAllAreas();
+            default: return [];
+        }
+    }
+
+    /**
+     * 読み込み・保存した時点の内容を基準情報として記録
+     */
+    remember(kind, item, id, local, remote) {
+        item.firestoreId = id;
+        this.baselines.get(kind.name).set(id, { local, remote });
+    }
+
+    /**
+     * 座標を一括で再計算する処理（リサイズ）の前後で、「画面で未変更」の状態を維持
+     * @param {Function} recalculate - 座標を再計算する処理
+     */
+    keepUnchangedAcross(recalculate) {
+        const unchanged = SYNC_KINDS.flatMap((kind) => this.getLocalItems(kind)
+            .map((item) => ({ kind, item, known: this.baselines.get(kind.name).get(item.firestoreId) }))
+            .filter(({ item, known }) => known && known.local === localState(kind, item)));
+
+        recalculate();
+
+        unchanged.forEach(({ kind, item, known }) => {
+            known.local = localState(kind, item);
+        });
+    }
+
+    /**
+     * ズーム倍率に依存しないキャンバスサイズを取得
+     * （通信待ちの間にズームされても座標変換が狂わないようにする）
+     * @returns {{width:number, height:number}}
+     */
+    getBaseSize() {
+        return {
+            width: Math.trunc(this.canvasRenderer.baseWidth),
+            height: Math.trunc(this.canvasRenderer.baseHeight)
+        };
     }
 
     /**
      * 現在の画像とキャンバスを設定
      * @param {HTMLImageElement} image - 現在の画像
      * @param {HTMLCanvasElement} canvas - キャンバス要素
+     * @param {Object} canvasRenderer - CanvasRendererインスタンス
      */
-    setImageAndCanvas(image, canvas) {
+    setImageAndCanvas(image, canvas, canvasRenderer) {
         this.currentImage = image;
         this.canvas = canvas;
-    }
-
-    /**
-     * ポイントをFirebaseに更新
-     * @param {number} pointIndex - ポイントのインデックス
-     */
-    async updatePointToFirebase(pointIndex) {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            return;
-        }
-
-        // 画像が読み込まれているか確認
-        if (!this.currentImage) {
-            return;
-        }
-
-        // プロジェクトIDを画像ファイル名から取得
-        const projectId = this.fileHandler.getCurrentImageFileName();
-        if (!projectId) {
-            return;
-        }
-
-        const points = this.pointManager.getPoints();
-        if (pointIndex < 0 || pointIndex >= points.length) {
-            return;
-        }
-
-        const point = points[pointIndex];
-
-        // 空白IDのポイントは更新対象外
-        if (!point.id || point.id.trim() === '') {
-            return;
-        }
-
-        try {
-            // キャンバス座標から画像座標に変換
-            const imageCoords = CoordinateUtils.canvasToImage(
-                point.x, point.y,
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-
-            // プロジェクトメタデータの存在確認・作成
-            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
-            if (!existingProject) {
-                const metadata = {
-                    projectName: projectId,
-                    imageName: projectId + '.png',
-                    imageWidth: this.currentImage.width,
-                    imageHeight: this.currentImage.height
-                };
-                await window.firestoreManager.createProjectMetadata(projectId, metadata);
-            }
-
-            // 既存ポイントを検索
-            const existingPoint = await window.firestoreManager.findPointById(projectId, point.id);
-
-            if (existingPoint) {
-                // 既存ポイントを更新
-                await window.firestoreManager.updatePoint(projectId, existingPoint.firestoreId, {
-                    x: imageCoords.x,
-                    y: imageCoords.y,
-                    index: point.index || 0,
-                    isMarker: false
-                });
-            } else {
-                // 新規ポイントを追加
-                await window.firestoreManager.addPoint(projectId, {
-                    id: point.id,
-                    x: imageCoords.x,
-                    y: imageCoords.y,
-                    index: point.index || 0,
-                    isMarker: false
-                });
-            }
-
-        } catch (error) {
-            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
-        }
+        this.canvasRenderer = canvasRenderer;
+        this.resetBaselines();
     }
 
     /**
@@ -158,82 +147,6 @@ export class FirebaseSyncManager {
                     break;
                 }
             }
-        } catch (error) {
-            // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
-        }
-    }
-
-    /**
-     * スポットをFirebaseに更新
-     * @param {number} spotIndex - スポットのインデックス
-     */
-    async updateSpotToFirebase(spotIndex) {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            return;
-        }
-
-        // 画像が読み込まれているか確認
-        if (!this.currentImage) {
-            return;
-        }
-
-        // プロジェクトIDを画像ファイル名から取得
-        const projectId = this.fileHandler.getCurrentImageFileName();
-        if (!projectId) {
-            return;
-        }
-
-        const spots = this.spotManager.getSpots();
-        if (spotIndex < 0 || spotIndex >= spots.length) {
-            return;
-        }
-
-        const spot = spots[spotIndex];
-
-        // 空白名のスポットは更新対象外
-        if (!spot.name || spot.name.trim() === '') {
-            return;
-        }
-
-        try {
-            // キャンバス座標から画像座標に変換
-            const imageCoords = CoordinateUtils.canvasToImage(
-                spot.x, spot.y,
-                this.canvas.width, this.canvas.height,
-                this.currentImage.width, this.currentImage.height
-            );
-
-            // プロジェクトメタデータの存在確認・作成
-            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
-            if (!existingProject) {
-                const metadata = {
-                    projectName: projectId,
-                    imageName: projectId + '.png',
-                    imageWidth: this.currentImage.width,
-                    imageHeight: this.currentImage.height
-                };
-                await window.firestoreManager.createProjectMetadata(projectId, metadata);
-            }
-
-            // 既存スポットを検索
-            const existingSpot = await window.firestoreManager.findSpotByName(projectId, spot.name);
-
-            if (existingSpot) {
-                // 既存スポットを更新
-                await window.firestoreManager.updateSpot(projectId, existingSpot.firestoreId, {
-                    x: imageCoords.x,
-                    y: imageCoords.y
-                });
-            } else {
-                // 新規スポットを追加
-                await window.firestoreManager.addSpot(projectId, {
-                    name: spot.name,
-                    x: imageCoords.x,
-                    y: imageCoords.y
-                });
-            }
-
         } catch (error) {
             // エラーが発生してもユーザーには通知しない（バックグラウンド処理）
         }
@@ -288,90 +201,6 @@ export class FirebaseSyncManager {
     }
 
     /**
-     * ルートをFirebaseに更新
-     * @param {number} routeIndex - ルートのインデックス
-     */
-    async updateRouteToFirebase(routeIndex) {
-        // Firebaseマネージャーの存在確認
-        if (!window.firestoreManager) {
-            return;
-        }
-
-        // 画像が読み込まれているか確認
-        if (!this.currentImage) {
-            return;
-        }
-
-        // プロジェクトIDを画像ファイル名から取得
-        const projectId = this.fileHandler.getCurrentImageFileName();
-        if (!projectId) {
-            return;
-        }
-
-        const routes = this.routeManager.getAllRoutes();
-        if (routeIndex < 0 || routeIndex >= routes.length) {
-            return;
-        }
-
-        const route = routes[routeIndex];
-
-        try {
-            // 中間点の座標変換
-            const convertedWaypoints = [];
-            if (route.routePoints) {
-                for (const waypoint of route.routePoints) {
-                    const imageCoords = CoordinateUtils.canvasToImage(
-                        waypoint.x, waypoint.y,
-                        this.canvas.width, this.canvas.height,
-                        this.currentImage.width, this.currentImage.height
-                    );
-                    convertedWaypoints.push({ x: imageCoords.x, y: imageCoords.y });
-                }
-            }
-
-            // プロジェクトメタデータの存在確認・作成
-            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
-            if (!existingProject) {
-                const metadata = {
-                    projectName: projectId,
-                    imageName: projectId + '.png',
-                    imageWidth: this.currentImage.width,
-                    imageHeight: this.currentImage.height
-                };
-                await window.firestoreManager.createProjectMetadata(projectId, metadata);
-            }
-
-            const routeData = {
-                routeName: route.routeName,
-                startPoint: route.startPointId,
-                endPoint: route.endPointId,
-                waypoints: convertedWaypoints,
-                waypointCount: convertedWaypoints.length,
-                description: route.description || ''
-            };
-
-            if (route.firestoreId) {
-                // 既存ルートを更新
-                await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
-            } else {
-                // 新規ルートを追加
-                const result = await window.firestoreManager.addRoute(projectId, routeData);
-                if (result.status === 'success') {
-                    // FirestoreIDを保存
-                    route.firestoreId = result.firestoreId;
-                } else if (result.status === 'duplicate') {
-                    // 重複時は既存のIDを使って更新
-                    route.firestoreId = result.existing.firestoreId;
-                    await window.firestoreManager.updateRoute(projectId, route.firestoreId, routeData);
-                }
-            }
-
-        } catch (error) {
-            console.error('ルート保存エラー:', error);
-        }
-    }
-
-    /**
      * ルートをFirebaseから削除
      * @param {string} firestoreId - Firestore ID
      */
@@ -388,55 +217,37 @@ export class FirebaseSyncManager {
     }
 
     /**
-     * エリアをFirebaseに更新
+     * エリア名の変更をFirebaseに即時反映
+     * 名前のみを更新する。未保存のエリアや、他の変更・同名のエリアがある場合は保存時の処理に委ねる
      * @param {number} areaIndex - エリアのインデックス
      */
     async updateAreaToFirebase(areaIndex) {
-        if (!window.firestoreManager || !this.currentImage) return;
+        if (!window.firestoreManager || !this.currentImage || this.busy) return;
 
         const projectId = this.fileHandler.getCurrentImageFileName();
-        if (!projectId) return;
+        const area = this.areaManager.getAllAreas()[areaIndex];
+        if (!projectId || !area) return;
 
-        const areas = this.areaManager.getAllAreas();
-        if (areaIndex < 0 || areaIndex >= areas.length) return;
+        const kind = SYNC_KINDS.find(({ name }) => name === 'areas');
+        const known = this.baselines.get(kind.name).get(area.firestoreId);
+        const { firestoreId, areaName } = area;
+        if (!known || !kind.isValid({ areaName })) return;
 
-        const area = areas[areaIndex];
-        if (!area.areaName || area.areaName.trim() === '') return;
-
+        this.busy = true;
         try {
-            // 頂点座標の変換
-            const convertedVertices = [];
-            if (area.vertices) {
-                for (const vertex of area.vertices) {
-                    const imageCoords = CoordinateUtils.canvasToImage(
-                        vertex.x, vertex.y,
-                        this.canvas.width, this.canvas.height,
-                        this.currentImage.width, this.currentImage.height
-                    );
-                    convertedVertices.push({ x: imageCoords.x, y: imageCoords.y });
-                }
-            }
+            const remoteAreas = await window.firestoreManager.getAreas(projectId);
+            const target = remoteAreas.find((remote) => remote.firestoreId === firestoreId);
+            if (!target || remoteState(kind, target) !== known.remote) return;
+            if (remoteAreas.some((remote) => remote !== target && kind.key(remote) === kind.key({ areaName }))) return;
 
-            const areaData = {
-                areaName: area.areaName,
-                vertices: convertedVertices
-            };
+            await window.firestoreManager.updateArea(projectId, firestoreId, { areaName });
 
-            if (area.firestoreId) {
-                // 更新
-                await window.firestoreManager.updateArea(projectId, area.firestoreId, areaData);
-            } else {
-                // 新規追加
-                const result = await window.firestoreManager.addArea(projectId, areaData);
-                if (result.status === 'success') {
-                    area.firestoreId = result.firestoreId;
-                } else if (result.status === 'duplicate') {
-                    area.firestoreId = result.existing.firestoreId;
-                    await window.firestoreManager.updateArea(projectId, area.firestoreId, areaData);
-                }
-            }
+            known.remote = remoteState(kind, { ...target, areaName });
+            known.local = JSON.stringify({ ...JSON.parse(known.local), areaName });
         } catch (error) {
             console.error('エリア保存エラー:', error);
+        } finally {
+            this.busy = false;
         }
     }
 
@@ -473,6 +284,12 @@ export class FirebaseSyncManager {
             return;
         }
 
+        if (this.busy) {
+            UIHelper.showWarning('データベースの処理中です。完了までお待ちください');
+            return;
+        }
+
+        this.busy = true;
         try {
             // プロジェクトIDを画像ファイル名から取得
             const projectId = this.fileHandler.getCurrentImageFileName();
@@ -502,18 +319,25 @@ export class FirebaseSyncManager {
                 }
             }
 
-            this.pointManager.clearPoints();
-            this.routeManager.clearAllRoutes();
-            this.spotManager.clearSpots();
-            this.areaManager.clearAreas();
-
             // 件数取得用に各コレクションを先読み（0件項目は処理をスキップしてメッセージも出さない）
+            // 取得に失敗しても画面のデータを失わないよう、クリアは全種別の取得後に行う
             const points = await window.firestoreManager.getPoints(projectId);
             const routes = await window.firestoreManager.getRoutes(projectId);
             const spots = await window.firestoreManager.getSpots(projectId);
             const areas = (window.firestoreManager.getAreas)
                 ? await window.firestoreManager.getAreas(projectId)
                 : [];
+
+            this.pointManager.clearPoints();
+            this.routeManager.clearAllRoutes();
+            this.spotManager.clearSpots();
+            this.areaManager.clearAreas();
+            this.resetBaselines();
+
+            const { width, height } = this.getBaseSize();
+            const [pointKind, routeKind, spotKind, areaKind] = SYNC_KINDS;
+            const rememberLoaded = (kind, item, doc) =>
+                this.remember(kind, item, doc.firestoreId, localState(kind, item), remoteState(kind, doc));
 
             // ポイントを読み込み（画像座標→キャンバス座標に変換）
             let loadedPoints = 0;
@@ -529,11 +353,12 @@ export class FirebaseSyncManager {
                 // 画像座標からキャンバス座標に変換
                 const canvasCoords = CoordinateUtils.imageToCanvas(
                     point.x, point.y,
-                    this.canvas.width, this.canvas.height,
+                    width, height,
                     this.currentImage.width, this.currentImage.height
                 );
 
-                this.pointManager.addPoint(canvasCoords.x, canvasCoords.y, point.id);
+                const addedPoint = this.pointManager.addPoint(canvasCoords.x, canvasCoords.y, point.id);
+                rememberLoaded(pointKind, addedPoint, point);
                 loadedPoints++;
             }
 
@@ -545,11 +370,11 @@ export class FirebaseSyncManager {
             for (const route of routes) {
                 // 中間点の座標変換
                 const convertedWaypoints = [];
-                for (const waypoint of route.waypoints) {
+                for (const waypoint of route.waypoints || []) {
                     // 画像座標からキャンバス座標に変換
                     const canvasCoords = CoordinateUtils.imageToCanvas(
                         waypoint.x, waypoint.y,
-                        this.canvas.width, this.canvas.height,
+                        width, height,
                         this.currentImage.width, this.currentImage.height
                     );
                     convertedWaypoints.push({ x: canvasCoords.x, y: canvasCoords.y });
@@ -557,13 +382,14 @@ export class FirebaseSyncManager {
 
                 // ルートオブジェクトを作成してRouteManagerに追加
                 // FirestoreIDを保持して、更新時に使用できるようにする
-                this.routeManager.addRoute({
-                    firestoreId: route.firestoreId,  // FirestoreドキュメントIDを保持
+                const addedRoute = {
                     routeName: route.routeName || `${route.startPoint} ～ ${route.endPoint}`,
                     startPointId: route.startPoint,
                     endPointId: route.endPoint,
                     routePoints: convertedWaypoints
-                });
+                };
+                this.routeManager.addRoute(addedRoute);
+                rememberLoaded(routeKind, addedRoute, route);
                 loadedRoutes++;
             }
 
@@ -581,11 +407,12 @@ export class FirebaseSyncManager {
                 // 画像座標からキャンバス座標に変換
                 const canvasCoords = CoordinateUtils.imageToCanvas(
                     spot.x, spot.y,
-                    this.canvas.width, this.canvas.height,
+                    width, height,
                     this.currentImage.width, this.currentImage.height
                 );
 
-                this.spotManager.addSpot(canvasCoords.x, canvasCoords.y, spot.name);
+                const addedSpot = this.spotManager.addSpot(canvasCoords.x, canvasCoords.y, spot.name);
+                rememberLoaded(spotKind, addedSpot, spot);
                 loadedSpots++;
 
             }
@@ -601,18 +428,19 @@ export class FirebaseSyncManager {
                     for (const vertex of area.vertices) {
                         const canvasCoords = CoordinateUtils.imageToCanvas(
                             vertex.x, vertex.y,
-                            this.canvas.width, this.canvas.height,
+                            width, height,
                             this.currentImage.width, this.currentImage.height
                         );
                         convertedVertices.push({ x: canvasCoords.x, y: canvasCoords.y });
                     }
                 }
 
-                this.areaManager.addArea({
-                    firestoreId: area.firestoreId,
+                const addedArea = {
                     areaName: area.areaName,
                     vertices: convertedVertices
-                });
+                };
+                this.areaManager.addArea(addedArea);
+                rememberLoaded(areaKind, addedArea, area);
                 loadedAreas++;
             }
 
@@ -635,11 +463,14 @@ export class FirebaseSyncManager {
         } catch (error) {
             UIHelper.hidePersistentMessage();
             UIHelper.showError('読み込み中にエラーが発生しました: ' + error.message);
+        } finally {
+            this.busy = false;
         }
     }
 
     /**
      * すべてのデータをFirebaseに保存
+     * 保存内容の決め方は SyncPlanner.js を参照
      */
     async saveAllToFirebase() {
         if (!window.firestoreManager || !this.currentImage) {
@@ -653,161 +484,144 @@ export class FirebaseSyncManager {
             return;
         }
 
+        if (this.busy) {
+            UIHelper.showWarning('データベースの処理中です。完了までお待ちください');
+            return;
+        }
+
+        this.busy = true;
         try {
-            // プロジェクトメタデータ更新
+            const { width: imageWidth, height: imageHeight } = this.currentImage;
+            const { width, height } = this.getBaseSize();
+            const toImage = ({ x, y }) => CoordinateUtils.canvasToImage(x, y, width, height, imageWidth, imageHeight);
+            // JSON入出力とDBの座標変換で生じる丸め誤差の範囲
+            const tolerance = {
+                x: Math.ceil(1.5 * imageWidth / width) + 1,
+                y: Math.ceil(1.5 * imageHeight / height) + 1
+            };
+
+            // 通信待ちの前に画面のデータを写し取る
+            const captured = SYNC_KINDS.map((kind) => ({
+                kind,
+                entries: captureLocal(kind, this.getLocalItems(kind), toImage)
+            }));
+
+            // メタデータは各データより先に読む（読み取り中に行われた他の保存を検出するため）
+            const projectBefore = await window.firestoreManager.getProjectMetadata(projectId);
+            const readers = {
+                points: () => window.firestoreManager.getPoints(projectId),
+                routes: () => window.firestoreManager.getRoutes(projectId),
+                spots: () => window.firestoreManager.getSpots(projectId),
+                areas: () => window.firestoreManager.getAreas(projectId)
+            };
+
+            const plans = [];
+            for (const { kind, entries } of captured) {
+                if (entries.length > 0) {
+                    UIHelper.showPersistentMessage(`${kind.label}のデータを保存中...`, 'info');
+                }
+                const remoteDocs = await readers[kind.name]();
+                plans.push(planSync(kind, entries, remoteDocs, this.baselines.get(kind.name), tolerance));
+            }
+
+            const duplicates = plans.flatMap((plan) => plan.duplicates);
+            if (duplicates.length > 0) {
+                UIHelper.hidePersistentMessage();
+                UIHelper.showMessageWithOk(
+                    '次の項目が画面内またはデータベース上の別のデータと重複するため、保存しませんでした。\n'
+                    + 'ID・名前・開始/終了ポイントを変更してから保存してください。\n'
+                    + this.formatItemList(duplicates),
+                    'error'
+                );
+                return;
+            }
+
+            const conflicts = plans.flatMap((plan) => plan.conflicts);
+            if (conflicts.length > 0) {
+                UIHelper.hidePersistentMessage();
+                const confirmed = confirm(
+                    '読み込んでいないデータ、または読み込んだ後に他で変更されたデータが対象に含まれています。\n\n'
+                    + this.formatItemList(conflicts)
+                    + '\n\n画面の内容で保存しますか？'
+                );
+                if (!confirmed) {
+                    UIHelper.showWarning('保存をキャンセルしました。データベースは変更していません');
+                    return;
+                }
+            }
+
+            UIHelper.showPersistentMessage('削除データを同期中...', 'info');
             const metadata = {
                 projectName: projectId,
                 imageName: projectId + '.png',
-                imageWidth: this.currentImage.width,
-                imageHeight: this.currentImage.height,
-                lastAccessedAt: firebase.firestore.FieldValue.serverTimestamp()
+                imageWidth,
+                imageHeight
             };
+            await window.firestoreManager.commitSync(projectId, metadata, projectBefore, plans);
 
-            const existingProject = await window.firestoreManager.getProjectMetadata(projectId);
-            if (!existingProject) {
-                await window.firestoreManager.createProjectMetadata(projectId, metadata);
-            } else {
-                await window.firestoreManager.updateProjectMetadata(projectId, metadata);
-            }
-
-            // ポイント保存
-            const points = this.pointManager.getPoints();
-            let savedPoints = 0;
-            if (points.length > 0) {
-                UIHelper.showPersistentMessage('ポイントのデータを保存中...', 'info');
-                for (let i = 0; i < points.length; i++) {
-                    await this.updatePointToFirebase(i);
-                    // 空白IDは updatePointToFirebase 内でスキップされるため、ここでカウントから除外
-                    const p = points[i];
-                    if (p && p.id && p.id.trim() !== '') savedPoints++;
-                }
-            }
-
-            // ルート保存
-            const routes = this.routeManager.getAllRoutes();
-            let savedRoutes = 0;
-            if (routes.length > 0) {
-                UIHelper.showPersistentMessage('ルートのデータを保存中...', 'info');
-                for (let i = 0; i < routes.length; i++) {
-                    await this.updateRouteToFirebase(i);
-                    savedRoutes++;
-                }
-            }
-
-            // スポット保存
-            const spots = this.spotManager.getSpots();
-            let savedSpots = 0;
-            if (spots.length > 0) {
-                UIHelper.showPersistentMessage('スポットのデータを保存中...', 'info');
-                for (let i = 0; i < spots.length; i++) {
-                    await this.updateSpotToFirebase(i);
-                    const s = spots[i];
-                    if (s && s.name && s.name.trim() !== '') savedSpots++;
-                }
-            }
-
-            // エリア保存
-            const areas = this.areaManager.getAllAreas();
-            let savedAreas = 0;
-            if (areas.length > 0) {
-                UIHelper.showPersistentMessage('エリアのデータを保存中...', 'info');
-                for (let i = 0; i < areas.length; i++) {
-                    await this.updateAreaToFirebase(i);
-                    const a = areas[i];
-                    if (a && a.areaName && a.areaName.trim() !== '') savedAreas++;
-                }
-            }
-
-            // ローカルで削除された項目をFirestoreからも削除して同期
-            UIHelper.showPersistentMessage('削除データを同期中...', 'info');
-            const deletedCount = await this.reconcileDeletions(projectId);
+            this.updateBaselines(plans);
 
             // 進捗用の永続メッセージを消去してから、完了メッセージを規定秒数表示
             UIHelper.hidePersistentMessage();
-
-            const completionLines = ['保存が完了しました。'];
-            if (savedPoints > 0) completionLines.push(`ポイント: ${savedPoints}件`);
-            if (savedRoutes > 0) completionLines.push(`ルート: ${savedRoutes}件`);
-            if (savedSpots > 0)  completionLines.push(`スポット: ${savedSpots}件`);
-            if (savedAreas > 0)  completionLines.push(`エリア: ${savedAreas}件`);
-            if (deletedCount > 0) completionLines.push(`削除: ${deletedCount}件`);
-            if (completionLines.length === 1) completionLines.push('データなし');
-            UIHelper.showMessage(completionLines.join('\n'), 'success');
+            UIHelper.showMessage(this.buildSaveSummary(plans), 'success');
 
         } catch (error) {
             console.error('全データ保存エラー:', error);
             UIHelper.hidePersistentMessage();
-            UIHelper.showError('保存中にエラーが発生しました');
+            UIHelper.showError(error.code === 'sync-conflict'
+                ? '保存中に他で変更があったため中止しました（データベースは変更していません）。もう一度「保存」を実行してください'
+                : '保存中にエラーが発生しました。画面のデータは残っています。もう一度「保存」を実行してください');
+        } finally {
+            this.busy = false;
         }
     }
 
     /**
-     * ローカルに存在しない項目をFirestoreから削除して同期する
-     * （削除はリアルタイムでは行わず、保存ボタン実行時にまとめて同期する）
-     * @param {string} projectId - プロジェクトID
-     * @returns {Promise<number>} 削除した件数
+     * 保存成功後に基準情報を更新
+     * @param {Array} plans - 保存内容
      */
-    async reconcileDeletions(projectId) {
-        let deletedCount = 0;
+    updateBaselines(plans) {
+        plans.forEach(({ kind, adds, updates, deletes, settled, linked }) => {
+            const baseline = this.baselines.get(kind.name);
+            deletes.forEach(({ id }) => baseline.delete(id));
+            [...adds, ...updates].forEach(({ entry, id, content }) =>
+                this.remember(kind, entry.item, id, entry.local, remoteState(kind, content)));
+            settled.forEach(({ entry, id, state }) => this.remember(kind, entry.item, id, entry.local, state));
+            linked.forEach(({ entry, id }) => {
+                entry.item.firestoreId = id;
+            });
+        });
+    }
 
-        // ポイント: ローカルのID集合に無いものを削除（ID一致で判定）
-        const localPointIds = new Set(
-            this.pointManager.getPoints()
-                .map(p => (p.id || '').trim())
-                .filter(id => id !== '')
-        );
-        const remotePoints = await window.firestoreManager.getPoints(projectId);
-        for (const rp of remotePoints) {
-            if (!localPointIds.has((rp.id || '').trim())) {
-                await window.firestoreManager.deletePoint(projectId, rp.firestoreId);
-                deletedCount++;
-            }
-        }
+    /**
+     * 保存完了メッセージを作成
+     * @param {Array} plans - 保存内容
+     * @returns {string}
+     */
+    buildSaveSummary(plans) {
+        const lines = ['保存が完了しました。'];
+        plans.forEach(({ kind, adds, updates, settled, linked }) => {
+            const count = adds.length + updates.length + settled.length + linked.length;
+            if (count > 0) lines.push(`${kind.label}: ${count}件`);
+        });
 
-        // スポット: ローカルの名称集合に無いものを削除（名称一致で判定）
-        const localSpotNames = new Set(
-            this.spotManager.getSpots()
-                .map(s => (s.name || '').trim())
-                .filter(name => name !== '')
-        );
-        const remoteSpots = await window.firestoreManager.getSpots(projectId);
-        for (const rs of remoteSpots) {
-            if (!localSpotNames.has((rs.name || '').trim())) {
-                await window.firestoreManager.deleteSpot(projectId, rs.firestoreId);
-                deletedCount++;
-            }
-        }
+        const deleted = plans.reduce((total, plan) => total + plan.deletes.length, 0);
+        if (deleted > 0) lines.push(`削除: ${deleted}件`);
 
-        // ルート: ローカルのFirestoreID集合に無いものを削除
-        const localRouteIds = new Set(
-            this.routeManager.getAllRoutes()
-                .map(r => r.firestoreId)
-                .filter(id => !!id)
-        );
-        const remoteRoutes = await window.firestoreManager.getRoutes(projectId);
-        for (const rr of remoteRoutes) {
-            if (!localRouteIds.has(rr.firestoreId)) {
-                await window.firestoreManager.deleteRoute(projectId, rr.firestoreId);
-                deletedCount++;
-            }
-        }
+        const unseen = plans.reduce((total, plan) => total + plan.unseen, 0);
+        if (unseen > 0) lines.push(`未読み込みのため削除せず残したデータ: ${unseen}件`);
 
-        // エリア: ローカルのFirestoreID集合に無いものを削除
-        if (window.firestoreManager.getAreas) {
-            const localAreaIds = new Set(
-                this.areaManager.getAllAreas()
-                    .map(a => a.firestoreId)
-                    .filter(id => !!id)
-            );
-            const remoteAreas = await window.firestoreManager.getAreas(projectId);
-            for (const ra of remoteAreas) {
-                if (!localAreaIds.has(ra.firestoreId)) {
-                    await window.firestoreManager.deleteArea(projectId, ra.firestoreId);
-                    deletedCount++;
-                }
-            }
-        }
+        if (lines.length === 1) lines.push('データなし');
+        return lines.join('\n');
+    }
 
-        return deletedCount;
+    /**
+     * 項目名の一覧を作成
+     * @param {Array<string>} items - 項目名
+     * @returns {string}
+     */
+    formatItemList(items) {
+        const omitted = items.length > MAX_LISTED_ITEMS ? `\n…ほか${items.length - MAX_LISTED_ITEMS}件` : '';
+        return items.slice(0, MAX_LISTED_ITEMS).map((item) => `・${item}`).join('\n') + omitted;
     }
 }

@@ -8,6 +8,8 @@
  * - PNG画像ファイル名がプロジェクトキー
  */
 
+import { remoteState } from './SyncPlanner.js';
+
 export class FirestoreDataManager {
     constructor(firestore, userId) {
         this.db = firestore;
@@ -943,6 +945,93 @@ export class FirestoreDataManager {
             console.error('エリア取得失敗:', error);
             throw error;
         }
+    }
+
+    // ========================================
+    // 一括保存
+    // ========================================
+
+    /**
+     * 保存内容を1つのトランザクションで反映（全件成功か、全件変更なしのどちらか）
+     * 保存内容を決めた後に他の保存・変更があった場合は code='sync-conflict' の例外で中止する
+     * @param {string} projectId - プロジェクトID
+     * @param {Object} metadata - プロジェクトのメタデータ
+     * @param {Object|null} projectBefore - 保存内容を決める前に読んだメタデータ
+     * @param {Array} plans - SyncPlanner.planSync()の戻り値の配列
+     * @returns {Promise<void>} 成功時、plans内の adds の各要素に id が設定される
+     */
+    async commitSync(projectId, metadata, projectBefore, plans) {
+        const projectRef = this.db.collection('projects').doc(projectId);
+        const refOf = (kind, id) => projectRef.collection(kind.name).doc(id);
+        const version = (project) => {
+            if (!project) return 'none';
+            const updatedAt = project.updatedAt;
+            return String(updatedAt?.toMillis ? updatedAt.toMillis() : updatedAt);
+        };
+
+        // 再試行されても同じドキュメントになるよう、IDはトランザクションの外で採番
+        const adds = plans.flatMap(({ kind, adds }) => adds.map((change) => {
+            const ref = projectRef.collection(kind.name).doc();
+            return { kind, change, ref };
+        }));
+        const updates = plans.flatMap(({ kind, updates }) =>
+            updates.map((change) => ({ kind, change, ref: refOf(kind, change.id) })));
+        const deletes = plans.flatMap(({ kind, deletes }) =>
+            deletes.map((change) => ({ kind, change, ref: refOf(kind, change.id) })));
+
+        await this.db.runTransaction(async (transaction) => {
+            // 読み取りはすべて書き込みより先に行う
+            const targets = [...updates, ...deletes];
+            const [projectDoc, ...targetDocs] = await Promise.all(
+                [projectRef, ...targets.map(({ ref }) => ref)].map((ref) => transaction.get(ref))
+            );
+            const project = projectDoc.exists ? projectDoc.data() : null;
+
+            const changedByOthers = version(project) !== version(projectBefore)
+                || targets.some(({ kind, change }, i) =>
+                    !targetDocs[i].exists || remoteState(kind, targetDocs[i].data()) !== change.before);
+            if (changedByOthers) {
+                const error = new Error('保存中に他の変更が行われました');
+                error.code = 'sync-conflict';
+                throw error;
+            }
+
+            const now = firebase.firestore.FieldValue.serverTimestamp();
+
+            adds.forEach(({ kind, change, ref }) => {
+                transaction.set(ref, {
+                    ...kind.defaults,
+                    ...change.content,
+                    ...kind.derive(change.content),
+                    createdAt: now,
+                    updatedAt: now
+                });
+            });
+            updates.forEach(({ kind, change, ref }) => {
+                transaction.update(ref, { ...change.content, ...kind.derive(change.content), updatedAt: now });
+            });
+            deletes.forEach(({ ref }) => transaction.delete(ref));
+
+            const projectData = { ...metadata, updatedAt: now, lastAccessedAt: now, lastUpdatedBy: this.userId };
+            plans.forEach(({ kind, remoteCount, adds, deletes }) => {
+                const difference = adds.length - deletes.length;
+                if (!project) {
+                    projectData[kind.counter] = remoteCount + difference;
+                } else if (difference !== 0) {
+                    projectData[kind.counter] = firebase.firestore.FieldValue.increment(difference);
+                }
+            });
+
+            if (project) {
+                transaction.update(projectRef, projectData);
+            } else {
+                transaction.set(projectRef, { ...projectData, createdBy: this.userId, createdAt: now });
+            }
+        });
+
+        adds.forEach(({ change, ref }) => {
+            change.id = ref.id;
+        });
     }
 
     // ========================================

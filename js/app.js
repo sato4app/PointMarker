@@ -902,7 +902,7 @@ export class PointMarkerApp {
         }
 
         // FirebaseSyncManagerに画像とキャンバスを設定
-        this.firebaseSyncManager.setImageAndCanvas(image, this.canvas);
+        this.firebaseSyncManager.setImageAndCanvas(image, this.canvas, this.canvasRenderer);
 
         // Stage 2へ移行
         this.setUIStage(2);
@@ -1320,18 +1320,21 @@ export class PointMarkerApp {
      * ウィンドウリサイズ処理
      */
     handleWindowResize() {
-        this.resizeHandler.handleResize(
-            this.currentImage,
-            this.canvas,
-            this.canvasRenderer,
-            this.layoutManager,
-            this.pointManager,
-            this.routeManager,
-            this.spotManager,
-            this.viewportManager,
-            () => this.redrawCanvas(),
-            this.areaManager
-        );
+        // リサイズによる座標の再計算は、保存時に「画面での変更」として扱わない
+        this.firebaseSyncManager.keepUnchangedAcross(() => {
+            this.resizeHandler.handleResize(
+                this.currentImage,
+                this.canvas,
+                this.canvasRenderer,
+                this.layoutManager,
+                this.pointManager,
+                this.routeManager,
+                this.spotManager,
+                this.viewportManager,
+                () => this.redrawCanvas(),
+                this.areaManager
+            );
+        });
     }
 
 }
